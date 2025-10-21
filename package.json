@@ -1,0 +1,31 @@
+{
+  "name": "neuropilot",
+  "version": "0.1.0",
+  "description": "Your AI co-pilot for focus",
+  "homepage": "https://github.com/sandipndev/neuropilot",
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup && cp src/manifest.json dist/ && cp -r src/popup dist/",
+    "start": "web-ext run --source-dir dist --target chromium"
+  },
+  "keywords": [
+    "ai",
+    "focus",
+    "productivity",
+    "learning",
+    "chrome-extension"
+  ],
+  "author": "sandipndev <hey@sandipan.dev>, neilblaze <putubanerjee23@gmail.com>",
+  "license": "CC-BY-4.0",
+  "engines": {
+    "node": "22.x",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@10.18.3",
+  "devDependencies": {
+    "@types/chrome": "^0.1.24",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3",
+    "web-ext": "^9.0.0"
+  }
+}

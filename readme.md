@@ -5,3 +5,127 @@
 - Tracks what you read, senses drift, nudges you back
 - Builds your Knowledge Garden with recall mini-games
 
+### Arechitecture
+
+```
+Background
+====================================
+BACKEND
+
+Event Triggered:
+- Data Extraction
+- Feature Extration
+- Time Series -> IndexedDB
+
+[BG] Activity Tracking
+[BG] Garbage Collector
+
+Inference Layer (background AI processes, Gemini Models):
+- [BG] Focus detection
+  -> Focus Shift detection
+- [BG] Quiz generation
+- [BG] Pulse generation
+====================================
+
+.......... via the persistence layer [for time series/bg data] (IndexedDB)
+.......... via the persistence layer [for Settings and Key/value] (Local Storage)
+
+Foreground
+====================================
+API Layer:
+- Queries/Mutation for serving the frontend
+
+FRONTEND
+- Extension: Popup
+- Extension: Fullpage
+====================================
+```
+
+### DB Tables
+ActivityWebsitesVisited:
+- id
+- timestamp
+- url
+- title
+- metadata
+- summary
+- opened_time
+- closed_time
+- active_time
+
+ActivityUserAttention:
+- id
+- website_id
+- timestamp
+- text_content
+
+ChatMessages:
+- id
+- time
+- message: JSON
+
+QuizQuestions:
+- id
+- question
+- option_1
+- option_2
+- answer: 1 | 2
+
+Pulse:
+- id
+- message
+
+Focus:
+- id
+- focus_item: String
+- time_spent: Array<{
+  start: Timestamp
+  stop: Timestamp
+}>
+
+PastFocus:
+- id
+- focus_item: String
+- total_time_spent: Int
+
+### Local Storage Keys
+- User Name
+- Attention Time: 0.5s
+- Focus Time: 5 minute
+- Paused
+
+### API Layer
+- mutation setUserName(name: String)
+- query getUserName()
+
+- query primeActivity {
+  state: PrimeActivityState -> "START_FOCUS" | "IN_SESSION" | "WIND_DOWN",
+  context: {
+    focus: [ Focus ],
+    totalFocusToday: Int,
+  }
+}
+
+type Focus {
+  id
+  focusItem
+  timeSpent: [ { start, stop }]
+}
+
+- query topActivities() -> Focus[]
+
+- mutation sendChatMessage(message: String) 
+- query chatMessages() -> ChatMessage[]
+
+- query quizQuestions() -> Quiz[]
+
+- query pulse() -> Pulse[]
+
+- query focus() -> Focus[]
+
+- mutation pomodoroStart()
+- mutation pomodoroStop()
+- query pomodoro()
+
+- query recentActivity() -> Activity[]
+- query wins() -> PastFocus[]

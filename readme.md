@@ -69,7 +69,7 @@ QuizQuestions:
 - question
 - option_1
 - option_2
-- answer: 1 | 2
+- correct_option: 1 | 2
 
 Pulse:
 - id

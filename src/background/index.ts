@@ -15,13 +15,14 @@ initDB()
 chrome.runtime.onMessage.addListener((message) => {
   if (message.type === "ATTENTION_UPDATE") {
     const { data } = message;
-    const sustainedAttention: SustainedAttention = data;
+    const url = data.url;
+    const sustainedAttention: SustainedAttention = data.currentSustainedAttention;
 
-    console.log({ sustainedAttention });
+    console.log({ sustainedAttention, url });
 
     // Save sustained attention data (delta tracking handled internally)
-    if (sustainedAttention?.text && sustainedAttention.wordsRead) {
-      saveActivityUserAttention(sustainedAttention).catch((error) => {
+    if (sustainedAttention?.text && sustainedAttention.wordsRead && url) {
+      saveActivityUserAttention(sustainedAttention, url).catch((error) => {
         console.error("Failed to save activity:", error);
       });
     }

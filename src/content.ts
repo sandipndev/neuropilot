@@ -29,7 +29,7 @@ new CognitiveAttentionTracker({
     if (data.currentSustainedAttention)
       safeSendMessage({
         type: "ATTENTION_UPDATE",
-        data: data.currentSustainedAttention,
+        data: data,
       });
   },
 }).init();

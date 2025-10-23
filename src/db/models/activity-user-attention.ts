@@ -5,23 +5,13 @@
 
 import { getDB } from "../index";
 import { SustainedAttention } from "../../background/tracker/cognitive-attention";
+import { hashString } from "../utils/hash";
 
 export interface ActivityUserAttention {
   id: string; // Hash of the delta text content
   timestamp: number;
   text_content: string; // Only the delta (newly read portion)
-}
-
-/**
- * Generate a hash from text content
- */
-export async function hashText(text: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(text);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-  return hashHex;
+  website_id: string; // Hash of the URL (links to ActivityWebsitesVisited)
 }
 
 // In-memory tracking of reading progress for each text
@@ -41,7 +31,8 @@ function extractWords(text: string, wordCount: number): string {
  * Only saves the newly read portion of text
  */
 export async function saveActivityUserAttention(
-  sustainedAttention: SustainedAttention
+  sustainedAttention: SustainedAttention,
+  url: string
 ): Promise<void> {
   const { text, wordsRead } = sustainedAttention;
 
@@ -50,7 +41,7 @@ export async function saveActivityUserAttention(
   }
 
   const db = await getDB();
-  const fullTextHash = await hashText(text);
+  const fullTextHash = await hashString(text);
 
   // Get previous reading progress for this text
   const previousWordsRead = readingProgressTracker.get(fullTextHash) || 0;
@@ -74,8 +65,11 @@ export async function saveActivityUserAttention(
   }
 
   // Hash the delta text for ID
-  const deltaHash = await hashText(deltaText);
+  const deltaHash = await hashString(deltaText);
   const timestamp = Date.now();
+
+  // Hash the URL to create website_id (same hash as ActivityWebsitesVisited)
+  const websiteId = await hashString(url);
 
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(["ActivityUserAttention"], "readwrite");
@@ -85,6 +79,7 @@ export async function saveActivityUserAttention(
       id: deltaHash,
       timestamp,
       text_content: deltaText,
+      website_id: websiteId,
     };
 
     const request = store.put(record);

@@ -4,6 +4,7 @@
  */
 
 import { getDB } from "../index";
+import { hashString } from "../utils/hash";
 
 export interface ActivityWebsiteVisited {
   id: string; // Hash of the URL
@@ -25,18 +26,6 @@ export interface WebsiteVisitEvent {
   timestamp: number;
 }
 
-/**
- * Generate a hash from URL
- */
-export async function hashUrl(url: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(url);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-  return hashHex;
-}
-
 // Track when the page became active (for calculating active time)
 const activeStartTimes = new Map<string, number>();
 
@@ -47,7 +36,7 @@ export async function saveWebsiteVisit(event: WebsiteVisitEvent): Promise<void> 
   const { url, title, metadata, eventType, timestamp } = event;
 
   const db = await getDB();
-  const urlHash = await hashUrl(url);
+  const urlHash = await hashString(url);
 
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(["ActivityWebsitesVisited"], "readwrite");

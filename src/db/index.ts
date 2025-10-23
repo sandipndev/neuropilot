@@ -3,7 +3,7 @@
  */
 
 const DB_NAME = "NeuroPilotDB";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 let dbInstance: IDBDatabase | null = null;
 
@@ -33,6 +33,7 @@ export async function initDB(): Promise<IDBDatabase> {
           keyPath: "id",
         });
         attentionStore.createIndex("timestamp", "timestamp", { unique: false });
+        attentionStore.createIndex("website_id", "website_id", { unique: false });
       }
 
       // ActivityWebsitesVisited table

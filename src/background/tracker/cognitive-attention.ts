@@ -3,6 +3,15 @@
  * Predicts what content the user is reading based on multiple behavioral cues
  */
 
+interface SustainedAttention {
+  text: string;
+  confidence: number; // 0-100, how confident we are the user was reading this
+  wordsRead?: number; // Estimated words read based on reading speed
+  totalWords?: number; // Total words in the text
+  readingProgress?: number; // Percentage of text read (0-100)
+  readingTimeElapsed?: number; // Time spent reading in milliseconds
+}
+
 interface AttentionUpdateData {
   timestamp: number;
   url: string;
@@ -28,6 +37,8 @@ interface CognitiveAttentionConfig {
   cognitiveAttentionThreshold?: number;
   ignoreSelectors?: string[];
   onUpdate?: (data: AttentionUpdateData) => void;
+  wordsPerMinute?: number; // Average reading speed (default: 200-250 WPM)
+  readingProgressInterval?: number; // How often to emit reading progress events (ms)
 }
 
 interface TrackerState {
@@ -68,15 +79,8 @@ interface SustainedAttentionHistory {
   text: string;
   firstSeenAt: number;
   totalDuration: number;
-  sessions: any[];
-}
-
-interface CurrentSustainedAttention {
-  element: Element;
-  text: string;
-  currentDuration: number;
-  metThreshold: boolean;
-  thresholdProgress: number;
+  lastEmittedProgress: number; // Track last reading progress percentage emitted
+  lastEmittedTime: number; // Track when we last emitted an event
 }
 
 interface DebugOverlayData {
@@ -96,21 +100,21 @@ class CognitiveAttentionTracker {
   private handleMouseMove: (e: MouseEvent) => void;
   private handleScroll: () => void;
   private handleVisibilityChange: () => void;
-  private lastBroadcastedElement: Element | null = null; // Track what we've already broadcasted
+  private lastBroadcastedElement: Element | null = null;
 
   constructor(config: CognitiveAttentionConfig = {}) {
-    // Store the callback separately
     this.onUpdateCallback = config.onUpdate;
 
-    // Configuration
     this.config = {
-      updateInterval: config.updateInterval || 500, // ms
-      mouseHoverThreshold: config.mouseHoverThreshold || 1000, // ms
-      idleThreshold: config.idleThreshold || 10000, // ms - user truly idle (no activity)
-      scrollVelocityThreshold: config.scrollVelocityThreshold || 500, // px/s
+      updateInterval: config.updateInterval || 500,
+      mouseHoverThreshold: config.mouseHoverThreshold || 1000,
+      idleThreshold: config.idleThreshold || 10000,
+      scrollVelocityThreshold: config.scrollVelocityThreshold || 500,
       debugMode: config.debugMode || false,
-      minTextLength: config.minTextLength || 20, // minimum characters for text element
-      cognitiveAttentionThreshold: config.cognitiveAttentionThreshold || 5000, // ms - minimum time to consider true attention
+      minTextLength: config.minTextLength || 20,
+      cognitiveAttentionThreshold: config.cognitiveAttentionThreshold || 5000,
+      wordsPerMinute: config.wordsPerMinute || 150, // Reading speed
+      readingProgressInterval: config.readingProgressInterval || 1000, // Emit every 10s of reading
       ignoreSelectors: config.ignoreSelectors || [
         "nav",
         "header",
@@ -141,7 +145,6 @@ class CognitiveAttentionTracker {
         ".controls",
         ".dropdown",
         ".dropdown-menu",
-        // Wikipedia-specific
         ".vector-header",
         ".vector-menu",
         ".vector-dropdown",
@@ -150,7 +153,6 @@ class CognitiveAttentionTracker {
         ".mw-navigation",
         ".vector-sticky-header",
         ".vector-page-toolbar",
-        // ARIA roles
         '[role="navigation"]',
         '[role="banner"]',
         '[role="complementary"]',
@@ -163,7 +165,6 @@ class CognitiveAttentionTracker {
       ...config,
     };
 
-    // State
     this.state = {
       mousePosition: { x: 0, y: 0 },
       lastMouseMove: Date.now(),
@@ -179,21 +180,17 @@ class CognitiveAttentionTracker {
       topElementStartTime: null,
     };
 
-    // Tracking data
     this.textElements = [];
     this.attentionScores = new Map<Element, AttentionCandidate>();
-    this.sustainedAttentionHistory = new Map<Element, SustainedAttentionHistory>(); // Track how long each element has been top
+    this.sustainedAttentionHistory = new Map<Element, SustainedAttentionHistory>();
     this.scrollTimeout = null;
 
-    // Initialize event handlers
     this.handleMouseMove = (e: MouseEvent) => {
       this.state.mousePosition = { x: e.clientX, y: e.clientY };
       this.state.lastMouseMove = Date.now();
       this.state.lastActivity = Date.now();
 
-      // Check if hovering over text element
       const hoveredElement = document.elementFromPoint(e.clientX, e.clientY);
-
       if (hoveredElement !== this.state.mouseHoverElement) {
         this.state.mouseHoverElement = hoveredElement;
         this.state.mouseHoverStartTime = Date.now();
@@ -206,14 +203,12 @@ class CognitiveAttentionTracker {
       const timeDelta = now - this.state.lastScrollTime;
       const scrollDelta = currentScroll - this.state.scrollPosition;
 
-      // Calculate scroll velocity (pixels per second)
       this.state.scrollVelocity = Math.abs((scrollDelta / timeDelta) * 1000);
       this.state.scrollPosition = currentScroll;
       this.state.lastScrollTime = now;
       this.state.isScrolling = true;
       this.state.lastActivity = now;
 
-      // Reset scrolling flag after delay
       if (this.scrollTimeout) clearTimeout(this.scrollTimeout);
       this.scrollTimeout = setTimeout(() => {
         this.state.isScrolling = false;
@@ -230,20 +225,13 @@ class CognitiveAttentionTracker {
   }
 
   init(): this {
-    // Cognitive Attention Tracker initialized
-
-    // Discover all text elements
     this.discoverTextElements();
-
-    // Set up event listeners
     this.setupEventListeners();
 
-    // Start tracking loop
     this.trackingInterval = setInterval(() => {
       this.calculateAttention();
     }, this.config.updateInterval);
 
-    // Create debug overlay if enabled
     if (this.config.debugMode) {
       this.createDebugOverlay();
     }
@@ -255,19 +243,15 @@ class CognitiveAttentionTracker {
     clearInterval(this.trackingInterval);
     if (this.scrollTimeout) clearTimeout(this.scrollTimeout);
 
-    // Remove event listeners
     document.removeEventListener("mousemove", this.handleMouseMove);
     document.removeEventListener("scroll", this.handleScroll);
     document.removeEventListener("visibilitychange", this.handleVisibilityChange);
 
-    // Remove debug overlay
     const overlay = document.getElementById("cog-attention-debug");
     if (overlay) overlay.remove();
   }
 
   private discoverTextElements(): void {
-    // Find all text-containing elements - focusing on content tags only
-    // Excluded: 'span', 'div', 'a' as they're often in navigation/UI chrome
     const textTags = [
       "p",
       "h1",
@@ -282,7 +266,6 @@ class CognitiveAttentionTracker {
       "article",
       "section",
     ];
-
     this.textElements = [];
     let ignoredCount = 0;
 
@@ -293,7 +276,6 @@ class CognitiveAttentionTracker {
         const htmlElem = elem as HTMLElement;
         const text = htmlElem.innerText?.trim();
 
-        // Filter out elements with insufficient text or hidden elements
         if (
           !text ||
           text.length < this.config.minTextLength ||
@@ -303,20 +285,18 @@ class CognitiveAttentionTracker {
           continue;
         }
 
-        // Check if element or any parent matches ignore selectors
         if (this.shouldIgnoreElement(elem)) {
           ignoredCount++;
           continue;
         }
 
-        // Additional check: prioritize elements in main content areas
         const isInMainContent = this.isInMainContent(htmlElem);
 
         this.textElements.push({
           element: htmlElem,
           text: text,
           tag: tag,
-          bounds: null, // Will be calculated dynamically
+          bounds: null,
           isMainContent: isInMainContent,
         });
       }
@@ -324,7 +304,6 @@ class CognitiveAttentionTracker {
   }
 
   private getIgnoreReason(element: Element): string {
-    // Helper method to explain why an element is ignored (for debugging)
     let current: Element | null = element;
 
     while (current && current !== document.body) {
@@ -369,7 +348,6 @@ class CognitiveAttentionTracker {
   }
 
   private isInMainContent(element: Element): boolean {
-    // Check if element is within main content area (not chrome/UI)
     let current: Element | null = element;
 
     while (current && current !== document.body) {
@@ -378,7 +356,6 @@ class CognitiveAttentionTracker {
       const id = (current.id || "").toLowerCase();
       const className = (current.className || "").toString().toLowerCase();
 
-      // Positive signals - element is in main content
       if (
         tagName === "main" ||
         tagName === "article" ||
@@ -395,15 +372,13 @@ class CognitiveAttentionTracker {
       current = current.parentElement as Element | null;
     }
 
-    return false; // No main content indicator found
+    return false;
   }
 
   private shouldIgnoreElement(element: Element): boolean {
-    // Check if element itself or any ancestor matches ignore criteria
     let current: Element | null = element;
 
     while (current && current !== document.body) {
-      // Check tag name - immediately reject common non-content elements
       const tagName = current.tagName.toLowerCase();
       if (
         ["nav", "header", "footer", "aside", "button", "input", "select", "textarea"].includes(
@@ -413,23 +388,18 @@ class CognitiveAttentionTracker {
         return true;
       }
 
-      // Check against CSS selectors
       for (let selector of this.config.ignoreSelectors) {
         try {
           if (current.matches(selector)) {
             return true;
           }
-        } catch (e) {
-          // Invalid selector, skip
-        }
+        } catch (e) {}
       }
 
-      // Check common class/id patterns (more comprehensive)
       const className = (current.className || "").toString().toLowerCase();
       const id = (current.id || "").toLowerCase();
       const combined = className + " " + id;
 
-      // More aggressive pattern matching for navigation, menus, UI chrome
       if (
         combined.match(
           /\b(nav|menu|header|footer|sidebar|side-bar|side_bar|advertisement|banner|cookie|popup|modal|dropdown|toolbar|chrome|controls|button|widget)\b/
@@ -438,7 +408,6 @@ class CognitiveAttentionTracker {
         return true;
       }
 
-      // Check ARIA roles that indicate non-content areas
       const role = current.getAttribute("role");
       if (
         role &&
@@ -449,7 +418,6 @@ class CognitiveAttentionTracker {
         return true;
       }
 
-      // Check aria-label for navigation-related keywords
       const ariaLabel = (current.getAttribute("aria-label") || "").toLowerCase();
       if (ariaLabel.match(/\b(navigation|menu|nav|banner|header|footer|sidebar)\b/)) {
         return true;
@@ -479,15 +447,82 @@ class CognitiveAttentionTracker {
     );
   }
 
+  private calculateConfidenceScore(
+    candidate: AttentionCandidate,
+    sustainedDuration: number
+  ): number {
+    let confidence = 0;
+
+    // 1. Sustained duration factor (0-40 points)
+    const durationFactor = Math.min(
+      40,
+      (sustainedDuration / this.config.cognitiveAttentionThreshold) * 40
+    );
+    confidence += durationFactor;
+
+    // 2. Score quality (0-30 points)
+    const scoreQuality = Math.min(30, (candidate.score / 115) * 30);
+    confidence += scoreQuality;
+
+    // 3. Engagement signals (0-30 points)
+    let engagementPoints = 0;
+
+    if (candidate.reasons.some((r) => r.includes("mouse-over-text"))) {
+      engagementPoints += 15;
+    } else if (candidate.reasons.some((r) => r.includes("hover"))) {
+      engagementPoints += 10;
+    } else if (candidate.reasons.some((r) => r.includes("proximity"))) {
+      engagementPoints += 5;
+    }
+
+    if (candidate.reasons.some((r) => r.includes("slow-scroll") || r.includes("no-scroll"))) {
+      engagementPoints += 10;
+    }
+
+    if (candidate.reasons.some((r) => r.includes("main-content"))) {
+      engagementPoints += 5;
+    }
+
+    confidence += Math.min(30, engagementPoints);
+
+    return Math.round(Math.min(100, confidence));
+  }
+
+  private countWords(text: string): number {
+    // Count words in text (split by whitespace)
+    return text
+      .trim()
+      .split(/\s+/)
+      .filter((word) => word.length > 0).length;
+  }
+
+  private calculateReadingProgress(
+    text: string,
+    durationMs: number
+  ): {
+    wordsRead: number;
+    totalWords: number;
+    readingProgress: number;
+  } {
+    const totalWords = this.countWords(text);
+    const minutesElapsed = durationMs / 60000;
+    const wordsRead = Math.min(Math.floor(minutesElapsed * this.config.wordsPerMinute), totalWords);
+    const readingProgress = totalWords > 0 ? Math.min(100, (wordsRead / totalWords) * 100) : 0;
+
+    return {
+      wordsRead,
+      totalWords,
+      readingProgress,
+    };
+  }
+
   private calculateAttention(): AttentionCandidate[] | void {
     const now = Date.now();
     this.attentionScores.clear();
 
-    // Check idle state
     const timeSinceLastActivity = now - this.state.lastActivity;
     const isIdle = timeSinceLastActivity > this.config.idleThreshold;
 
-    // If page is not active or user is idle for too long, reduce all scores
     if (!this.state.isPageActive || isIdle) {
       if (this.config.debugMode) {
         this.updateDebugOverlay({
@@ -504,7 +539,6 @@ class CognitiveAttentionTracker {
       const bounds = textElem.element.getBoundingClientRect();
       textElem.bounds = bounds;
 
-      // Skip if not in viewport
       if (!this.isElementInViewport(bounds)) {
         return;
       }
@@ -513,23 +547,17 @@ class CognitiveAttentionTracker {
       const reasons = [];
 
       // 1. VIEWPORT POSITION SCORE (0-30 points)
-      // Base score for being in viewport
       score += 20;
       reasons.push("in-viewport(20)");
 
-      // Additional bonus for center area when NOT scrolling (user is likely reading)
       if (!this.state.isScrolling) {
         const viewportHeight = window.innerHeight;
         const elementCenterY = (bounds.top + bounds.bottom) / 2;
         const viewportCenterY = viewportHeight / 2;
-
-        // Calculate distance from viewport center (0 = perfect center, 1 = edge)
         const distanceFromCenter =
           Math.abs(elementCenterY - viewportCenterY) / (viewportHeight / 2);
 
-        // Give up to 10 bonus points for being near center (when not scrolling)
         if (distanceFromCenter < 0.5) {
-          // Within center 50% of viewport
           const centerBonus = Math.floor(10 * (1 - distanceFromCenter * 2));
           score += centerBonus;
           reasons.push(`center-focus(${centerBonus})`);
@@ -540,22 +568,15 @@ class CognitiveAttentionTracker {
       const mouseX = this.state.mousePosition.x;
       const mouseY = this.state.mousePosition.y;
 
-      // Check if mouse is within element bounds
       if (
         mouseX >= bounds.left &&
         mouseX <= bounds.right &&
         mouseY >= bounds.top &&
         mouseY <= bounds.bottom
       ) {
-        // IMPORTANT: Only give points if there's actual text under the mouse cursor
-        // Get the element directly at mouse position
         const elementAtMouse = document.elementFromPoint(mouseX, mouseY);
-
-        // Check if the element at mouse position is the text element itself or a child of it
         const isTextUnderMouse =
           elementAtMouse === textElem.element || textElem.element.contains(elementAtMouse);
-
-        // Also verify the element at mouse has text content (not an image, empty div, etc)
         const hasTextUnderMouse =
           elementAtMouse &&
           "innerText" in elementAtMouse &&
@@ -563,11 +584,9 @@ class CognitiveAttentionTracker {
           (elementAtMouse as HTMLElement).innerText.trim().length > 0;
 
         if (isTextUnderMouse && hasTextUnderMouse) {
-          // Mouse is directly over text element with actual text
           score += 25;
           reasons.push("mouse-over-text(25)");
 
-          // Bonus if hovering for a while
           if (
             this.state.mouseHoverElement === textElem.element &&
             this.state.mouseHoverStartTime !== null
@@ -579,18 +598,14 @@ class CognitiveAttentionTracker {
             }
           }
         } else {
-          // Mouse is over the element bounds but not over actual text
-          // Give much smaller proximity bonus
           score += 5;
           reasons.push("mouse-near(5)");
         }
       } else {
-        // Calculate proximity to mouse (closer = higher score)
         const centerX = (bounds.left + bounds.right) / 2;
         const centerY = (bounds.top + bounds.bottom) / 2;
         const distance = Math.sqrt(Math.pow(mouseX - centerX, 2) + Math.pow(mouseY - centerY, 2));
 
-        // Within 200px gets partial points
         if (distance < 200) {
           const proximityScore = Math.floor(15 * (1 - distance / 200));
           score += proximityScore;
@@ -600,23 +615,19 @@ class CognitiveAttentionTracker {
 
       // 3. SCROLL BEHAVIOR SCORE (0-25 points)
       if (this.state.isScrolling) {
-        // Fast scrolling = probably not reading
         if (this.state.scrollVelocity > this.config.scrollVelocityThreshold) {
           score -= 15;
           reasons.push("fast-scroll(-15)");
         } else {
-          // Slow scrolling = probably reading
           score += 15;
           reasons.push("slow-scroll(15)");
         }
       } else {
-        // Not scrolling = likely reading
         score += 10;
         reasons.push("no-scroll(10)");
       }
 
       // 4. ELEMENT IMPORTANCE SCORE (0-10 points)
-      // Headings and emphasized content get bonus
       const tag = textElem.tag.toLowerCase();
       if (tag.match(/^h[1-3]$/)) {
         score += 10;
@@ -626,7 +637,6 @@ class CognitiveAttentionTracker {
         reasons.push("subheading(5)");
       }
 
-      // Bold or emphasized text
       const style = window.getComputedStyle(textElem.element);
       if (style.fontWeight === "bold" || parseInt(style.fontWeight) >= 600) {
         score += 3;
@@ -634,7 +644,6 @@ class CognitiveAttentionTracker {
       }
 
       // 5. MAIN CONTENT AREA BONUS (0-15 points)
-      // Strongly prefer elements in main content area
       if (textElem.isMainContent) {
         score += 15;
         reasons.push("main-content(15)");
@@ -643,46 +652,40 @@ class CognitiveAttentionTracker {
       candidates.push({
         element: textElem.element,
         text: textElem.text,
-        score: Math.max(0, score), // Ensure non-negative
+        score: Math.max(0, score),
         reasons: reasons,
         bounds: bounds,
       });
     });
 
-    // Sort by score
     candidates.sort((a, b) => b.score - a.score);
 
-    // Track sustained attention on top element
     const topCandidate = candidates[0];
 
     if (topCandidate) {
-      // Check if top element changed
       if (this.state.currentTopElement !== topCandidate.element) {
         this.state.currentTopElement = topCandidate.element;
         this.state.topElementStartTime = now;
 
-        // Initialize sustained attention tracking for this element
         if (!this.sustainedAttentionHistory.has(topCandidate.element)) {
           this.sustainedAttentionHistory.set(topCandidate.element, {
             element: topCandidate.element,
             text: topCandidate.text,
             firstSeenAt: now,
             totalDuration: 0,
-            sessions: [],
+            lastEmittedProgress: 0,
+            lastEmittedTime: now,
           });
         }
       }
 
-      // Calculate how long this element has been top
       const sustainedDuration =
         this.state.topElementStartTime !== null ? now - this.state.topElementStartTime : 0;
 
-      // Update sustained attention history
       const history = this.sustainedAttentionHistory.get(topCandidate.element);
       if (history) {
         history.totalDuration = sustainedDuration;
 
-        // Mark as cognitively attended if threshold met
         if (sustainedDuration >= this.config.cognitiveAttentionThreshold) {
           topCandidate.cognitivelyAttended = true;
           topCandidate.sustainedDuration = sustainedDuration;
@@ -690,12 +693,10 @@ class CognitiveAttentionTracker {
       }
     }
 
-    // Store top candidates
     candidates.slice(0, 10).forEach((candidate) => {
       this.attentionScores.set(candidate.element, candidate);
     });
 
-    // Update debug display
     if (this.config.debugMode) {
       this.updateDebugOverlay({
         message: "👁️ Tracking active",
@@ -704,39 +705,61 @@ class CognitiveAttentionTracker {
       this.highlightTopElement(candidates[0]);
     }
 
-    // Only broadcast when sustained attention threshold is met (and it's a new element)
-    if (this.onUpdateCallback && candidates.length > 0) {
-      const currentSustained = this.getCurrentSustainedAttention();
+    if (this.onUpdateCallback && candidates.length > 0 && topCandidate) {
+      const sustainedDuration =
+        this.state.topElementStartTime !== null ? now - this.state.topElementStartTime : 0;
+      const metThreshold = sustainedDuration >= this.config.cognitiveAttentionThreshold;
 
-      // Only trigger callback if:
-      // 1. Sustained attention threshold is met
-      // 2. It's a different element than we last broadcasted
-      if (
-        currentSustained?.metThreshold &&
-        currentSustained.element !== this.lastBroadcastedElement
-      ) {
-        const updateData: AttentionUpdateData = {
-          timestamp: Date.now(),
-          url: window.location.href,
-          title: document.title,
-          topElements: candidates.slice(0, 5).map((item, index) => ({
-            rank: index + 1,
-            text: item.text,
-            score: item.score,
-            reasons: item.reasons,
-            cognitivelyAttended: item.cognitivelyAttended || false,
-            sustainedDuration: item.sustainedDuration,
-          })),
-          currentSustainedAttention: {
-            text: currentSustained.text,
-            currentDuration: currentSustained.currentDuration,
-            metThreshold: currentSustained.metThreshold,
-            thresholdProgress: currentSustained.thresholdProgress,
-          },
-        };
+      if (metThreshold) {
+        const history = this.sustainedAttentionHistory.get(topCandidate.element);
 
-        this.onUpdateCallback(updateData);
-        this.lastBroadcastedElement = currentSustained.element;
+        if (history) {
+          const readingProgress = this.calculateReadingProgress(
+            topCandidate.text,
+            sustainedDuration
+          );
+          const timeSinceLastEmit = now - history.lastEmittedTime;
+
+          // Emit if:
+          // 1. It's a new element (different from last broadcasted), OR
+          // 2. Enough time has passed since last emission (readingProgressInterval), OR
+          // 3. User has progressed significantly in reading (at least 10% more)
+          const isNewElement = topCandidate.element !== this.lastBroadcastedElement;
+          const hasEnoughTimePassed = timeSinceLastEmit >= this.config.readingProgressInterval;
+          const hasProgressedEnough =
+            readingProgress.readingProgress >= history.lastEmittedProgress + 10;
+
+          if (isNewElement || hasEnoughTimePassed || hasProgressedEnough) {
+            const confidence = this.calculateConfidenceScore(topCandidate, sustainedDuration);
+
+            const updateData: AttentionUpdateData = {
+              timestamp: Date.now(),
+              url: window.location.href,
+              title: document.title,
+              topElements: candidates.slice(0, 5).map((item, index) => ({
+                rank: index + 1,
+                text: item.text,
+                score: item.score,
+                reasons: item.reasons,
+                cognitivelyAttended: item.cognitivelyAttended || false,
+                sustainedDuration: item.sustainedDuration,
+              })),
+              currentSustainedAttention: {
+                text: topCandidate.text,
+                confidence: confidence,
+                wordsRead: readingProgress.wordsRead,
+                totalWords: readingProgress.totalWords,
+                readingProgress: readingProgress.readingProgress,
+                readingTimeElapsed: sustainedDuration,
+              },
+            };
+
+            this.onUpdateCallback(updateData);
+            this.lastBroadcastedElement = topCandidate.element;
+            history.lastEmittedProgress = readingProgress.readingProgress;
+            history.lastEmittedTime = now;
+          }
+        }
       }
     }
 
@@ -745,30 +768,34 @@ class CognitiveAttentionTracker {
 
   getTopAttention(count = 1): AttentionCandidate | AttentionCandidate[] | undefined {
     const sorted = Array.from(this.attentionScores.values()).sort((a, b) => b.score - a.score);
-
     return count === 1 ? sorted[0] : sorted.slice(0, count);
   }
 
   getCognitivelyAttendedElements(): SustainedAttentionHistory[] {
-    // Returns elements that have received sustained attention (met threshold)
     return Array.from(this.sustainedAttentionHistory.values())
       .filter((history) => history.totalDuration >= this.config.cognitiveAttentionThreshold)
       .sort((a, b) => b.totalDuration - a.totalDuration);
   }
 
-  getCurrentSustainedAttention(): CurrentSustainedAttention | null {
-    // Returns current top element and how long it's been attended
+  getCurrentSustainedAttention(): SustainedAttention | null {
     if (!this.state.currentTopElement || this.state.topElementStartTime === null) return null;
 
     const duration = Date.now() - this.state.topElementStartTime;
     const history = this.sustainedAttentionHistory.get(this.state.currentTopElement);
+    const topCandidate = this.attentionScores.get(this.state.currentTopElement);
+
+    if (!topCandidate) return null;
+
+    const confidence = this.calculateConfidenceScore(topCandidate, duration);
+    const readingProgress = this.calculateReadingProgress(topCandidate.text, duration);
 
     return {
-      element: this.state.currentTopElement,
       text: history?.text || (this.state.currentTopElement as HTMLElement).innerText || "",
-      currentDuration: duration,
-      metThreshold: duration >= this.config.cognitiveAttentionThreshold,
-      thresholdProgress: Math.min(100, (duration / this.config.cognitiveAttentionThreshold) * 100),
+      confidence: confidence,
+      wordsRead: readingProgress.wordsRead,
+      totalWords: readingProgress.totalWords,
+      readingProgress: readingProgress.readingProgress,
+      readingTimeElapsed: duration,
     };
   }
 
@@ -808,29 +835,43 @@ class CognitiveAttentionTracker {
     `;
 
     if (data.topElements && data.topElements.length > 0) {
-      // Show sustained attention status
       const sustained = this.getCurrentSustainedAttention();
-      if (sustained) {
-        const progressBar = "█".repeat(Math.floor(sustained.thresholdProgress / 10));
-        const emptyBar = "░".repeat(10 - Math.floor(sustained.thresholdProgress / 10));
-        const statusIcon = sustained.metThreshold ? "✓" : "⏱️";
-        const statusColor = sustained.metThreshold ? "#00ff00" : "#ffaa00";
+      if (sustained && this.state.topElementStartTime !== null) {
+        const duration = Date.now() - this.state.topElementStartTime;
+        const progress = Math.min(100, (duration / this.config.cognitiveAttentionThreshold) * 100);
+        const progressBar = "█".repeat(Math.floor(progress / 10));
+        const emptyBar = "░".repeat(10 - Math.floor(progress / 10));
+        const metThreshold = duration >= this.config.cognitiveAttentionThreshold;
+        const statusIcon = metThreshold ? "✓" : "⏱️";
+        const statusColor = metThreshold ? "#00ff00" : "#ffaa00";
+
+        const readingInfo =
+          sustained.wordsRead !== undefined && sustained.totalWords !== undefined
+            ? `<div style="color: #00ff88; font-size: 11px; margin-bottom: 3px;">
+              Reading: ${sustained.wordsRead} / ${sustained.totalWords} words (${sustained.readingProgress?.toFixed(0)}%)
+            </div>
+            <div style="color: #888; font-size: 10px;">
+              @ ${this.config.wordsPerMinute} WPM
+            </div>`
+            : "";
+
+        const thresholdMet = metThreshold
+          ? '<div style="color: #00ff00; font-size: 10px; margin-top: 5px;">✓ Cognitive attention threshold met!</div>'
+          : "";
 
         html += `
           <div style="margin: 10px 0; padding: 10px; background: rgba(0,100,255,0.1); border: 2px solid ${statusColor}; border-radius: 5px;">
             <div style="color: ${statusColor}; font-weight: bold; margin-bottom: 5px;">
-              ${statusIcon} SUSTAINED ATTENTION: ${(sustained.currentDuration / 1000).toFixed(
-                1
-              )}s / ${(this.config.cognitiveAttentionThreshold / 1000).toFixed(0)}s
+              ${statusIcon} SUSTAINED ATTENTION: ${(duration / 1000).toFixed(1)}s / ${(this.config.cognitiveAttentionThreshold / 1000).toFixed(0)}s
             </div>
-            <div style="font-family: monospace; color: ${statusColor};">
-              [${progressBar}${emptyBar}] ${sustained.thresholdProgress.toFixed(0)}%
+            <div style="font-family: monospace; color: ${statusColor}; margin-bottom: 5px;">
+              [${progressBar}${emptyBar}] ${progress.toFixed(0)}%
             </div>
-            ${
-              sustained.metThreshold
-                ? '<div style="color: #00ff00; font-size: 10px; margin-top: 5px;">✓ Cognitive attention threshold met!</div>'
-                : ""
-            }
+            <div style="color: #00aaff; font-size: 11px; margin-bottom: 3px;">
+              Confidence: ${sustained.confidence}%
+            </div>
+            ${readingInfo}
+            ${thresholdMet}
           </div>
         `;
       }
@@ -858,7 +899,6 @@ class CognitiveAttentionTracker {
       });
     }
 
-    // Add stats
     html += `
       <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #333; font-size: 10px; color: #666;">
         Scroll: ${this.state.scrollVelocity.toFixed(0)} px/s | 
@@ -871,7 +911,6 @@ class CognitiveAttentionTracker {
   }
 
   private highlightTopElement(candidate: AttentionCandidate | undefined): void {
-    // Remove previous highlights
     document.querySelectorAll(".cog-attention-highlight").forEach((el) => {
       el.remove();
     });
@@ -894,8 +933,65 @@ class CognitiveAttentionTracker {
       box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
     `;
     document.body.appendChild(highlight);
+
+    // Add reading progress indicator
+    if (this.state.currentTopElement && this.state.topElementStartTime !== null) {
+      const duration = Date.now() - this.state.topElementStartTime;
+      const readingProgress = this.calculateReadingProgress(candidate.text, duration);
+
+      // Only show progress overlay if threshold is met and there's actual progress
+      if (
+        duration >= this.config.cognitiveAttentionThreshold &&
+        readingProgress.readingProgress > 0
+      ) {
+        const progressOverlay = document.createElement("div");
+        progressOverlay.className = "cog-attention-highlight";
+
+        // Calculate height based on reading progress
+        const progressHeight = (bounds.height * readingProgress.readingProgress) / 100;
+
+        progressOverlay.style.cssText = `
+          position: absolute;
+          left: ${bounds.left + window.scrollX}px;
+          top: ${bounds.top + window.scrollY}px;
+          width: ${bounds.width}px;
+          height: ${progressHeight}px;
+          background: linear-gradient(to bottom, 
+            rgba(144, 238, 144, 0.3) 0%, 
+            rgba(144, 238, 144, 0.2) 80%,
+            rgba(144, 238, 144, 0) 100%);
+          pointer-events: none;
+          z-index: 999999;
+          border-bottom: 2px dashed #90ee90;
+        `;
+        document.body.appendChild(progressOverlay);
+
+        // Add a small label showing percentage read
+        if (readingProgress.readingProgress < 100) {
+          const label = document.createElement("div");
+          label.className = "cog-attention-highlight";
+          label.style.cssText = `
+            position: absolute;
+            left: ${bounds.left + window.scrollX + bounds.width - 60}px;
+            top: ${bounds.top + window.scrollY + progressHeight - 20}px;
+            background: rgba(144, 238, 144, 0.9);
+            color: #000;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-family: monospace;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 1000000;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+          `;
+          label.textContent = `${readingProgress.readingProgress.toFixed(0)}% read`;
+          document.body.appendChild(label);
+        }
+      }
+    }
   }
 }
 
 export default CognitiveAttentionTracker;
-export type { AttentionUpdateData };
+export type { AttentionUpdateData, SustainedAttention };

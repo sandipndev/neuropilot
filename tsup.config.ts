@@ -3,7 +3,7 @@ import { defineConfig } from "tsup";
 export default defineConfig({
   entry: {
     background: "src/background/index.ts",
-    content: "src/content.ts",
+    content: "src/content/index.ts",
     popup: "src/frontend/popup.tsx",
     fullpage: "src/frontend/fullpage.tsx",
   },

@@ -1,10 +1,9 @@
 /**
  * ActivityWebsitesVisited Model
- * Stores website visit tracking data
+ * Pure CRUD operations for website visit data
  */
 
 import { getDB } from "../index";
-import { hashString } from "../utils/hash";
 
 export interface ActivityWebsiteVisited {
   id: string; // Hash of the URL
@@ -18,114 +17,46 @@ export interface ActivityWebsiteVisited {
   active_time: number; // Accumulated active time in milliseconds
 }
 
-export interface WebsiteVisitEvent {
-  url: string;
-  title: string;
-  metadata: string;
-  eventType: "open" | "close" | "active" | "inactive";
-  timestamp: number;
+/**
+ * Get a website visit record by ID
+ */
+export async function getWebsiteVisit(id: string): Promise<ActivityWebsiteVisited | undefined> {
+  const db = await getDB();
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(["ActivityWebsitesVisited"], "readonly");
+    const store = transaction.objectStore("ActivityWebsitesVisited");
+    const request = store.get(id);
+
+    request.onsuccess = () => {
+      resolve(request.result as ActivityWebsiteVisited | undefined);
+    };
+
+    request.onerror = () => {
+      reject(new Error(`Failed to get website visit: ${request.error?.message}`));
+    };
+  });
 }
 
-// Track when the page became active (for calculating active time)
-const activeStartTimes = new Map<string, number>();
-
 /**
- * Save or update website visit data
+ * Save or update a website visit record
  */
-export async function saveWebsiteVisit(event: WebsiteVisitEvent): Promise<void> {
-  const { url, title, metadata, eventType, timestamp } = event;
-
+export async function saveWebsiteVisit(record: ActivityWebsiteVisited): Promise<void> {
   const db = await getDB();
-  const urlHash = await hashString(url);
 
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(["ActivityWebsitesVisited"], "readwrite");
     const store = transaction.objectStore("ActivityWebsitesVisited");
 
-    // First, try to get existing record
-    const getRequest = store.get(urlHash);
+    const request = store.put(record);
 
-    getRequest.onsuccess = () => {
-      const existingRecord = getRequest.result as ActivityWebsiteVisited | undefined;
-
-      let record: ActivityWebsiteVisited;
-
-      if (existingRecord) {
-        // Update existing record
-        record = { ...existingRecord };
-
-        switch (eventType) {
-          case "open":
-            // Reset for a new visit
-            record.opened_time = timestamp;
-            record.closed_time = null;
-            record.active_time = 0;
-            activeStartTimes.set(urlHash, timestamp);
-            break;
-
-          case "close":
-            record.closed_time = timestamp;
-            // If page was active when closed, add that time
-            const activeStart = activeStartTimes.get(urlHash);
-            if (activeStart) {
-              record.active_time += timestamp - activeStart;
-              activeStartTimes.delete(urlHash);
-            }
-            break;
-
-          case "active":
-            // Mark when page became active
-            activeStartTimes.set(urlHash, timestamp);
-            break;
-
-          case "inactive":
-            // Calculate and add active time since last active event
-            const lastActiveStart = activeStartTimes.get(urlHash);
-            if (lastActiveStart) {
-              record.active_time += timestamp - lastActiveStart;
-              activeStartTimes.delete(urlHash);
-            }
-            break;
-        }
-
-        record.timestamp = timestamp;
-      } else {
-        // Create new record (only for "open" events)
-        if (eventType !== "open") {
-          console.warn(`Received ${eventType} event for non-existent record: ${url}`);
-          resolve();
-          return;
-        }
-
-        record = {
-          id: urlHash,
-          timestamp,
-          url,
-          title,
-          metadata,
-          summary: "",
-          opened_time: timestamp,
-          closed_time: null,
-          active_time: 0,
-        };
-
-        activeStartTimes.set(urlHash, timestamp);
-      }
-
-      const putRequest = store.put(record);
-
-      putRequest.onsuccess = () => {
-        console.log(`Saved website visit (${eventType}): ${url}`);
-        resolve();
-      };
-
-      putRequest.onerror = () => {
-        reject(new Error(`Failed to save website visit: ${putRequest.error?.message}`));
-      };
+    request.onsuccess = () => {
+      console.log(`Saved website visit: ${record.url}`);
+      resolve();
     };
 
-    getRequest.onerror = () => {
-      reject(new Error(`Failed to get existing record: ${getRequest.error?.message}`));
+    request.onerror = () => {
+      reject(new Error(`Failed to save website visit: ${request.error?.message}`));
     };
 
     transaction.onerror = () => {
@@ -162,6 +93,28 @@ export async function getActivityWebsitesVisited(): Promise<ActivityWebsiteVisit
 
     request.onerror = () => {
       reject(new Error(`Failed to get website visits: ${request.error?.message}`));
+    };
+  });
+}
+
+/**
+ * Delete a website visit record
+ */
+export async function deleteWebsiteVisit(id: string): Promise<void> {
+  const db = await getDB();
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(["ActivityWebsitesVisited"], "readwrite");
+    const store = transaction.objectStore("ActivityWebsitesVisited");
+
+    const request = store.delete(id);
+
+    request.onsuccess = () => {
+      resolve();
+    };
+
+    request.onerror = () => {
+      reject(new Error(`Failed to delete website visit: ${request.error?.message}`));
     };
   });
 }

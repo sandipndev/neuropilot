@@ -1,7 +1,11 @@
-import { SustainedAttention } from "./tracker/cognitive-attention";
+/**
+ * Background Script Entry Point
+ * Routes messages to appropriate handlers
+ */
+
 import { initDB } from "../db";
-import { saveActivityUserAttention } from "../db/models/activity-user-attention";
-import { saveWebsiteVisit, type WebsiteVisitEvent } from "../db/models/activity-website-visited";
+import { handleAttentionUpdate } from "./handlers/attention-handler";
+import { handleWebsiteVisit } from "./handlers/website-visit-handler";
 
 // Initialize database on extension load
 initDB()
@@ -12,35 +16,29 @@ initDB()
     console.error("Failed to initialize database:", error);
   });
 
-chrome.runtime.onMessage.addListener((message) => {
-  if (message.type === "ATTENTION_UPDATE") {
-    const { data } = message;
-    const url = data.url;
-    const sustainedAttention: SustainedAttention = data.currentSustainedAttention;
+// Message router
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  // Handle messages asynchronously
+  (async () => {
+    try {
+      switch (message.type) {
+        case "ATTENTION_UPDATE":
+          await handleAttentionUpdate(message.data);
+          break;
 
-    console.log({ sustainedAttention, url });
+        case "WEBSITE_VISITED":
+          await handleWebsiteVisit(message.data);
+          break;
 
-    // Save sustained attention data (delta tracking handled internally)
-    if (sustainedAttention?.text && sustainedAttention.wordsRead && url) {
-      saveActivityUserAttention(sustainedAttention, url).catch((error) => {
-        console.error("Failed to save activity:", error);
-      });
+        default:
+          console.warn(`Unknown message type: ${message.type}`);
+      }
+    } catch (error) {
+      console.error(`Error handling ${message.type}:`, error);
+    } finally {
+      sendResponse({ success: true });
     }
-  }
-
-  if (message.type === "WEBSITE_VISITED") {
-    const { data } = message;
-    const websiteVisitEvent: WebsiteVisitEvent = data;
-
-    console.log({ websiteVisitEvent });
-
-    // Save website visit data
-    if (websiteVisitEvent?.url && websiteVisitEvent.eventType) {
-      saveWebsiteVisit(websiteVisitEvent).catch((error) => {
-        console.error("Failed to save website visit:", error);
-      });
-    }
-  }
+  })();
 
   return true;
 });

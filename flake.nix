@@ -20,17 +20,17 @@
       pkgs = import nixpkgs {
         inherit system overlays;
       };
-      nativeBuildInputs = with pkgs;
-        [
-          alejandra
-          postgresql
-          docker-compose
-          pnpm
-          nodejs
-          typescript
-          yarn-berry_4
-          nodePackages.vercel
-        ];
+      nativeBuildInputs = with pkgs; [
+        git
+        alejandra
+        postgresql
+        docker-compose
+        pnpm
+        nodejs
+        typescript
+        yarn-berry_4
+        nodePackages.vercel
+      ];
       devEnvVars = rec {};
     in
       with pkgs; {

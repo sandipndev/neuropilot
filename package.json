@@ -5,8 +5,11 @@
   "homepage": "https://github.com/sandipndev/neuropilot",
   "scripts": {
     "dev": "tsup --watch",
-    "build": "tsup && cp src/manifest.json dist/ && cp -r src/popup dist/",
-    "start": "web-ext run --source-dir dist --target chromium"
+    "build": "tsup && cp src/frontend/popup.html dist/ && cp src/frontend/fullpage.html dist/ && cp src/frontend/styles.css dist/ && cp src/manifest.json dist/",
+    "start": "web-ext run --source-dir dist --target chromium",
+    "check": "tsc --noEmit",
+    "lint": "eslint src --ext .ts,.tsx && prettier --check src",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix && prettier --write src"
   },
   "keywords": [
     "ai",
@@ -24,8 +27,21 @@
   "packageManager": "pnpm@10.18.3",
   "devDependencies": {
     "@types/chrome": "^0.1.24",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@typescript-eslint/eslint-plugin": "^8.19.1",
+    "@typescript-eslint/parser": "^8.19.1",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-react": "^7.37.3",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "prettier": "^3.4.2",
     "tsup": "^8.5.0",
     "typescript": "^5.9.3",
     "web-ext": "^9.0.0"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   }
 }

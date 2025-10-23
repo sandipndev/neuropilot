@@ -5,7 +5,7 @@ import CognitiveAttentionTracker, {
 // Initialize the cognitive attention tracker in the content script context
 // This runs on each web page and has access to the DOM
 new CognitiveAttentionTracker({
-  debugMode: true,
+  debugMode: false,
   cognitiveAttentionThreshold: 3000, // 3s wait for attention
   idleThreshold: 60000, // 1m idle timeout
   mouseHoverThreshold: 1000, // 1s hover bonus

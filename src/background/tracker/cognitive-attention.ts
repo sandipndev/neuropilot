@@ -3,7 +3,7 @@
  * Predicts what content the user is reading based on multiple behavioral cues
  */
 
-interface SustainedAttention {
+export interface SustainedAttention {
   text: string;
   confidence: number; // 0-100, how confident we are the user was reading this
   wordsRead?: number; // Estimated words read based on reading speed

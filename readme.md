@@ -5,7 +5,7 @@
 - Tracks what you read, senses drift, nudges you back
 - Builds your Knowledge Garden with recall mini-games
 
-### Arechitecture
+### Architecture
 
 ```
 Background
@@ -21,6 +21,7 @@ Event Triggered:
 [BG] Garbage Collector
 
 Inference Layer (background AI processes, Gemini Models):
+- [BG] Website summary
 - [BG] Focus detection
   -> Focus Shift detection
 - [BG] Quiz generation
@@ -58,6 +59,11 @@ ActivityUserAttention:
 - website_id
 - timestamp
 - text_content
+
+// Runs every 20s for the last 20s UserAttention
+AttentionSummaries:
+- id
+- summary
 
 ChatMessages:
 - id

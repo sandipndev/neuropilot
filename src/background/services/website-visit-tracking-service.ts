@@ -88,6 +88,7 @@ export async function processWebsiteVisitEvent(
       title,
       metadata,
       summary: "",
+      summary_attention_count: 0,
       opened_time: timestamp,
       closed_time: null,
       active_time: 0,

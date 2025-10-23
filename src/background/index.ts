@@ -6,11 +6,14 @@
 import { initDB } from "../db";
 import { handleAttentionUpdate } from "./handlers/attention-handler";
 import { handleWebsiteVisit } from "./handlers/website-visit-handler";
+import { scheduler } from "./inference";
 
 // Initialize database on extension load
 initDB()
   .then(() => {
     console.log("NeuroPilot Database initialized");
+    scheduler.start();
+    console.log("Inference scheduler started");
   })
   .catch((error) => {
     console.error("Failed to initialize database:", error);

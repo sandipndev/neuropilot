@@ -12,6 +12,7 @@ export interface ActivityWebsiteVisited {
   title: string;
   metadata: string; // JSON string of meta tags
   summary: string;
+  summary_attention_count: number; // Number of attention items used for summary
   opened_time: number;
   closed_time: number | null;
   active_time: number; // Accumulated active time in milliseconds

@@ -19,6 +19,7 @@ Event Triggered:
 
 [BG] Activity Tracking
 [BG] Garbage Collector
+[BG] Last 10 min no activity = auto pause focus
 
 Inference Layer (background AI processes, Gemini Models):
 - [BG] Website summary
@@ -63,6 +64,7 @@ ActivityUserAttention:
 // Runs every 20s for the last 20s UserAttention
 AttentionSummaries:
 - id
+- timestamp
 - summary
 
 ChatMessages:
@@ -72,9 +74,11 @@ ChatMessages:
 
 QuizQuestions:
 - id
+- timestamp
 - question
 - option_1
 - option_2
+- is_answered
 - correct_option: 1 | 2
 
 Pulse:
@@ -83,13 +87,18 @@ Pulse:
 
 Focus:
 - id
-- focus_item: String
+- focus_item: String // should be very small - 1/2 words
 - time_spent: Array<{
   start: Timestamp
   stop: Timestamp
 }>
 
-PastFocus:
+PastWeeksFocus:
+- id
+- focus_item: String
+- total_time_spent: Int
+
+Wins: // Top 3 all time
 - id
 - focus_item: String
 - total_time_spent: Int

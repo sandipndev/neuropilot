@@ -25,38 +25,37 @@ export const detectFocusDrift = async (
   // Parse keywords from the previous focus
   const keywords = parseKeywords(previousFocus);
 
-  // Format the new attention data
   const attentionContent = newAttention
     .map(
       (a, index) => `
-Title ${index + 1}: ${a.title}
-URL ${index + 1}: ${a.url}
-Content ${index + 1} user is paying attention to in this page:
-${a.attentionRecords.map((r) => r.text_content).join(" ")}`
-    )
-    .join("\n\n---\n\n");
+  Title ${index + 1}: ${a.title}
+  URL ${index + 1}: ${a.url}
+  Content ${index + 1} user is paying attention to in this page:
+  ${a.attentionRecords.map((r) => r.text_content).join(" ")}`
+      )
+      .join("\n\n---\n\n");
 
-  const prompt = `
-You are checking if the user's attention has changed from their previous topic.
+    const prompt = `
+  You are checking if the user's attention has changed from their previous topic.
 
-Previous focus: ${previousFocus.focus_item}
-Previous keywords: ${keywords.join(", ")}
+  Previous focus: ${previousFocus.focus_item}
+  Previous keywords: ${keywords.join(", ")}
 
-Current attention:
-${attentionContent}
+  Current attention:
+  ${attentionContent}
 
----\n\n
+  ---\n\n
 
-Keep the order in context while returning inference.
+  Keep the order in context while returning inference.
 
-Question:
-Does the current attention clearly belong to a different subject (for example, moving from tech to cooking or fashion)?
-Or is it still about the same general topic or subtopic?
+  Question:
+  Does the current attention clearly belong to a different subject (for example, moving from tech to cooking or fashion)?
+  Or is it still about the same general topic or subtopic?
 
-If it is even related or still part of the same domain then answer no (still focused). 
-Otherwise, if you don't find a relation between the previous focus and current attention, then answer yes (shifted).
+  If it is even related or still part of the same domain then answer no (still focused). 
+  Otherwise, if you don't find a relation between the previous focus and current attention, then answer yes (shifted).
 
-Answer in one word (yes/no) only, no reasoning.
+  Answer in one word (yes/no) only, no reasoning.
 `;
 
   const response = await session.prompt(prompt);

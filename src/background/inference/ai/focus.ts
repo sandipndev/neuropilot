@@ -19,23 +19,23 @@ export const detectFocusArea = async (
     .join("\n\n---\n\n");
 
   const prompt = `
-You are an attention analysis model. Based on the following reading sessions,
-determine the user's current main focus area.
+  You are an attention analysis model. Based on the following reading sessions,
+  determine the user's current main focus area.
 
-Each session represents what the user has been reading recently.
+  Each session represents what the user has been reading recently.
 
-Sessions:
----
-${combinedContent}
----
+  Sessions:
+  ---
+  ${combinedContent}
+  ---
 
-Think about the most recent and dominant topic the user is focusing on.
-Respond with only one or two words that best represent this topic.
-Do not include punctuation, explanations, or any extra text.
+  Think about the most recent and dominant topic the user is focusing on.
+  Respond with only one or two words that best represent this topic.
+  Do not include punctuation, explanations, or any extra text.
 
-If you cannot determine the user's current main focus area (probably because 
-the user is not reading anything), return null.
-`;
+  If you cannot determine the user's current main focus area (probably because 
+  the user is not reading anything), return null.
+  `;
 
   const focus = await session.prompt(prompt);
   session.destroy();
@@ -53,11 +53,11 @@ export const summarizeFocus = async (focus_keywords: string[]): Promise<string> 
   const session = await getLanguageModel();
 
   const prompt = `
-Reply in one or two words.
-What is the greatest common factor between these:
+  Reply in one or two words.
+  What is the greatest common factor between these:
 
-${focus_keywords.join(", ")}
-`;
+  ${focus_keywords.join(", ")}
+  `;
 
   const focus = await session.prompt(prompt);
   session.destroy();

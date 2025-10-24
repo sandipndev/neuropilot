@@ -12,14 +12,14 @@ export const summarizeWebsiteActivity = async (
 
   const prompt = `Summarize my activity for this website in a concise manner:
 
-Title: ${website.title}
-URL: ${website.url}
-Active time: ${Math.round(website.active_time / 1000)}s
+  Title: ${website.title}
+  URL: ${website.url}
+  Active time: ${Math.round(website.active_time / 1000)}s
 
-Content the user read:
-${readContent}
+  Content the user read:
+  ${readContent}
 
-Provide a concise summary of what the user focused on.`;
+  Provide a concise summary of what the user focused on.`;
 
   console.debug({ prompt });
 

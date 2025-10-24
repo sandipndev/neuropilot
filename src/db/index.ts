@@ -62,9 +62,9 @@ export async function initDB(): Promise<IDBDatabase> {
         pulseStore.createIndex("timestamp", "timestamp", { unique: false });
       }
 
-      // ImageCaption table
-      if (!db.objectStoreNames.contains("ImageCaption")) {
-        const imageCaptionStore = db.createObjectStore("ImageCaption", {
+      // ActivityUserAttentionImage table
+      if (!db.objectStoreNames.contains("ActivityUserAttentionImage")) {
+        const imageCaptionStore = db.createObjectStore("ActivityUserAttentionImage", {
           keyPath: "id",
         });
         imageCaptionStore.createIndex("image_src", "image_src", { unique: false });

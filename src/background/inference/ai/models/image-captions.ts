@@ -78,8 +78,6 @@ export const generateCaption = async (imageFile: File, imageSrc?: string): Promi
 };
 
 
-// Extras ...
-
 export const clearCaptionCache = (): void => {
   captionCache.clear();
   console.debug("[Image Caption Cache] Cleared");

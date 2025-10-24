@@ -8,7 +8,7 @@ import {
   saveImageCaption,
   getImageCaptionBySrc,
   getAllImageCaptions,
-  type ImageCaption,
+  type ActivityUserAttentionImage,
 } from "../../db/models/image-captions";
 
 
@@ -40,7 +40,7 @@ export async function getOrGenerateCaption(
   imageFile: File,
   altText?: string,
   title?: string
-): Promise<ImageCaption> {
+): Promise<ActivityUserAttentionImage> {
   const cached = await getImageCaptionBySrc(imageSrc);
   if (cached) {
     return cached;
@@ -56,6 +56,6 @@ export async function getOrGenerateCaption(
   return newCaption;
 }
 
-export async function getCachedImageCaptions(): Promise<ImageCaption[]> {
+export async function getCachedActivityUserAttentionImageCaptions(): Promise<ActivityUserAttentionImage[]> {
   return await getAllImageCaptions();
 }

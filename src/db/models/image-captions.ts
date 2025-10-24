@@ -6,7 +6,7 @@
 import { getDB } from "../index";
 import { hashString } from "../utils/hash";
 
-export interface ImageCaption {
+export interface ActivityUserAttentionImage {
   id: string;
   image_src: string;
   caption: string;
@@ -27,7 +27,7 @@ export async function saveImageCaption(data: {
   const db = await getDB();
   const now = Date.now();
 
-  const imageCaption: ImageCaption = {
+  const imageCaption: ActivityUserAttentionImage = {
     id: await hashString(data.image_src + now.toString()),
     image_src: data.image_src,
     caption: data.caption,
@@ -37,8 +37,8 @@ export async function saveImageCaption(data: {
   };
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(["ImageCaption"], "readwrite");
-    const store = transaction.objectStore("ImageCaption");
+    const transaction = db.transaction(["ActivityUserAttentionImage"], "readwrite");
+    const store = transaction.objectStore("ActivityUserAttentionImage");
 
     const request = store.put(imageCaption);
 
@@ -60,17 +60,17 @@ export async function saveImageCaption(data: {
 /**
  * Get caption for a specific image by src
  */
-export async function getImageCaptionBySrc(imageSrc: string): Promise<ImageCaption | null> {
+export async function getImageCaptionBySrc(imageSrc: string): Promise<ActivityUserAttentionImage | null> {
   const db = await getDB();
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(["ImageCaption"], "readonly");
-    const store = transaction.objectStore("ImageCaption");
+    const transaction = db.transaction(["ActivityUserAttentionImage"], "readonly");
+    const store = transaction.objectStore("ActivityUserAttentionImage");
     const index = store.index("image_src");
     const request = index.get(imageSrc);
 
     request.onsuccess = () => {
-      resolve(request.result as ImageCaption | null);
+      resolve(request.result as ActivityUserAttentionImage | null);
     };
 
     request.onerror = () => {
@@ -82,16 +82,16 @@ export async function getImageCaptionBySrc(imageSrc: string): Promise<ImageCapti
 /**
  * Get all image captions
  */
-export async function getAllImageCaptions(): Promise<ImageCaption[]> {
+export async function getAllImageCaptions(): Promise<ActivityUserAttentionImage[]> {
   const db = await getDB();
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(["ImageCaption"], "readonly");
-    const store = transaction.objectStore("ImageCaption");
+    const transaction = db.transaction(["ActivityUserAttentionImage"], "readonly");
+    const store = transaction.objectStore("ActivityUserAttentionImage");
     const request = store.getAll();
 
     request.onsuccess = () => {
-      resolve(request.result as ImageCaption[]);
+      resolve(request.result as ActivityUserAttentionImage[]);
     };
 
     request.onerror = () => {
@@ -107,8 +107,8 @@ export async function deleteImageCaption(imageSrc: string): Promise<void> {
   const db = await getDB();
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(["ImageCaption"], "readwrite");
-    const store = transaction.objectStore("ImageCaption");
+    const transaction = db.transaction(["ActivityUserAttentionImage"], "readwrite");
+    const store = transaction.objectStore("ActivityUserAttentionImage");
     const index = store.index("image_src");
     const getRequest = index.getKey(imageSrc);
 
@@ -141,8 +141,8 @@ export async function clearAllImageCaptions(): Promise<void> {
   const db = await getDB();
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(["ImageCaption"], "readwrite");
-    const store = transaction.objectStore("ImageCaption");
+    const transaction = db.transaction(["ActivityUserAttentionImage"], "readwrite");
+    const store = transaction.objectStore("ActivityUserAttentionImage");
 
     const request = store.clear();
 

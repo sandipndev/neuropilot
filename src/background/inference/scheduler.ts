@@ -13,7 +13,7 @@ import { hashString } from "../../db/utils/hash";
 import { getFocusData } from "../../api/queries/focus";
 import { savePulses } from "../../db/models/pulse";
 import { getPulses } from "../../api/queries/pulse";
-import { getCachedImageCaptions } from "../../api/queries/image-captions";
+import { getCachedActivityUserAttentionImageCaptions } from "../../api/queries/image-captions";
 import { deleteImageCaption } from "../../db/models/image-captions";
 
 type Task = {
@@ -249,7 +249,7 @@ class InferenceScheduler {
 
   private async scheduleImageCaptionCleanup() {
     console.debug("Scheduling image caption cleanup");
-    const captions = await getCachedImageCaptions();
+    const captions = await getCachedActivityUserAttentionImageCaptions();
     
     const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
     const now = Date.now();

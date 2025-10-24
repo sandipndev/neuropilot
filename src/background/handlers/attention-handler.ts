@@ -14,7 +14,7 @@ export async function handleAttentionUpdate(data: any): Promise<void> {
     return;
   }
 
-  console.log({ sustainedAttention, url });
+  console.debug({ sustainedAttention, url });
 
   // Calculate delta using service
   const delta = await calculateAttentionDelta(sustainedAttention, url);
@@ -31,5 +31,5 @@ export async function handleAttentionUpdate(data: any): Promise<void> {
     website_id: delta.websiteId,
   });
 
-  console.log(`Saved attention delta: ${delta.deltaWords} words`);
+  console.debug(`Saved attention delta: ${delta.deltaWords} words`);
 }

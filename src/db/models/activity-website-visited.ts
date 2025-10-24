@@ -52,7 +52,7 @@ export async function saveWebsiteVisit(record: ActivityWebsiteVisited): Promise<
     const request = store.put(record);
 
     request.onsuccess = () => {
-      console.log(`Saved website visit: ${record.url}`);
+      console.debug(`Saved website visit: ${record.url}`);
       resolve();
     };
 

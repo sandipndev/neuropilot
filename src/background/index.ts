@@ -11,9 +11,9 @@ import { scheduler } from "./inference";
 // Initialize database on extension load
 initDB()
   .then(() => {
-    console.log("NeuroPilot Database initialized");
+    console.debug("NeuroPilot Database initialized");
     scheduler.start();
-    console.log("Inference scheduler started");
+    console.debug("Inference scheduler started");
   })
   .catch((error) => {
     console.error("Failed to initialize database:", error);

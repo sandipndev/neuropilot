@@ -13,7 +13,7 @@ export async function handleWebsiteVisit(data: WebsiteVisitEvent): Promise<void>
     return;
   }
 
-  console.log({ websiteVisitEvent: data });
+  console.debug({ websiteVisitEvent: data });
 
   // Process event using service
   const result = await processWebsiteVisitEvent(data);

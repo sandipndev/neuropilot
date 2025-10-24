@@ -25,7 +25,7 @@ export async function saveActivityUserAttention(record: ActivityUserAttention): 
     const request = store.put(record);
 
     request.onsuccess = () => {
-      console.log(`Saved attention: ${record.text_content.substring(0, 50)}...`);
+      console.debug(`Saved attention: ${record.text_content.substring(0, 50)}...`);
       resolve();
     };
 

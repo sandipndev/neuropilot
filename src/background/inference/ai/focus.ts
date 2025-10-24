@@ -10,8 +10,8 @@ export const detectFocusArea = async (
   // Combine reading content from all websites, ordered by recency.
   const combinedContent = activity
     .map((a) => {
-      const content = a.attentionRecords.map((r) => r.text_content).join("\n\n");
-      return `Title: ${a.title}\nURL: ${a.url}\nContent:\n${content}`;
+      const content = a.attentionRecords.map((r) => r.text_content).join("\n");
+      return `Title: ${a.title}\nURL: ${a.url}\nContent user paid the most attention to:\n${content}`;
     })
     .join("\n\n---\n\n");
 
@@ -31,7 +31,7 @@ Respond with only one or two words that best represent this topic.
 Do not include punctuation, explanations, or any extra text.
 `;
 
-  console.log({ prompt });
+  console.debug({ prompt });
 
   const focus = await session.prompt(prompt);
   session.destroy();

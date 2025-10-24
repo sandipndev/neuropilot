@@ -15,31 +15,72 @@ type Task = {
 
 class InferenceScheduler {
   private queue: Task[] = [];
-  private isProcessing = false;
+  private isRunning = false;
   private intervalId: number | null = null;
 
   start(intervalMs: number = 3000) {
-    console.log("Starting inference scheduler");
-    this.intervalId = setInterval(() => {
-      console.log("Scheduling tasks");
-      this.scheduleWebsiteSummarization();
-      this.scheduleFocusDetection();
-    }, intervalMs);
+    console.debug("Starting inference scheduler");
 
-    this.scheduleWebsiteSummarization();
-    this.scheduleFocusDetection();
+    // Start the continuous processing loop
+    this.startProcessingLoop();
+
+    // Schedule initial tasks
+    this.scheduleInferenceTasks();
+
+    // Schedule tasks at intervals
+    this.intervalId = setInterval(() => {
+      this.scheduleInferenceTasks();
+    }, intervalMs);
+  }
+
+  private scheduleInferenceTasks() {
+    console.debug("Scheduling tasks");
+    this.addTask({
+      id: `schedule-website-summarization-${Date.now()}`,
+      type: "schedule-website-summarization",
+      execute: async () => {
+        await this.scheduleWebsiteSummarization();
+      },
+    });
+    this.addTask({
+      id: `schedule-focus-detection-${Date.now()}`,
+      type: "schedule-focus-detection",
+      execute: async () => {
+        await this.scheduleFocusDetection();
+      },
+    });
   }
 
   stop() {
-    console.log("Stopping inference scheduler");
+    console.debug("Stopping inference scheduler");
+    this.isRunning = false;
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
     }
   }
 
+  private async startProcessingLoop() {
+    if (this.isRunning) return;
+
+    this.isRunning = true;
+    console.debug("Starting continuous processing loop");
+
+    // Continuous loop that processes tasks
+    while (this.isRunning) {
+      await this.processQueue();
+
+      // Small delay when queue is empty to avoid busy waiting
+      if (this.queue.length === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+    }
+
+    console.debug("Processing loop stopped");
+  }
+
   private async scheduleWebsiteSummarization() {
-    console.log("Scheduling website summarization");
+    console.debug("Scheduling website summarization");
     const websites = await getActivityWebsitesVisited();
 
     for (const website of websites) {
@@ -65,7 +106,7 @@ class InferenceScheduler {
   }
 
   private async scheduleFocusDetection() {
-    console.log("Scheduling focus detection");
+    console.debug("Scheduling focus detection");
     const websites = await getActivityWebsitesVisited();
 
     const combinedActivity: WebsiteActivityWithAttention[] = await Promise.all(
@@ -76,33 +117,28 @@ class InferenceScheduler {
     );
 
     const focusArea = await detectFocusArea(combinedActivity);
-    console.log({ focusArea });
+    console.debug({ focusArea });
   }
 
   private addTask(task: Task) {
     if (this.queue.some((t) => t.id === task.id)) return;
 
     this.queue.push(task);
-    this.processQueue();
   }
 
   private async processQueue() {
-    if (this.isProcessing || this.queue.length === 0) return;
+    if (this.queue.length === 0) return;
 
-    this.isProcessing = true;
+    const task = this.queue.shift();
+    if (!task) return;
 
-    while (this.queue.length > 0) {
-      const task = this.queue.shift();
-      if (!task) break;
-
-      try {
-        await task.execute();
-      } catch (error) {
-        console.error(`Task ${task.id} failed:`, error);
-      }
+    try {
+      console.debug(`Processing task ${task.id}`);
+      await task.execute();
+      console.debug(`Task ${task.id} completed`);
+    } catch (error) {
+      console.error(`Task ${task.id} failed:`, error);
     }
-
-    this.isProcessing = false;
   }
 }
 

@@ -15,6 +15,13 @@ export const detectFocusDrift = async (
 ): Promise<boolean> => {
   const session = await getLanguageModel();
 
+  if (
+    newAttention.length === 0 ||
+    newAttention.map((a) => a.attentionRecords.length).every((l) => l === 0)
+  ) {
+    return false;
+  }
+
   // Parse keywords from the previous focus
   const keywords = parseKeywords(previousFocus);
 

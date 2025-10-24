@@ -4,12 +4,14 @@ interface ProgressIndicatorProps {
   currentStep: number;
   totalSteps: number;
   stepLabels: string[];
+  onNavigateToStep?: (step: number) => void;
 }
 
 export function ProgressIndicator({
   currentStep,
   totalSteps,
   stepLabels,
+  onNavigateToStep,
 }: ProgressIndicatorProps) {
   return (
     <div className="w-full bg-muted rounded-lg p-6">
@@ -29,11 +31,17 @@ export function ProgressIndicator({
           {stepLabels.map((label, index) => {
             const isCompleted = index < currentStep;
             const isCurrent = index === currentStep;
+            const isClickable = onNavigateToStep && (isCompleted || index <= currentStep);
 
             return (
-              <div key={index} className="flex flex-col items-center">
+              <div 
+                key={index} 
+                className="flex flex-col items-center"
+              >
                 {/* Circle or checkmark */}
-                <div
+                <button
+                  onClick={() => isClickable && onNavigateToStep(index)}
+                  disabled={!isClickable}
                   className={`
                     w-10 h-10 rounded-full flex items-center justify-center
                     transition-all duration-300 z-10
@@ -44,14 +52,21 @@ export function ProgressIndicator({
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted border-2 border-border text-muted-foreground"
                     }
+                    ${
+                      isClickable
+                        ? "cursor-pointer hover:scale-110 hover:shadow-lg"
+                        : "cursor-default"
+                    }
+                    disabled:cursor-default disabled:hover:scale-100 disabled:hover:shadow-none
                   `}
+                  title={isClickable ? `Go to ${label}` : label}
                 >
                   {isCompleted ? (
                     <CheckCircle2 className="w-6 h-6" />
                   ) : (
                     <span className="text-sm font-semibold">{index + 1}</span>
                   )}
-                </div>
+                </button>
 
                 {/* Label */}
                 <span

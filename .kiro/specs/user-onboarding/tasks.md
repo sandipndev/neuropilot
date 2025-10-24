@@ -65,7 +65,7 @@
   - Style with shadcn Card and Badge components
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 5.1, 5.4, 5.5_
 
-- [ ] 8. Build UserInfoStep component
+- [x] 8. Build UserInfoStep component
   - Create `src/components/steps/UserInfoStep.tsx`
   - Implement form with shadcn Input and Label components
   - Add name field validation (required, min 1 character, trim whitespace)

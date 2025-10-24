@@ -8,9 +8,9 @@ export interface ImageCaptionSession {
   destroy: () => void;
 }
 
-/**
- * Get vision-enabled language model for image captioning
- */
+// In-memory cache for image captions (key: image src URL, value: caption)
+const captionCache = new Map<string, string>();
+
 export const getImageCaptionModel = async (): Promise<ImageCaptionSession> => {
   const LanguageModel = (self as any).LanguageModel as any;
 
@@ -43,10 +43,13 @@ export const getImageCaptionModel = async (): Promise<ImageCaptionSession> => {
   };
 };
 
-/**
- * Generate caption for an image using Gemini Nano
- */
-export const generateCaption = async (imageFile: File): Promise<string> => {
+
+export const generateCaption = async (imageFile: File, imageSrc?: string): Promise<string> => {
+  if (imageSrc && captionCache.has(imageSrc)) {
+    console.debug(`[Image Caption Cache] Hit for: ${imageSrc}`);
+    return captionCache.get(imageSrc)!;
+  }
+
   const model = await getImageCaptionModel();
 
   try {
@@ -61,8 +64,27 @@ export const generateCaption = async (imageFile: File): Promise<string> => {
     ]);
 
     const caption = await model.session.prompt("");
-    return caption.trim();
+    const trimmedCaption = caption.trim();
+
+    if (imageSrc) {
+      captionCache.set(imageSrc, trimmedCaption);
+      console.debug(`[Image Caption Cache] Stored for: ${imageSrc}`);
+    }
+
+    return trimmedCaption;
   } finally {
     model.destroy();
   }
+};
+
+
+// Extras ...
+
+export const clearCaptionCache = (): void => {
+  captionCache.clear();
+  console.debug("[Image Caption Cache] Cleared");
+};
+
+export const getCacheSize = (): number => {
+  return captionCache.size;
 };

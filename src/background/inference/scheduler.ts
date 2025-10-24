@@ -3,6 +3,7 @@ import {
   saveWebsiteVisit,
 } from "../../db/models/activity-website-visited";
 import { getActivityUserAttentionByWebsite } from "../../db/models/activity-user-attention";
+import { persistFocus } from "../../db/models/focus";
 import { summarizeWebsiteActivity } from "./ai/website-summarizer";
 import { detectFocusArea } from "./ai/focus";
 import { WebsiteActivityWithAttention } from "../../db/utils/activity";
@@ -18,7 +19,7 @@ class InferenceScheduler {
   private isRunning = false;
   private intervalId: number | null = null;
 
-  start(intervalMs: number = 3000) {
+  start(intervalMs: number = 30000) {
     console.debug("Starting inference scheduler");
 
     // Start the continuous processing loop
@@ -109,15 +110,35 @@ class InferenceScheduler {
     console.debug("Scheduling focus detection");
     const websites = await getActivityWebsitesVisited();
 
-    const combinedActivity: WebsiteActivityWithAttention[] = await Promise.all(
-      websites.map(async (website) => ({
-        ...website,
-        attentionRecords: await getActivityUserAttentionByWebsite(website.id),
-      }))
-    );
+    const TEN_MINUTES_MS = 10 * 60 * 1000;
+    const cutoffTime = Date.now() - TEN_MINUTES_MS;
+
+    // Get activity from the last 10 minutes only
+    const combinedActivity: WebsiteActivityWithAttention[] = (
+      await Promise.all(
+        websites.map(async (website) => {
+          const allAttentionRecords = await getActivityUserAttentionByWebsite(website.id);
+
+          // Filter to only attention records from the last 10 minutes
+          const recentAttentionRecords = allAttentionRecords.filter(
+            (record) => record.timestamp >= cutoffTime
+          );
+
+          return {
+            ...website,
+            attentionRecords: recentAttentionRecords,
+          };
+        })
+      )
+    ).filter((website) => website.attentionRecords.length > 0); // Only include websites with recent activity
 
     const focusArea = await detectFocusArea(combinedActivity);
     console.debug({ focusArea });
+
+    // Persist the focus
+    if (focusArea) {
+      await persistFocus(focusArea);
+    }
   }
 
   private addTask(task: Task) {

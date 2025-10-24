@@ -88,6 +88,7 @@ Pulse:
 Focus:
 - id
 - focus_item: String // should be very small - 1/2 words
+- keywords: String[]
 - time_spent: Array<{
   start: Timestamp
   stop: Timestamp

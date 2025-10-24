@@ -40,7 +40,7 @@ the user is not reading anything), return null.
   const focus = await session.prompt(prompt);
   session.destroy();
 
-  console.log({ where: "detectFocusArea", focus, prompt, activity });
+  console.debug({ where: "detectFocusArea", focus, prompt, activity });
 
   return focus.trim() === "null" ? null : focus.trim();
 };
@@ -62,7 +62,7 @@ ${focus_keywords.join(", ")}
   const focus = await session.prompt(prompt);
   session.destroy();
 
-  console.log({ where: "summarizeFocus", prompt, focus, focus_keywords });
+  console.debug({ where: "summarizeFocus", prompt, focus, focus_keywords });
 
   return focus.trim();
 };

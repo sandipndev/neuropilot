@@ -121,7 +121,7 @@ class InferenceScheduler {
 
     const previousFocus = await getActiveFocus();
 
-    console.log({ previousFocus });
+    console.debug({ previousFocus });
 
     // Default: assume no drift if no previous focus (so new focus is saved)
     let focusDrifted = false;
@@ -198,7 +198,7 @@ class InferenceScheduler {
   private async logAllFocusRecords() {
     console.debug("Logging all focus records");
     const focusRecords = await getFocusData();
-    console.warn({ focusRecords });
+    console.debug({ focusRecords });
   }
 
   private addTask(task: Task) {

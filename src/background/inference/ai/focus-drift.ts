@@ -63,7 +63,7 @@ Answer in one word (yes/no) only, no reasoning.
   session.destroy();
 
   const answer = response.trim().toLowerCase();
-  console.log({ where: "detectFocusDrift", previousFocus, newAttention, prompt, answer });
+  console.debug({ where: "detectFocusDrift", previousFocus, newAttention, prompt, answer });
 
   return answer === "yes";
 };

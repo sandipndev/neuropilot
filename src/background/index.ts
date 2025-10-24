@@ -34,7 +34,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
           break;
 
         default:
-          console.warn(`Unknown message type: ${message.type}`);
+          console.debug(`Unknown message type: ${message.type}`);
       }
     } catch (error) {
       console.error(`Error handling ${message.type}:`, error);
@@ -46,12 +46,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   return true;
 });
 
-
 // Upon installation we want to show an onboarding workflow
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") {
     chrome.tabs.create({
-      url: "welcome.html" 
+      url: "welcome.html",
     });
   }
 });

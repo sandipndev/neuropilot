@@ -1027,8 +1027,11 @@ class CognitiveAttentionTracker {
       if (this.state.hoveredImage !== imageElement) {
         this.state.hoveredImage = imageElement;
         this.state.imageHoverStartTime = Date.now();
+        this.showImageHoverHighlight(imageElement);
       } else {
         const hoverDuration = Date.now() - (this.state.imageHoverStartTime || 0);
+        this.updateImageHoverProgress(imageElement, hoverDuration);
+        
         if (
           hoverDuration >= 1500 &&
           this.state.lastCaptionedImage !== imageElement.src
@@ -1041,9 +1044,108 @@ class CognitiveAttentionTracker {
       if (this.state.hoveredImage) {
         this.state.hoveredImage = null;
         this.state.imageHoverStartTime = null;
+        this.hideImageHoverHighlight();
         this.hideImageCaptionOverlay();
       }
     }
+  }
+
+  private showImageHoverHighlight(image: HTMLImageElement): void {
+    this.hideImageHoverHighlight();
+
+    const bounds = image.getBoundingClientRect();
+    
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "image-hover-highlight image-hover-svg");
+    svg.style.cssText = `
+      position: fixed;
+      left: ${bounds.left}px;
+      top: ${bounds.top}px;
+      width: ${bounds.width}px;
+      height: ${bounds.height}px;
+      pointer-events: none;
+      z-index: 999997;
+    `;
+
+    // Calculate perimeter for the progress stroke
+    const width = bounds.width;
+    const height = bounds.height;
+    const perimeter = 2 * (width + height);
+
+    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rect.setAttribute("x", "0.5");
+    rect.setAttribute("y", "0.5");
+    rect.setAttribute("width", (width - 1).toString());
+    rect.setAttribute("height", (height - 1).toString());
+    rect.setAttribute("fill", "none");
+    rect.setAttribute("stroke", "#bfff00");
+    rect.setAttribute("stroke-width", "1");
+    rect.setAttribute("stroke-dasharray", perimeter.toString());
+    rect.setAttribute("stroke-dashoffset", perimeter.toString());
+    rect.setAttribute("class", "image-hover-progress");
+    rect.style.filter = "drop-shadow(0 0 4px rgba(191, 255, 0, 0.8))";
+
+    svg.appendChild(rect);
+    document.body.appendChild(svg);
+
+    const overlay = document.createElement("div");
+    overlay.className = "image-hover-highlight";
+    overlay.style.cssText = `
+      position: fixed;
+      left: ${bounds.left}px;
+      top: ${bounds.top}px;
+      width: ${bounds.width}px;
+      height: ${bounds.height}px;
+      background: rgba(191, 255, 0, 0.08);
+      pointer-events: none;
+      z-index: 999996;
+      border-radius: 2px;
+    `;
+    document.body.appendChild(overlay);
+  }
+
+  private updateImageHoverProgress(image: HTMLImageElement, hoverDuration: number): void {
+    const progressRect = document.querySelector(".image-hover-progress") as SVGRectElement;
+    const svg = document.querySelector(".image-hover-svg") as SVGElement;
+    const overlay = document.querySelectorAll(".image-hover-highlight")[1] as HTMLElement;
+    
+    if (!progressRect || !svg) return;
+
+    // Update position to track image on scroll
+    const bounds = image.getBoundingClientRect();
+    svg.style.left = `${bounds.left}px`;
+    svg.style.top = `${bounds.top}px`;
+    if (overlay) {
+      overlay.style.left = `${bounds.left}px`;
+      overlay.style.top = `${bounds.top}px`;
+    }
+
+    // Progress over 2 seconds (2000ms) - clockwise
+    const progress = Math.min(100, (hoverDuration / 2000) * 100);
+    const perimeter = parseFloat(progressRect.getAttribute("stroke-dasharray") || "0");
+    const offset = perimeter - (perimeter * progress) / 100;
+    progressRect.setAttribute("stroke-dashoffset", offset.toString());
+
+    if (progress >= 100) {
+      progressRect.style.animation = "pulse 0.5s ease-in-out infinite";
+      const style = document.createElement("style");
+      style.textContent = `
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.6; }
+        }
+      `;
+      if (!document.querySelector('style[data-image-pulse]')) {
+        style.setAttribute('data-image-pulse', 'true');
+        document.head.appendChild(style);
+      }
+    }
+  }
+
+  private hideImageHoverHighlight(): void {
+    document.querySelectorAll(".image-hover-highlight").forEach((el) => {
+      el.remove();
+    });
   }
 
   private async generateImageCaption(image: HTMLImageElement): Promise<void> {
@@ -1062,7 +1164,6 @@ class CognitiveAttentionTracker {
       reader.onloadend = () => {
         const base64data = reader.result as string;
         
-        // Send message to background script
         chrome.runtime.sendMessage(
           {
             type: "IMAGE_CAPTION_REQUEST",
@@ -1088,6 +1189,7 @@ class CognitiveAttentionTracker {
                 caption: response.caption,
               });
 
+              this.hideImageHoverHighlight();
               this.showImageCaptionOverlay(image, response.caption);
             }
           }

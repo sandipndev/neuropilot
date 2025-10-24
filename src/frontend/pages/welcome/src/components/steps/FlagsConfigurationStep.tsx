@@ -48,18 +48,19 @@ export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({
     setIsChecking(true);
     
     try {
-      // Check if Chrome AI is available as a proxy for flags being enabled
+      // Check if LanguageModel.availability exists - this indicates flags are properly set
       const aiCheck = await checkChromeAIAvailability();
       
       if (aiCheck.available) {
-        // If Chrome AI is available, we can assume all flags are enabled
+        // If LanguageModel.availability exists, all required flags are enabled
         updateFlagsStatus({
           promptApi: true,
           multimodalInput: true,
           optimizationGuide: true,
         });
       } else {
-        // If not available, mark all as disabled
+        // If not available, one or more flags are not enabled
+        // Note: We can't check individual flags, so we mark all as disabled
         updateFlagsStatus({
           promptApi: false,
           multimodalInput: false,
@@ -177,6 +178,12 @@ export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({
             </CollapsibleTrigger>
             <CollapsibleContent>
               <CardContent className="space-y-4 pt-0">
+                <div className="p-3 bg-chart-1/10 border border-chart-1/30 rounded-md mb-4">
+                  <p className="text-xs text-muted-foreground">
+                    ⚠️ <span className="font-medium">Note:</span> Chrome doesn't allow extensions to open chrome:// URLs programmatically for security reasons. You'll need to manually copy and paste the URLs into your address bar.
+                  </p>
+                </div>
+
                 <div className="space-y-3">
                   <div className="flex gap-3">
                     <div className="shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
@@ -184,10 +191,10 @@ export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({
                     </div>
                     <div>
                       <p className="font-medium text-foreground">
-                        Click "Open Flag Settings" on each disabled flag above
+                        Copy the flag URL from each disabled flag above
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        This will open the flag configuration page in a new tab
+                        Click "Copy URL" button and paste it into your browser's address bar
                       </p>
                     </div>
                   </div>
@@ -212,10 +219,10 @@ export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({
                     </div>
                     <div>
                       <p className="font-medium text-foreground">
-                        Restart Chrome when prompted
+                        Repeat for all three flags
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        After enabling all flags, Chrome will ask you to restart. Click "Relaunch" to apply changes
+                        Enable all three flags before restarting Chrome to save time
                       </p>
                     </div>
                   </div>
@@ -223,6 +230,20 @@ export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({
                   <div className="flex gap-3">
                     <div className="shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
                       4
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">
+                        Restart Chrome when prompted
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        After enabling all flags, Chrome will show a "Relaunch" button. Click it to apply changes
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <div className="shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
+                      5
                     </div>
                     <div>
                       <p className="font-medium text-foreground">
@@ -237,7 +258,7 @@ export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({
 
                 <div className="p-3 bg-muted rounded-md">
                   <p className="text-xs text-muted-foreground">
-                    💡 <span className="font-medium">Tip:</span> You can enable all three flags before restarting Chrome to save time
+                    💡 <span className="font-medium">Tip:</span> Keep this tab open while you enable the flags so you can easily return here after restarting
                   </p>
                 </div>
               </CardContent>

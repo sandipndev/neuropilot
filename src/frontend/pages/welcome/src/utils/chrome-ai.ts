@@ -3,28 +3,21 @@
  */
 
 /**
- * Check if Chrome AI API is available in the browser
- * This verifies that the required Chrome flags are enabled
+ * Check if Chrome AI flags are properly enabled
+ * This checks if LanguageModel.availability exists, which indicates flags are set correctly
  * 
- * @returns Object containing availability status and details
+ * @returns Object containing flags status
  */
 export async function checkChromeAIAvailability(): Promise<{
   available: boolean;
   reason?: string;
 }> {
-  // Check if window.ai exists
-  if (!window.ai) {
+  const LanguageModel = (window as any).LanguageModel;
+  
+  if (!LanguageModel?.availability) {
     return {
       available: false,
-      reason: 'Chrome AI API not found. Please ensure you are using Chrome 127+ and have enabled the required flags.',
-    };
-  }
-
-  // Check if languageModel API exists
-  if (!window.ai.languageModel) {
-    return {
-      available: false,
-      reason: 'Language Model API not found. Please enable the required Chrome flags.',
+      reason: 'Chrome flags are not enabled. Please enable the required flags and restart Chrome.',
     };
   }
 
@@ -44,7 +37,7 @@ export async function checkModelAvailability(): Promise<{
   needsDownload: boolean;
   message: string;
 }> {
-  // First check if Chrome AI is available
+  // First check if Chrome AI flags are enabled
   const chromeAICheck = await checkChromeAIAvailability();
   
   if (!chromeAICheck.available) {
@@ -52,47 +45,52 @@ export async function checkModelAvailability(): Promise<{
       status: 'no',
       available: false,
       needsDownload: false,
-      message: chromeAICheck.reason || 'Chrome AI is not available',
+      message: chromeAICheck.reason || 'Chrome flags are not enabled',
     };
   }
 
   try {
+    const LanguageModel = (window as any).LanguageModel;
+    
     // Check model availability status
-    const status = await window.ai!.languageModel.availability();
+    const status = await LanguageModel.availability();
 
-    switch (status) {
-      case 'readily':
-        return {
-          status: 'readily',
-          available: true,
-          needsDownload: false,
-          message: 'Gemini Nano model is ready to use',
-        };
-
-      case 'after-download':
-        return {
-          status: 'after-download',
-          available: false,
-          needsDownload: true,
-          message: 'Gemini Nano model needs to be downloaded',
-        };
-
-      case 'no':
-        return {
-          status: 'no',
-          available: false,
-          needsDownload: false,
-          message: 'Gemini Nano model is not available on this device',
-        };
-
-      default:
-        return {
-          status: 'no',
-          available: false,
-          needsDownload: false,
-          message: 'Unknown model availability status',
-        };
+    // Handle both 'readily' and 'available' as ready states
+    if (status === 'readily' || status === 'available') {
+      return {
+        status: 'readily',
+        available: true,
+        needsDownload: false,
+        message: 'Gemini Nano model is ready to use',
+      };
     }
+
+    if (status === 'after-download') {
+      return {
+        status: 'after-download',
+        available: false,
+        needsDownload: true,
+        message: 'Gemini Nano model needs to be downloaded',
+      };
+    }
+
+    if (status === 'no') {
+      return {
+        status: 'no',
+        available: false,
+        needsDownload: false,
+        message: 'Gemini Nano model is not available on this device',
+      };
+    }
+
+    // Unknown status - log it for debugging
+    console.warn('Unknown model availability status:', status);
+    return {
+      status: 'no',
+      available: false,
+      needsDownload: false,
+      message: `Unknown model availability status: ${status}`,
+    };
   } catch (error) {
     return {
       status: 'no',

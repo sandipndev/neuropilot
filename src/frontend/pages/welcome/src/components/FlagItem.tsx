@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, AlertCircle, ExternalLink } from "lucide-react";
+import { CheckCircle2, AlertCircle, Copy, Check } from "lucide-react";
 
 interface FlagItemProps {
   name: string;
@@ -15,9 +16,16 @@ export const FlagItem: React.FC<FlagItemProps> = ({
   flagUrl, 
   enabled 
 }) => {
-  const handleOpenFlag = () => {
-    // Open chrome://flags URL in a new tab
-    window.open(flagUrl, '_blank');
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(flagUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+    }
   };
 
   return (
@@ -40,7 +48,7 @@ export const FlagItem: React.FC<FlagItemProps> = ({
           {/* Flag Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2 mb-2">
-              <div>
+              <div className="flex-1">
                 <h3 className="font-semibold text-foreground text-sm">
                   {name}
                 </h3>
@@ -57,18 +65,33 @@ export const FlagItem: React.FC<FlagItemProps> = ({
               </div>
             </div>
 
-            {/* Open Flag Button */}
-            {!enabled && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleOpenFlag}
-                className="mt-2 text-xs"
-              >
-                <ExternalLink className="w-3 h-3 mr-1" />
-                Open Flag Settings
-              </Button>
-            )}
+            {/* Flag URL and Copy Button */}
+              <div className="mt-3 space-y-2">
+                <div className="flex items-center gap-2 p-2 bg-muted rounded text-xs font-mono break-all">
+                  <span className="flex-1 text-muted-foreground">{flagUrl}</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyUrl}
+                  className="text-xs"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="w-3 h-3 mr-1" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3 mr-1" />
+                      Copy URL
+                    </>
+                  )}
+                </Button>
+                <p className="text-xs text-muted-foreground italic">
+                  Copy this URL and paste it in your browser's address bar to open the flag settings
+                </p>
+              </div>
           </div>
         </div>
       </CardContent>

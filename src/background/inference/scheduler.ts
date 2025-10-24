@@ -4,6 +4,8 @@ import {
 } from "../../db/models/activity-website-visited";
 import { getActivityUserAttentionByWebsite } from "../../db/models/activity-user-attention";
 import { summarizeWebsiteActivity } from "./ai/website-summarizer";
+import { detectFocusArea } from "./ai/focus";
+import { WebsiteActivityWithAttention } from "../../db/utils/activity";
 
 type Task = {
   id: string;
@@ -19,11 +21,13 @@ class InferenceScheduler {
   start(intervalMs: number = 3000) {
     console.log("Starting inference scheduler");
     this.intervalId = setInterval(() => {
-      console.log("Scheduling website summarization");
+      console.log("Scheduling tasks");
       this.scheduleWebsiteSummarization();
+      this.scheduleFocusDetection();
     }, intervalMs);
 
     this.scheduleWebsiteSummarization();
+    this.scheduleFocusDetection();
   }
 
   stop() {
@@ -58,6 +62,21 @@ class InferenceScheduler {
         });
       }
     }
+  }
+
+  private async scheduleFocusDetection() {
+    console.log("Scheduling focus detection");
+    const websites = await getActivityWebsitesVisited();
+
+    const combinedActivity: WebsiteActivityWithAttention[] = await Promise.all(
+      websites.map(async (website) => ({
+        ...website,
+        attentionRecords: await getActivityUserAttentionByWebsite(website.id),
+      }))
+    );
+
+    const focusArea = await detectFocusArea(combinedActivity);
+    console.log({ focusArea });
   }
 
   private addTask(task: Task) {

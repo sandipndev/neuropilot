@@ -21,6 +21,8 @@ ${readContent}
 
 Provide a concise summary of what the user focused on.`;
 
+  console.log({ prompt });
+
   const summary = await session.prompt(prompt);
   session.destroy();
 

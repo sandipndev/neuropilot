@@ -73,6 +73,7 @@ export async function getActivityUserAttention(): Promise<ActivityUserAttention[
 
 /**
  * Get attention records by website_id
+ * Returns array sorted by timestamp (most recent first)
  */
 export async function getActivityUserAttentionByWebsite(
   websiteId: string
@@ -94,6 +95,7 @@ export async function getActivityUserAttentionByWebsite(
         results.push(cursor.value as ActivityUserAttention);
         cursor.continue();
       } else {
+        results.sort((a, b) => a.timestamp - b.timestamp);
         resolve(results);
       }
     };

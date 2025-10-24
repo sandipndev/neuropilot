@@ -88,6 +88,7 @@ export async function getActivityWebsitesVisited(): Promise<ActivityWebsiteVisit
         results.push(cursor.value as ActivityWebsiteVisited);
         cursor.continue();
       } else {
+        results.sort((a, b) => a.timestamp - b.timestamp);
         resolve(results);
       }
     };

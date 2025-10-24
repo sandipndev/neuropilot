@@ -7,9 +7,12 @@ import { getActiveFocus, saveFocus, parseKeywords, parseTimeSpent } from "../../
 import { summarizeWebsiteActivity } from "./ai/website-summarizer";
 import { detectFocusArea, summarizeFocus } from "./ai/focus";
 import { detectFocusDrift } from "./ai/focus-drift";
+import { generatePulse } from "./ai/pulse";
 import { WebsiteActivityWithAttention } from "../../db/utils/activity";
 import { hashString } from "../../db/utils/hash";
 import { getFocusData } from "../../api/queries/focus";
+import { savePulses } from "../../db/models/pulse";
+import { getPulses } from "../../api/queries/pulse";
 
 type Task = {
   id: string;
@@ -51,6 +54,13 @@ class InferenceScheduler {
       type: "schedule-focus-detection",
       execute: async () => {
         await this.scheduleFocusDetection();
+      },
+    });
+    this.addTask({
+      id: `schedule-pulse-generation-${Date.now()}`,
+      type: "schedule-pulse-generation",
+      execute: async () => {
+        await this.schedulePulseGeneration();
       },
     });
     this.addTask({
@@ -195,10 +205,45 @@ class InferenceScheduler {
     }
   }
 
+  private async schedulePulseGeneration() {
+    console.debug("Scheduling pulse generation");
+
+    // Get focus data
+    const focusRecords = await getFocusData();
+
+    // Get recent website activity with attention
+    const websites = await getActivityWebsitesVisited();
+    const recentWebsites: WebsiteActivityWithAttention[] = (
+      await Promise.all(
+        websites.map(async (website) => {
+          const attentionRecords = await getActivityUserAttentionByWebsite(website.id);
+          return attentionRecords.length > 0
+            ? ({ ...website, attentionRecords } as WebsiteActivityWithAttention)
+            : null;
+        })
+      )
+    ).filter((x): x is WebsiteActivityWithAttention => Boolean(x));
+
+    // Only generate pulse if there's data to work with
+    if (focusRecords.length > 0 || recentWebsites.length > 0) {
+      const pulseMessages = await generatePulse({
+        focusRecords,
+        recentWebsites,
+      });
+
+      await savePulses(pulseMessages);
+      console.debug("Pulse generated and saved", { pulseMessages });
+    } else {
+      console.debug("No data available for pulse generation");
+    }
+  }
+
   private async logAllFocusRecords() {
     console.debug("Logging all focus records");
     const focusRecords = await getFocusData();
-    console.debug({ focusRecords });
+    const pulses = await getPulses();
+
+    console.info({ pulses, focusRecords });
   }
 
   private addTask(task: Task) {

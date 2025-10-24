@@ -2,22 +2,26 @@ import { getLanguageModel } from "./models/language";
 
 import { Focus, parseKeywords } from "../../../db/models/focus";
 import { WebsiteActivityWithAttention } from "../../../db/utils/activity";
+import type { ActivityUserAttentionImage } from "../../../db/models/image-captions";
 
 /**
  * Detects if the user's focus has drifted from their previous topic
  * @param previousFocus - The previous focus record with focus_item and keywords
  * @param newAttention - The new website activity with attention data
+ * @param imageAttention - The new image attention data
  * @returns Promise<boolean> - true if focus has drifted, false if still focused
  */
 export const detectFocusDrift = async (
   previousFocus: Focus,
-  newAttention: WebsiteActivityWithAttention[]
+  newAttention: WebsiteActivityWithAttention[],
+  imageAttention: ActivityUserAttentionImage[] = []
 ): Promise<boolean> => {
   const session = await getLanguageModel();
 
   if (
     newAttention.length === 0 ||
-    newAttention.map((a) => a.attentionRecords.length).every((l) => l === 0)
+    (newAttention.map((a) => a.attentionRecords.length).every((l) => l === 0) &&
+     imageAttention.length === 0)
   ) {
     return false;
   }
@@ -33,7 +37,11 @@ export const detectFocusDrift = async (
   Content ${index + 1} user is paying attention to in this page:
   ${a.attentionRecords.map((r) => r.text_content).join(" ")}`
       )
-      .join("\n\n---\n\n");
+    .join("\n\n---\n\n");
+
+  const imageContent = imageAttention.length > 0
+    ? `\n\n---\n\nImages the user viewed:\n${imageAttention.map((img, i) => `Image ${i + 1}: ${img.caption}`).join('\n')}`
+    : '';
 
     const prompt = `
   You are checking if the user's attention has changed from their previous topic.
@@ -43,6 +51,7 @@ export const detectFocusDrift = async (
 
   Current attention:
   ${attentionContent}
+  ${imageContent}
 
   ---\n\n
 

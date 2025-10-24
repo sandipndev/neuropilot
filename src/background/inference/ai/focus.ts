@@ -1,11 +1,13 @@
 import { getLanguageModel } from "./models/language";
 
 import { WebsiteActivityWithAttention } from "../../../db/utils/activity";
+import type { ActivityUserAttentionImage } from "../../../db/models/image-captions";
 
 export const detectFocusArea = async (
-  activity: WebsiteActivityWithAttention[]
+  activity: WebsiteActivityWithAttention[],
+  imageAttention: ActivityUserAttentionImage[] = []
 ): Promise<string | null> => {
-  if (activity.length === 0) {
+  if (activity.length === 0 && imageAttention.length === 0) {
     return null;
   }
 
@@ -18,6 +20,10 @@ export const detectFocusArea = async (
     })
     .join("\n\n---\n\n");
 
+  const imageContent = imageAttention.length > 0
+    ? `\n\n---\n\nImages the user viewed:\n${imageAttention.map(img => `- ${img.caption}`).join('\n')}`
+    : '';
+
   const prompt = `
   You are an attention analysis model. Based on the following reading sessions,
   determine the user's current main focus area.
@@ -26,7 +32,7 @@ export const detectFocusArea = async (
 
   Sessions:
   ---
-  ${combinedContent}
+  ${combinedContent}${imageContent}
   ---
 
   Think about the most recent and dominant topic the user is focusing on.

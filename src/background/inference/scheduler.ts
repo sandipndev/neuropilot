@@ -112,6 +112,7 @@ class InferenceScheduler {
   private async scheduleWebsiteSummarization() {
     console.debug("Scheduling website summarization");
     const websites = await getActivityWebsitesVisited();
+    const allImageCaptions = await getCachedActivityUserAttentionImageCaptions();
 
     for (const website of websites) {
       const attentionRecords = await getActivityUserAttentionByWebsite(website.id);
@@ -123,7 +124,10 @@ class InferenceScheduler {
           id: `summarize-${website.id}`,
           type: "website-summarization",
           execute: async () => {
-            const summary = await summarizeWebsiteActivity(website, attentionRecords);
+            const websiteImageCaptions = allImageCaptions.filter(
+              (img) => img.image_src.startsWith(website.url) || img.image_src.includes(new URL(website.url).hostname)
+            );
+            const summary = await summarizeWebsiteActivity(website, attentionRecords, websiteImageCaptions);
             await saveWebsiteVisit({
               ...website,
               summary,
@@ -163,14 +167,17 @@ class InferenceScheduler {
       )
     ).filter((x): x is WebsiteActivityWithAttention => Boolean(x));
 
+    const allImageCaptions = await getCachedActivityUserAttentionImageCaptions();
+    const recentImageCaptions = allImageCaptions.filter((img) => img.timestamp >= since);
+
     // === Task 2: Detect focus drift ===
     if (previousFocus) {
-      focusDrifted = await detectFocusDrift(previousFocus, activitySince);
+      focusDrifted = await detectFocusDrift(previousFocus, activitySince, recentImageCaptions);
     }
 
     // === Task 3: Handle no drift (continue or create focus) ===
     if (!focusDrifted) {
-      const updatedSlidingWindowFocus = await detectFocusArea(activitySince);
+      const updatedSlidingWindowFocus = await detectFocusArea(activitySince, recentImageCaptions);
       if (updatedSlidingWindowFocus) {
         const slidingWindowKeywords = previousFocus
           ? parseKeywords(previousFocus)
@@ -233,11 +240,15 @@ class InferenceScheduler {
       )
     ).filter((x): x is WebsiteActivityWithAttention => Boolean(x));
 
+    const allImageCaptions = await getCachedActivityUserAttentionImageCaptions();
+    const recentImageCaptions = allImageCaptions.slice(0, 10);
+
     // Only generate pulse if there's data to work with
     if (focusRecords.length > 0 || recentWebsites.length > 0) {
       const pulseMessages = await generatePulse({
         focusRecords,
         recentWebsites,
+        imageAttention: recentImageCaptions,
       });
 
       await savePulses(pulseMessages);

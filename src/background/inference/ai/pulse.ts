@@ -6,14 +6,16 @@
 import { getLanguageModel } from "./models/language";
 import { WebsiteActivityWithAttention } from "../../../db/utils/activity";
 import { FocusWithParsedData } from "../../../api/queries/focus";
+import type { ActivityUserAttentionImage } from "../../../db/models/image-captions";
 
 export interface PulseGenerationData {
   focusRecords: FocusWithParsedData[];
   recentWebsites: WebsiteActivityWithAttention[];
+  imageAttention?: ActivityUserAttentionImage[];
 }
 
 export async function generatePulse(data: PulseGenerationData): Promise<string[]> {
-  const { focusRecords, recentWebsites } = data;
+  const { focusRecords, recentWebsites, imageAttention = [] } = data;
 
   // Calculate aggregated data
   const focusTopics = focusRecords.map((f) => f.focus_item).join(", ") || "various topics";
@@ -29,6 +31,10 @@ export async function generatePulse(data: PulseGenerationData): Promise<string[]
     .map((w) => w.summary)
     .join("\n");
 
+  const imageInsights = imageAttention.length > 0
+    ? `\n\nVisual Content Explored:\n${imageAttention.slice(0, 5).map(img => `- ${img.caption}`).join('\n')}`
+    : '';
+
   const prompt = `Generate 5 personalized learning progress updates using this data:
 
   Focus Topics: ${focusTopics}
@@ -38,6 +44,7 @@ export async function generatePulse(data: PulseGenerationData): Promise<string[]
 
   Key Quotes from Learning:
   ${keyLearnings}
+  ${imageInsights}
 
   Create 5 diverse updates using these patterns:
     1. Progress celebration: "You've spent Xh on [topic] - great progress!"

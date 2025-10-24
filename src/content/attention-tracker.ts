@@ -13,7 +13,7 @@ import { safeSendMessage } from "./utils/messaging";
  */
 export function initializeAttentionTracker(): void {
   new CognitiveAttentionTracker({
-    debugMode: false,
+    debugMode: true,
     cognitiveAttentionThreshold: 3000, // 3s wait for attention
     idleThreshold: 15000, // 15s idle timeout
     mouseHoverThreshold: 1000, // 1s hover bonus

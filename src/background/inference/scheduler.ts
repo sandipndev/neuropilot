@@ -3,10 +3,12 @@ import {
   saveWebsiteVisit,
 } from "../../db/models/activity-website-visited";
 import { getActivityUserAttentionByWebsite } from "../../db/models/activity-user-attention";
-import { persistFocus } from "../../db/models/focus";
+import { getActiveFocus, saveFocus, parseKeywords, parseTimeSpent } from "../../db/models/focus";
 import { summarizeWebsiteActivity } from "./ai/website-summarizer";
-import { detectFocusArea } from "./ai/focus";
+import { detectFocusArea, summarizeFocus } from "./ai/focus";
+import { detectFocusDrift } from "./ai/focus-drift";
 import { WebsiteActivityWithAttention } from "../../db/utils/activity";
+import { hashString } from "../../db/utils/hash";
 
 type Task = {
   id: string;
@@ -17,7 +19,7 @@ type Task = {
 class InferenceScheduler {
   private queue: Task[] = [];
   private isRunning = false;
-  private intervalId: number | null = null;
+  private intervalId: ReturnType<typeof setInterval> | null = null;
 
   start(intervalMs: number = 30000) {
     console.debug("Starting inference scheduler");
@@ -108,36 +110,84 @@ class InferenceScheduler {
 
   private async scheduleFocusDetection() {
     console.debug("Scheduling focus detection");
-    const websites = await getActivityWebsitesVisited();
+
+    const previousFocus = await getActiveFocus();
+
+    console.log({ previousFocus });
+
+    // Default: assume no drift if no previous focus (so new focus is saved)
+    let focusDrifted = false;
 
     const TEN_MINUTES_MS = 10 * 60 * 1000;
-    const cutoffTime = Date.now() - TEN_MINUTES_MS;
+    const now = Date.now();
+    const cutoffTime = now - TEN_MINUTES_MS;
+    const since = Math.max(
+      previousFocus?.last_updated ? previousFocus.last_updated + 1 : 0,
+      cutoffTime
+    );
 
-    // Get activity from the last 10 minutes only
-    const combinedActivity: WebsiteActivityWithAttention[] = (
+    // === Task 1: Gather recent attention activity ===
+    const websites = await getActivityWebsitesVisited();
+    const activitySince: WebsiteActivityWithAttention[] = (
       await Promise.all(
         websites.map(async (website) => {
-          const allAttentionRecords = await getActivityUserAttentionByWebsite(website.id);
-
-          // Filter to only attention records from the last 10 minutes
-          const recentAttentionRecords = allAttentionRecords.filter(
-            (record) => record.timestamp >= cutoffTime
-          );
-
-          return {
-            ...website,
-            attentionRecords: recentAttentionRecords,
-          };
+          const all = await getActivityUserAttentionByWebsite(website.id);
+          const recent = all.filter((r) => r.timestamp >= since);
+          return recent.length > 0
+            ? ({ ...website, attentionRecords: recent } as WebsiteActivityWithAttention)
+            : null;
         })
       )
-    ).filter((website) => website.attentionRecords.length > 0); // Only include websites with recent activity
+    ).filter((x): x is WebsiteActivityWithAttention => Boolean(x));
 
-    const focusArea = await detectFocusArea(combinedActivity);
-    console.debug({ focusArea });
+    // === Task 2: Detect focus drift ===
+    if (previousFocus) {
+      focusDrifted = await detectFocusDrift(previousFocus, activitySince);
+    }
 
-    // Persist the focus
-    if (focusArea) {
-      await persistFocus(focusArea);
+    // === Task 3: Handle no drift (continue or create focus) ===
+    if (!focusDrifted) {
+      const updatedSlidingWindowFocus = await detectFocusArea(activitySince);
+      if (updatedSlidingWindowFocus) {
+        const slidingWindowKeywords = previousFocus
+          ? parseKeywords(previousFocus)
+          : [updatedSlidingWindowFocus];
+        const summarizedFocus = await summarizeFocus(slidingWindowKeywords);
+
+        const keywords = previousFocus
+          ? [updatedSlidingWindowFocus, ...parseKeywords(previousFocus)]
+          : [updatedSlidingWindowFocus];
+
+        // Common fields
+        const baseFocus = {
+          focus_item: summarizedFocus ?? updatedSlidingWindowFocus,
+          keywords: JSON.stringify(keywords),
+          last_updated: now,
+        };
+
+        // Merge update/insert paths
+        const focusData = previousFocus
+          ? { ...previousFocus, ...baseFocus }
+          : {
+              id: await hashString(updatedSlidingWindowFocus.toLowerCase()),
+              ...baseFocus,
+              time_spent: JSON.stringify([{ start: now, stop: null }]),
+            };
+
+        await saveFocus(focusData);
+      }
+    }
+
+    // === Task 4: Handle drift (close current focus) ===
+    else if (previousFocus) {
+      const timeSpent = parseTimeSpent(previousFocus);
+      const last = timeSpent[timeSpent.length - 1];
+      if (last && !last.stop) last.stop = now; // ensure not overriding a closed segment
+      await saveFocus({
+        ...previousFocus,
+        time_spent: JSON.stringify(timeSpent),
+        last_updated: now,
+      });
     }
   }
 

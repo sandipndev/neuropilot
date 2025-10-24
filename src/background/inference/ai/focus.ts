@@ -37,15 +37,19 @@ If you cannot determine the user's current main focus area (probably because
 the user is not reading anything), return null.
 `;
 
-  console.debug({ prompt });
-
   const focus = await session.prompt(prompt);
   session.destroy();
+
+  console.log({ where: "detectFocusArea", focus, prompt, activity });
 
   return focus.trim() === "null" ? null : focus.trim();
 };
 
 export const summarizeFocus = async (focus_keywords: string[]): Promise<string> => {
+  if (focus_keywords.length === 1) {
+    return focus_keywords[0];
+  }
+
   const session = await getLanguageModel();
 
   const prompt = `
@@ -55,9 +59,10 @@ What is the greatest common factor between these:
 ${focus_keywords.join(", ")}
 `;
 
-  console.debug({ prompt });
-
   const focus = await session.prompt(prompt);
   session.destroy();
+
+  console.log({ where: "summarizeFocus", prompt, focus, focus_keywords });
+
   return focus.trim();
 };

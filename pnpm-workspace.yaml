@@ -1,0 +1,12 @@
+packages:
+  # these pages have their own package.json, and are separate.. 
+  # later we should do something similar for background and other jobs.
+  - src/frontend/pages/*
+
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - '@swc/core'
+  - edgedriver
+  - esbuild
+  - geckodriver
+  - unrs-resolver

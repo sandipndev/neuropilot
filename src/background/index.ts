@@ -45,3 +45,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   return true;
 });
+
+
+// Upon installation we want to show an onboarding workflow
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === "install") {
+    chrome.tabs.create({
+      url: "welcome" 
+    });
+  }
+});

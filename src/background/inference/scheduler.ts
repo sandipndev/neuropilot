@@ -13,6 +13,8 @@ import { hashString } from "../../db/utils/hash";
 import { getFocusData } from "../../api/queries/focus";
 import { savePulses } from "../../db/models/pulse";
 import { getPulses } from "../../api/queries/pulse";
+import { getCachedImageCaptions } from "../../api/queries/image-captions";
+import { deleteImageCaption } from "../../db/models/image-captions";
 
 type Task = {
   id: string;
@@ -61,6 +63,13 @@ class InferenceScheduler {
       type: "schedule-pulse-generation",
       execute: async () => {
         await this.schedulePulseGeneration();
+      },
+    });
+    this.addTask({
+      id: `schedule-image-caption-cleanup-${Date.now()}`,
+      type: "schedule-image-caption-cleanup",
+      execute: async () => {
+        await this.scheduleImageCaptionCleanup();
       },
     });
     this.addTask({
@@ -235,6 +244,22 @@ class InferenceScheduler {
       console.debug("Pulse generated and saved", { pulseMessages });
     } else {
       console.debug("No data available for pulse generation");
+    }
+  }
+
+  private async scheduleImageCaptionCleanup() {
+    console.debug("Scheduling image caption cleanup");
+    const captions = await getCachedImageCaptions();
+    
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    
+    for (const caption of captions) {
+      const age = now - caption.timestamp;
+      if (age > SEVEN_DAYS_MS) {
+        await deleteImageCaption(caption.image_src);
+        console.debug(`Deleted old image caption: ${caption.image_src}`);
+      }
     }
   }
 

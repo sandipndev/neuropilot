@@ -6,6 +6,7 @@
 import { initDB } from "../db";
 import { handleAttentionUpdate } from "./handlers/attention-handler";
 import { handleWebsiteVisit } from "./handlers/website-visit-handler";
+import { handleImageCaptionRequest } from "./handlers/image-caption-handler";
 import { scheduler } from "./inference";
 
 // Initialize database on extension load
@@ -27,19 +28,26 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       switch (message.type) {
         case "ATTENTION_UPDATE":
           await handleAttentionUpdate(message.data);
+          sendResponse({ success: true });
           break;
 
         case "WEBSITE_VISITED":
           await handleWebsiteVisit(message.data);
+          sendResponse({ success: true });
+          break;
+
+        case "IMAGE_CAPTION_REQUEST":
+          const result = await handleImageCaptionRequest(message.data);
+          sendResponse(result);
           break;
 
         default:
           console.debug(`Unknown message type: ${message.type}`);
+          sendResponse({ success: false, error: "Unknown message type" });
       }
     } catch (error) {
       console.error(`Error handling ${message.type}:`, error);
-    } finally {
-      sendResponse({ success: true });
+      sendResponse({ success: false, error: String(error) });
     }
   })();
 

@@ -9,6 +9,7 @@ import { detectFocusArea, summarizeFocus } from "./ai/focus";
 import { detectFocusDrift } from "./ai/focus-drift";
 import { WebsiteActivityWithAttention } from "../../db/utils/activity";
 import { hashString } from "../../db/utils/hash";
+import { getFocusData } from "../../api/queries/focus";
 
 type Task = {
   id: string;
@@ -50,6 +51,13 @@ class InferenceScheduler {
       type: "schedule-focus-detection",
       execute: async () => {
         await this.scheduleFocusDetection();
+      },
+    });
+    this.addTask({
+      id: `log-all-focus-${Date.now()}`,
+      type: "log-all-focus",
+      execute: async () => {
+        await this.logAllFocusRecords();
       },
     });
   }
@@ -120,11 +128,7 @@ class InferenceScheduler {
 
     const TEN_MINUTES_MS = 10 * 60 * 1000;
     const now = Date.now();
-    const cutoffTime = now - TEN_MINUTES_MS;
-    const since = Math.max(
-      previousFocus?.last_updated ? previousFocus.last_updated + 1 : 0,
-      cutoffTime
-    );
+    const since = previousFocus ? previousFocus.last_updated + 1 : now - TEN_MINUTES_MS;
 
     // === Task 1: Gather recent attention activity ===
     const websites = await getActivityWebsitesVisited();
@@ -189,6 +193,12 @@ class InferenceScheduler {
         last_updated: now,
       });
     }
+  }
+
+  private async logAllFocusRecords() {
+    console.debug("Logging all focus records");
+    const focusRecords = await getFocusData();
+    console.warn({ focusRecords });
   }
 
   private addTask(task: Task) {

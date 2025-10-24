@@ -77,7 +77,6 @@ export async function processWebsiteVisitEvent(
   } else {
     // Create new record (only for "open" events)
     if (eventType !== "open") {
-      console.warn(`Received ${eventType} event for non-existent record: ${url}`);
       return null;
     }
 

@@ -21,10 +21,10 @@ export const detectFocusDrift = async (
   // Format the new attention data
   const attentionContent = newAttention
     .map(
-      (a) => `
-Title: ${a.title}
-URL: ${a.url}
-Content user is paying attention to:
+      (a, index) => `
+Title ${index + 1}: ${a.title}
+URL ${index + 1}: ${a.url}
+Content ${index + 1} user is paying attention to in this page:
 ${a.attentionRecords.map((r) => r.text_content).join(" ")}`
     )
     .join("\n\n---\n\n");
@@ -37,6 +37,10 @@ Previous keywords: ${keywords.join(", ")}
 
 Current attention:
 ${attentionContent}
+
+---\n\n
+
+Keep the order in context while returning inference.
 
 Question:
 Does the current attention clearly belong to a different subject (for example, moving from tech to cooking or fashion)?

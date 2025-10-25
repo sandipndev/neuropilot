@@ -7,6 +7,7 @@ import { initDB } from "../db";
 import { handleAttentionUpdate } from "./handlers/attention-handler";
 import { handleWebsiteVisit } from "./handlers/website-visit-handler";
 import { handleImageCaptionRequest } from "./handlers/image-caption-handler";
+import { handleGetCurrentFocus, handleGetFocusHistory } from "./handlers/focus-handler";
 import { scheduler } from "./inference";
 
 // Initialize database on extension load
@@ -39,6 +40,16 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         case "IMAGE_CAPTION_REQUEST":
           const result = await handleImageCaptionRequest(message.data);
           sendResponse(result);
+          break;
+
+        case "GET_CURRENT_FOCUS":
+          const currentFocus = await handleGetCurrentFocus();
+          sendResponse(currentFocus);
+          break;
+
+        case "GET_FOCUS_HISTORY":
+          const focusHistory = await handleGetFocusHistory();
+          sendResponse(focusHistory);
           break;
 
         default:

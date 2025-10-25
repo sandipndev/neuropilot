@@ -46,7 +46,7 @@ export async function getOrGenerateCaption(
     return cached;
   }
 
-  const caption = await generateAndSaveImageCaption(imageSrc, imageFile, altText, title);
+  await generateAndSaveImageCaption(imageSrc, imageFile, altText, title);
 
   const newCaption = await getImageCaptionBySrc(imageSrc);
   if (!newCaption) {

@@ -7,7 +7,6 @@ import {
   getActiveFocus,
   parseKeywords,
   parseTimeSpent,
-  type Focus,
 } from "../../db/models/focus";
 
 export interface FocusWithParsedData {
@@ -49,6 +48,8 @@ export async function getFocusData(): Promise<FocusWithParsedData[]> {
 export async function getCurrentFocus(): Promise<FocusWithParsedData | null> {
   const focus = await getActiveFocus();
 
+  console.log(`[API] Current focus: ${focus}`)
+
   if (!focus) {
     return null;
   }
@@ -69,7 +70,7 @@ export async function getCurrentFocus(): Promise<FocusWithParsedData | null> {
 /**
  * Calculate total time spent from time_spent array
  */
-function calculateTotalTime(timeSpent: Array<{ start: number; stop: number | null }>): number {
+export function calculateTotalTime(timeSpent: Array<{ start: number; stop: number | null }>): number {
   return timeSpent.reduce((total, period) => {
     const end = period.stop || Date.now();
     return total + (end - period.start);

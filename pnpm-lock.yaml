@@ -58,6 +58,8 @@ importers:
         specifier: ^9.0.0
         version: 9.0.0
 
+  src/api: {}
+
   src/frontend/pages/popup:
     dependencies:
       '@radix-ui/react-collapsible':
@@ -90,6 +92,9 @@ importers:
       lucide-react:
         specifier: ^0.546.0
         version: 0.546.0(react@19.2.0)
+      neuropilot-api:
+        specifier: workspace:1.0.0
+        version: link:../../../api
       react:
         specifier: ^19.1.1
         version: 19.2.0

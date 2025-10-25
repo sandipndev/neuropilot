@@ -7,15 +7,16 @@ const DB_VERSION = 8;
 
 let dbInstance: IDBDatabase | null = null;
 
-export async function initDB(): Promise<IDBDatabase> {
+export async function initDB(dbName = DB_NAME, dbVersion = DB_VERSION): Promise<IDBDatabase> {
   if (dbInstance) {
     return dbInstance;
   }
 
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    const request = indexedDB.open(dbName, dbVersion);
 
-    request.onerror = () => {
+    request.onerror = (err) => {
+      console.log(err)
       reject(new Error("Failed to open database"));
     };
 

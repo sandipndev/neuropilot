@@ -92,7 +92,7 @@ function App() {
 
   // Poll pomodoro state every second
   useEffect(() => {
-    console.log(`pomodoro...`)
+    console.log(`pomodoro...`);
     const interval = setInterval(async () => {
       try {
         const state = await getPomodoroState();
@@ -161,9 +161,9 @@ function App() {
         <TreeAnimationSection totalFocusTime={focusData?.total_time || 0} />
       </div>
 
-      <div className="h-full overflow-y-auto relative z-10">
+      <div className="h-full overflow-y-auto relative z-10 flex flex-col">
         {/* Main Card Container */}
-        <div className="m-4 border-gray-900 overflow-hidden transition-all duration-300 animate-fade-in">
+        <div className="m-4 border-gray-900 overflow-hidden transition-all duration-300 animate-fade-in flex-shrink-0">
           {/* Current Focus Header */}
           <div
             className="p-6 border-b border-gray-900"
@@ -191,7 +191,7 @@ function App() {
                   <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200 hover:bg-gray-100 transition-colors">
                     <span
                       className="text-xs text-gray-600 font-medium"
-                      aria-label={`Pomodoro timer: ${formattedPomodoroTime} remaining`}
+                      aria-labl={`Pomodoro timer: ${formattedPomodoroTime} remaining`}
                     >
                       🍅 {formattedPomodoroTime}
                     </span>
@@ -223,43 +223,60 @@ function App() {
           <div className="p-6" role="region" aria-label="Quiz suggestions">
             <div className="space-y-2">
               <div className="text-sm text-gray-700 leading-relaxed">
-                <p className="font-semibold mb-2">We know you learnt a lot about: </p>
-                <div className="space-y-1 text-xs text-gray-500 italic pl-3 border-blue-200">
-                  {focusHistory.slice(0, 5).map((item) => (
-                    <p key={item.id}>{item.focus_item}</p>
-                  ))}
-                </div>
+                <p className="mb-2">
+                  {focusHistory.length >= 1 ? (
+                    <>
+                      <p className="font-semibold mb-2">We know you learnt a lot about: </p>
+                      <div className="space-y-1 text-xs text-gray-500 italic pl-3 border-blue-200">
+                        {focusHistory.slice(0, 5).map((item) => (
+                          <p key={item.id}>{item.focus_item}</p>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div>
+                      <div>You don't have enough focus items 😭.</div>
+                      <div className="text-xs text-gray-500">
+                        Once you have enough focus items, you can take a refresher.
+                      </div>
+                    </div>
+                  )}
+                </p>
               </div>
-              <RefresherButton />
+              <RefresherButton isDisabled={focusHistory.length < 1} />
             </div>
           </div>
 
           {/* Wins Section */}
           <div className="p-6 border-t border-gray-900">
             <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Wins</p>
-            <div className="flex flex-wrap gap-3 text-sm">
-              {wins.slice(0, 3).map((win, index) => (
-                <div
-                  key={win.id}
-                  className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border-2 border-gray-900 shadow-sm hover:shadow-md transition-all hover:scale-105 hover:-translate-y-0.5"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  {getWinIcon(win.type)}
-                  <span className="font-bold text-gray-900 text-sm">
-                    {win.focusItem
-                      .split(" ")
-                      .join("")
-                      .toUpperCase()}
-                  </span>
-                  <span className="text-gray-500 font-mono text-xs">
-                    {Math.floor(win.totalTimeSpent / 60000)}:
-                    {((win.totalTimeSpent % 60000) / 1000).toString().padStart(2, "0")}
-                  </span>
-                </div>
-              ))}
-            </div>
+            {wins.length === 0 ? (
+              <div className="text-sm text-gray-500 italic py-2">No wins yet.</div>
+            ) : (
+              <div className="flex flex-wrap gap-3 text-sm">
+                {wins.slice(0, 3).map((win, index) => (
+                  <div
+                    key={win.id}
+                    className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border-2 border-gray-900 shadow-sm hover:shadow-md transition-all hover:scale-105 hover:-translate-y-0.5"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    {getWinIcon(win.type)}
+                    <span className="font-bold text-gray-900 text-sm">
+                      {win.focusItem.split(" ").join("").toUpperCase()}
+                    </span>
+                    <span className="text-gray-500 font-mono text-xs">
+                      {Math.floor(win.totalTimeSpent / 60000)}:
+                      {((win.totalTimeSpent % 60000) / 1000).toString().padStart(2, "0")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
+        <p className="text-xs mt-auto text-center text-gray-500 italic px-4 pb-4">
+          🌱 Your focus nurtures growth — watch your tree flourish with every session.
+        </p>
       </div>
     </div>
   );

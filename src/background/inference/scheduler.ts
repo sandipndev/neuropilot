@@ -9,15 +9,19 @@ import { detectFocusArea, summarizeFocus } from "./ai/focus";
 import { detectFocusDrift } from "./ai/focus-drift";
 import { generatePulse } from "./ai/pulse";
 import { generateQuizQuestions } from "./ai/quiz-questions";
+import { generateActivitySummary } from "./ai/activity-summary";
 import { WebsiteActivityWithAttention } from "../../db/utils/activity";
 import { hashString } from "../../db/utils/hash";
 import { getFocusData } from "../../api/queries/focus";
 import { savePulses } from "../../db/models/pulse";
 import { saveQuizQuestions } from "../../db/models/quiz-questions";
+import { saveActivitySummary, deleteOldActivitySummaries } from "../../db/models/activity-summary";
 import { getPulses } from "../../api/queries/pulse";
 import { getQuizQuestions } from "../../api/queries/quiz-questions";
+import { getActivitySummaries } from "../../api/queries/activity-summary";
 import { getCachedActivityUserAttentionImageCaptions } from "../../api/queries/image-captions";
 import { deleteImageCaption } from "../../db/models/image-captions";
+import { getActivityUserAttention } from "../../db/models/activity-user-attention";
 
 type Task = {
   id: string;
@@ -29,6 +33,7 @@ class InferenceScheduler {
   private queue: Task[] = [];
   private isRunning = false;
   private intervalId: ReturnType<typeof setInterval> | null = null;
+  private activitySummaryIntervalId: ReturnType<typeof setInterval> | null = null;
 
   start(intervalMs: number = 30000) {
     console.debug("Starting inference scheduler");
@@ -43,6 +48,12 @@ class InferenceScheduler {
     this.intervalId = setInterval(() => {
       this.scheduleInferenceTasks();
     }, intervalMs);
+
+    // Schedule activity summary generation every 1 minute
+    this.scheduleActivitySummaryGeneration(); // Initial run
+    this.activitySummaryIntervalId = setInterval(() => {
+      this.scheduleActivitySummaryGeneration();
+    }, 60000); // 1 minute
   }
 
   private scheduleInferenceTasks() {
@@ -97,6 +108,10 @@ class InferenceScheduler {
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
+    }
+    if (this.activitySummaryIntervalId) {
+      clearInterval(this.activitySummaryIntervalId);
+      this.activitySummaryIntervalId = null;
     }
   }
 
@@ -332,8 +347,66 @@ class InferenceScheduler {
     const focusRecords = await getFocusData();
     const pulses = await getPulses();
     const quizQuestions = await getQuizQuestions();
+    const activitySummaries = await getActivitySummaries();
 
-    console.info({ pulses, focusRecords, quizQuestions });
+    console.info({ pulses, focusRecords, quizQuestions, activitySummaries });
+  }
+
+  private async scheduleActivitySummaryGeneration() {
+    console.debug("Scheduling activity summary generation");
+
+    const ONE_MINUTE_MS = 60 * 1000;
+    const now = Date.now();
+    const since = now - ONE_MINUTE_MS;
+
+    // Get all websites visited in the last minute
+    const websites = await getActivityWebsitesVisited();
+    const recentWebsites: WebsiteActivityWithAttention[] = (
+      await Promise.all(
+        websites.map(async (website) => {
+          const attentionRecords = await getActivityUserAttentionByWebsite(website.id);
+          const recentAttention = attentionRecords.filter((r) => r.timestamp >= since);
+          return recentAttention.length > 0
+            ? ({ ...website, attentionRecords: recentAttention } as WebsiteActivityWithAttention)
+            : null;
+        })
+      )
+    ).filter((x): x is WebsiteActivityWithAttention => Boolean(x));
+
+    // Get all attention records from the last minute
+    const allAttention = await getActivityUserAttention();
+    const recentAttention = allAttention
+      .filter((a) => a.timestamp >= since)
+      .map((a) => a.text_content);
+
+    // Get image captions from the last minute
+    const allImageCaptions = await getCachedActivityUserAttentionImageCaptions();
+    const recentImageCaptions = allImageCaptions.filter((img) => img.timestamp >= since);
+
+    // Only generate summary if there's activity
+    if (recentWebsites.length > 0 || recentAttention.length > 0 || recentImageCaptions.length > 0) {
+      this.addTask({
+        id: `activity-summary-${Date.now()}`,
+        type: "activity-summary-generation",
+        execute: async () => {
+          const summary = await generateActivitySummary({
+            recentWebsites,
+            recentAttention,
+            imageAttention: recentImageCaptions,
+          });
+
+          await saveActivitySummary(summary);
+          console.debug("Activity summary generated and saved", { summary });
+        },
+      });
+    } else {
+      console.debug("No activity in the last minute to summarize");
+    }
+
+    // Clean up old activity summaries (older than 7 days)
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    const cutoffTime = now - SEVEN_DAYS_MS;
+    await deleteOldActivitySummaries(cutoffTime);
   }
 
   private addTask(task: Task) {

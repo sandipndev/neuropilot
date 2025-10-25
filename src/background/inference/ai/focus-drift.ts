@@ -44,28 +44,29 @@ export const detectFocusDrift = async (
     : '';
 
     const prompt = `
-  You are checking if the user's attention has changed from their previous topic.
+    You are performing focus analysis to check if the user's attention has shifted to a new topic from their previous topic.
 
-  Previous focus: ${previousFocus.focus_item}
-  Previous keywords: ${keywords.join(", ")}
+    Previous focus: ${previousFocus.focus_item}
+    Previous keywords: ${keywords.join(", ")}
 
-  Current attention:
-  ${attentionContent}
-  ${imageContent}
+    Current attention:
+    ${attentionContent}
+    ${imageContent}
 
-  ---\n\n
+    ---\n\n
 
-  Keep the order in context while returning inference.
+    Keep the order in context while returning inference.
 
-  Question:
-  Does the current attention clearly belong to a different subject (for example, moving from tech to cooking or fashion)?
-  Or is it still about the same general topic or subtopic?
+    Question:
+    Does the Current attention clearly belong to a different subject (for example, moving from tech to cooking or fashion)?
+    Or is it still about the same general topic or subtopic, and related concepts within the same domain?
+    Be sensitive to context - similar words might have different meanings in different contexts.
 
-  If it is even related or still part of the same domain then answer no (still focused). 
-  Otherwise, if you don't find a relation between the previous focus and current attention, then answer yes (shifted).
+    If it is even related or still part of the same domain then answer no (still focused). 
+    Otherwise, if you don't find a relation between the previous focus and current attention, then answer yes (shifted).
 
-  Answer in one word (yes/no) only, no reasoning.
-`;
+    Answer in one word (yes/no) only, no reasoning.
+  `;
 
   const response = await session.prompt(prompt);
   session.destroy();

@@ -47,7 +47,7 @@ export async function generatePulse(data: PulseGenerationData): Promise<string[]
   ${imageInsights}
 
   Create 5 diverse updates using these patterns:
-    1. Progress celebration: "You've spent Xh on [topic] - great progress!"
+    1. Progress celebration: "You've spent Xtime [X mins OR Xh, whichever is more appropriate] on [topic] - great progress!"
     2. Content reminder: "Remember: [quote first 60 chars from Key Quotes]..."
     3. Topic connection: "Connect [topic1] with [topic2] for deeper understanding"
     4. Resource count: "You've explored X resources - try practicing what you learned"

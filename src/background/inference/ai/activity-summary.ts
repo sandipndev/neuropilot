@@ -39,27 +39,27 @@ export async function generateActivitySummary(data: ActivitySummaryData): Promis
 
   const prompt = `Based on the following user activity data from the last minute, generate a 5-6 word third-person summary describing what the user is doing.
 
-Activity Data:
-Website Titles: ${websiteTitles || "None"}
-Website Summaries: ${websiteSummaries || "None"}
-Text Content Read: ${attentionText || "None"}
-Images Viewed: ${imageDescriptions || "None"}
+  Activity Data:
+  Website Titles: ${websiteTitles || "None"}
+  Website Summaries: ${websiteSummaries || "None"}
+  Text Content Read: ${attentionText || "None"}
+  Images Viewed: ${imageDescriptions || "None"}
 
-Examples of good summaries:
-- "You are reading about Hermione"
-- "You are learning React hooks"
-- "You are watching cooking tutorials"
-- "You are browsing tech news"
-- "You are researching climate change"
+  Examples of good summaries:
+  - "You are reading about Hermione"
+  - "You are learning React hooks"
+  - "You are watching cooking tutorials"
+  - "You are browsing tech news"
+  - "You are researching climate change"
 
-Requirements:
-- EXACTLY 5-6 words
-- Third person perspective starting with "You are" or "You're"
-- Specific and descriptive based on ACTUAL data above
-- No generic phrases
-- Casual, natural tone
+  Requirements:
+  - EXACTLY 5-6 words
+  - Third person perspective starting with "You are" or "You're"
+  - Specific and descriptive based on ACTUAL data above
+  - No generic phrases
+  - Casual, natural tone
 
-Return ONLY the summary text, nothing else.`;
+  Return ONLY the summary text, nothing else.`;
 
   try {
     const model = await getLanguageModel();

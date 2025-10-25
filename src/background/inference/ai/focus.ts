@@ -26,21 +26,25 @@ export const detectFocusArea = async (
 
   const prompt = `
   You are an attention analysis model. Based on the following reading sessions,
-  determine the user's current main focus area.
+  determine the user's primary (current) focus area.
 
   Each session represents what the user has been reading recently.
 
   Sessions:
   ---
-  ${combinedContent}${imageContent}
+  ${combinedContent}
+  ${imageContent}
   ---
 
-  Think about the most recent and dominant topic the user is focusing on.
-  Respond with only one or two words that best represent this topic.
-  Do not include punctuation, explanations, or any extra text.
+  Think about the most recent and dominant (prominent) topic or theme the user is focusing on.
+  
+  - Respond with only one or two words that best represent this topic. 
+  - If multiple topics exist, identify the most recent or dominant one
+  - Consider both explicit mentions and implied context.
+  - Do not include punctuation, explanations, or any extra text.
 
   If you cannot determine the user's current main focus area (probably because 
-  the user is not reading anything), return null.
+  the user is not reading anything), return "null"
   `;
 
   const focus = await session.prompt(prompt);
@@ -60,9 +64,11 @@ export const summarizeFocus = async (focus_keywords: string[]): Promise<string> 
 
   const prompt = `
   Reply in one or two words.
-  What is the greatest common factor between these:
+  What is the single greatest common factor between these:
 
   ${focus_keywords.join(", ")}
+
+  Note: Be specific enough to be meaningful. Consider both direct and indirect relationships. If no clear commonality exists, identify the most significant or dominant term.
   `;
 
   const focus = await session.prompt(prompt);

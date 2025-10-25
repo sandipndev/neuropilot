@@ -3,7 +3,7 @@
  * Retrieves quiz questions generated from user's learning activity
  */
 
-import { getAllQuizQuestions, QuizQuestion } from "../../db/models/quiz-questions";
+import { getAllQuizQuestions, type QuizQuestion } from "../../db/models/quiz-questions";
 
 /**
  * Get all available quiz questions

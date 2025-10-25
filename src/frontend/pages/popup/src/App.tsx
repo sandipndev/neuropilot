@@ -3,6 +3,7 @@ import { TreeAnimationSection } from "./components/TreeAnimationSection";
 import { RefresherButton } from "./components/RefresherButton";
 import { getCurrentFocusData, getFocusHistory } from "./api/focus";
 import { getWinsData } from "./api/wins";
+import { getPomodoroState, togglePomodoro } from "./api/pomodoro";
 import { calculateTotalTime, type FocusWithParsedData } from "neuropilot-api";
 import type { PomodoroState } from "./types/pomodoro";
 import type { WinItem } from "./types/wins";
@@ -15,10 +16,13 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [pomodoroState, setPomodoroState] = useState<PomodoroState>({
+    id: "current",
     isActive: false,
     remainingTime: 1500, // 25 minutes in seconds
     state: "idle",
+    startTime: null,
     totalPomodoros: 0,
+    lastUpdated: Date.now(),
   });
   const [formattedFocusTime, setFormattedFocusTime] = useState("00:00:00");
 
@@ -48,6 +52,16 @@ function App() {
         setFocusHistory(history);
         setWins(winsData);
 
+        // Fetch pomodoro state separately with error handling
+        try {
+          const pomodoro = await getPomodoroState();
+          if (pomodoro) {
+            setPomodoroState(pomodoro);
+          }
+        } catch (pomodoroError) {
+          console.error("Error fetching pomodoro state:", pomodoroError);
+        }
+
         // Check if currentFocus was updated within the last minute
         if (currentFocus) {
           updateTimeSpent(currentFocus);
@@ -55,12 +69,11 @@ function App() {
           const isActive = currentFocus.time_spent[currentFocus.time_spent.length - 1].stop == null;
 
           if (isActive) {
-            console.log(`Updating... ${currentFocus}`)
+            console.log(`Updating... ${currentFocus}`);
             // update the time spent
             interval = setInterval(() => {
               updateTimeSpent(currentFocus);
             }, 1000);
-
           }
         }
       } catch (error) {
@@ -76,57 +89,35 @@ function App() {
       if (interval) {
         clearInterval(interval);
       }
-    }
+    };
   }, []);
 
-  // Timer countdown effect
+  // Poll pomodoro state every second
   useEffect(() => {
-    if (!pomodoroState.isActive || pomodoroState.remainingTime <= 0) {
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setPomodoroState((prev) => {
-        const newRemainingTime = prev.remainingTime - 1;
-
-        // Timer completed
-        if (newRemainingTime <= 0) {
-          return {
-            ...prev,
-            remainingTime: 0,
-            isActive: false,
-          };
+    console.log(`pomodoro...`)
+    const interval = setInterval(async () => {
+      try {
+        const state = await getPomodoroState();
+        if (state) {
+          setPomodoroState(state);
         }
-
-        return {
-          ...prev,
-          remainingTime: newRemainingTime,
-        };
-      });
+      } catch (error) {
+        console.error("Error fetching pomodoro state:", error);
+      }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [pomodoroState.isActive, pomodoroState.remainingTime]);
+  }, []);
 
-  const handlePomodoroToggle = useCallback(() => {
-    setPomodoroState((prev) => {
-      // If timer is at 0, reset to 25 minutes
-      if (prev.remainingTime === 0) {
-        return {
-          ...prev,
-          isActive: true,
-          remainingTime: 1500, // Reset to 25 minutes
-          state: "focus",
-        };
+  const handlePomodoroToggle = useCallback(async () => {
+    try {
+      const newState = await togglePomodoro();
+      if (newState) {
+        setPomodoroState(newState);
       }
-
-      // Toggle active state
-      return {
-        ...prev,
-        isActive: !prev.isActive,
-        state: prev.isActive ? "idle" : "focus",
-      };
-    });
+    } catch (error) {
+      console.error("Error toggling pomodoro:", error);
+    }
   }, []);
 
   const getWinIcon = useCallback((type: string) => {
@@ -143,12 +134,15 @@ function App() {
   }, []);
 
   const formattedPomodoroTime = useMemo(() => {
+    if (!pomodoroState) {
+      return "25:00";
+    }
     const minutes = Math.floor(pomodoroState.remainingTime / 60);
     const seconds = pomodoroState.remainingTime % 60;
     return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-  }, [pomodoroState.remainingTime]);
+  }, [pomodoroState]);
 
-  console.log(isLoading, focusData);
+  console.log(isLoading, focusData, pomodoroState, formattedPomodoroTime);
   if (isLoading) {
     return (
       <div className="w-[400px] h-[600px] flex items-center justify-center bg-linear-to-br from-gray-50 to-gray-100">

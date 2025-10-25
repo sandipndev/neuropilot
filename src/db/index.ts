@@ -16,8 +16,13 @@ export async function initDB(dbName = DB_NAME, dbVersion = DB_VERSION): Promise<
     const request = indexedDB.open(dbName, dbVersion);
 
     request.onerror = (err) => {
-      console.log(err)
-      reject(new Error("Failed to open database"));
+      console.error("Database error:", err);
+      console.error("Request error:", request.error);
+      reject(new Error(`Failed to open database: ${request.error?.message || 'Unknown error'}`));
+    };
+
+    request.onblocked = () => {
+      console.warn("Database upgrade blocked. Please close all other tabs using this extension.");
     };
 
     request.onsuccess = () => {
@@ -86,6 +91,13 @@ export async function initDB(dbName = DB_NAME, dbVersion = DB_VERSION): Promise<
           keyPath: "id",
         });
         activitySummaryStore.createIndex("timestamp", "timestamp", { unique: false });
+      }
+
+      // Pomodoro table
+      if (!db.objectStoreNames.contains("Pomodoro")) {
+        db.createObjectStore("Pomodoro", {
+          keyPath: "id",
+        });
       }
     };
   });

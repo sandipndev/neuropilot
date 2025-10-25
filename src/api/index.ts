@@ -1,6 +1,8 @@
 // Export all mutations
 export * from './mutations/pomodoro-start'
 export * from './mutations/pomodoro-stop'
+export * from './mutations/pomodoro-reset'
+export * from './mutations/pomodoro-tick'
 export * from './mutations/send-chat-message'
 export * from './mutations/set-user-name'
 
@@ -16,3 +18,6 @@ export * from './queries/recent-activity'
 export * from './queries/top-activities'
 export * from './queries/user-name'
 export * from './queries/wins'
+
+// Export types
+export type { PomodoroRecord } from '../db/models/pomodoro'

@@ -3,7 +3,7 @@
  */
 
 const DB_NAME = "NeuroPilotDB";
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 
 let dbInstance: IDBDatabase | null = null;
 
@@ -69,6 +69,14 @@ export async function initDB(): Promise<IDBDatabase> {
         });
         imageCaptionStore.createIndex("image_src", "image_src", { unique: false });
         imageCaptionStore.createIndex("timestamp", "timestamp", { unique: false });
+      }
+
+      // QuizQuestions table
+      if (!db.objectStoreNames.contains("QuizQuestions")) {
+        const quizStore = db.createObjectStore("QuizQuestions", {
+          keyPath: "id",
+        });
+        quizStore.createIndex("timestamp", "timestamp", { unique: false });
       }
     };
   });

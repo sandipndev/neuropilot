@@ -8,11 +8,14 @@ import { summarizeWebsiteActivity } from "./ai/website-summarizer";
 import { detectFocusArea, summarizeFocus } from "./ai/focus";
 import { detectFocusDrift } from "./ai/focus-drift";
 import { generatePulse } from "./ai/pulse";
+import { generateQuizQuestions } from "./ai/quiz-questions";
 import { WebsiteActivityWithAttention } from "../../db/utils/activity";
 import { hashString } from "../../db/utils/hash";
 import { getFocusData } from "../../api/queries/focus";
 import { savePulses } from "../../db/models/pulse";
+import { saveQuizQuestions } from "../../db/models/quiz-questions";
 import { getPulses } from "../../api/queries/pulse";
+import { getQuizQuestions } from "../../api/queries/quiz-questions";
 import { getCachedActivityUserAttentionImageCaptions } from "../../api/queries/image-captions";
 import { deleteImageCaption } from "../../db/models/image-captions";
 
@@ -63,6 +66,13 @@ class InferenceScheduler {
       type: "schedule-pulse-generation",
       execute: async () => {
         await this.schedulePulseGeneration();
+      },
+    });
+    this.addTask({
+      id: `schedule-quiz-generation-${Date.now()}`,
+      type: "schedule-quiz-generation",
+      execute: async () => {
+        await this.scheduleQuizGeneration();
       },
     });
     this.addTask({
@@ -125,9 +135,15 @@ class InferenceScheduler {
           type: "website-summarization",
           execute: async () => {
             const websiteImageCaptions = allImageCaptions.filter(
-              (img) => img.image_src.startsWith(website.url) || img.image_src.includes(new URL(website.url).hostname)
+              (img) =>
+                img.image_src.startsWith(website.url) ||
+                img.image_src.includes(new URL(website.url).hostname)
             );
-            const summary = await summarizeWebsiteActivity(website, attentionRecords, websiteImageCaptions);
+            const summary = await summarizeWebsiteActivity(
+              website,
+              attentionRecords,
+              websiteImageCaptions
+            );
             await saveWebsiteVisit({
               ...website,
               summary,
@@ -258,13 +274,50 @@ class InferenceScheduler {
     }
   }
 
+  private async scheduleQuizGeneration() {
+    console.debug("Scheduling quiz generation");
+
+    // Get focus data
+    const focusRecords = await getFocusData();
+
+    // Get recent website activity with attention
+    const websites = await getActivityWebsitesVisited();
+    const recentWebsites: WebsiteActivityWithAttention[] = (
+      await Promise.all(
+        websites.map(async (website) => {
+          const attentionRecords = await getActivityUserAttentionByWebsite(website.id);
+          return attentionRecords.length > 0
+            ? ({ ...website, attentionRecords } as WebsiteActivityWithAttention)
+            : null;
+        })
+      )
+    ).filter((x): x is WebsiteActivityWithAttention => Boolean(x));
+
+    const allImageCaptions = await getCachedActivityUserAttentionImageCaptions();
+    const recentImageCaptions = allImageCaptions.slice(0, 10);
+
+    // Only generate quiz if there's data to work with
+    if (focusRecords.length > 0 || recentWebsites.length > 0) {
+      const quizQuestions = await generateQuizQuestions({
+        focusRecords,
+        recentWebsites,
+        imageAttention: recentImageCaptions,
+      });
+
+      await saveQuizQuestions(quizQuestions);
+      console.debug("Quiz questions generated and saved", { quizQuestions });
+    } else {
+      console.debug("No data available for quiz generation");
+    }
+  }
+
   private async scheduleImageCaptionCleanup() {
     console.debug("Scheduling image caption cleanup");
     const captions = await getCachedActivityUserAttentionImageCaptions();
-    
+
     const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
     const now = Date.now();
-    
+
     for (const caption of captions) {
       const age = now - caption.timestamp;
       if (age > SEVEN_DAYS_MS) {
@@ -278,8 +331,9 @@ class InferenceScheduler {
     console.debug("Logging all focus records");
     const focusRecords = await getFocusData();
     const pulses = await getPulses();
+    const quizQuestions = await getQuizQuestions();
 
-    console.info({ pulses, focusRecords });
+    console.info({ pulses, focusRecords, quizQuestions });
   }
 
   private addTask(task: Task) {

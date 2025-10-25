@@ -3,7 +3,7 @@
  */
 
 const DB_NAME = "NeuroPilotDB";
-const DB_VERSION = 8;
+const DB_VERSION = 9;
 
 let dbInstance: IDBDatabase | null = null;
 
@@ -18,7 +18,7 @@ export async function initDB(dbName = DB_NAME, dbVersion = DB_VERSION): Promise<
     request.onerror = (err) => {
       console.error("Database error:", err);
       console.error("Request error:", request.error);
-      reject(new Error(`Failed to open database: ${request.error?.message || 'Unknown error'}`));
+      reject(new Error(`Failed to open database: ${request.error?.message || "Unknown error"}`));
     };
 
     request.onblocked = () => {
@@ -98,6 +98,15 @@ export async function initDB(dbName = DB_NAME, dbVersion = DB_VERSION): Promise<
         db.createObjectStore("Pomodoro", {
           keyPath: "id",
         });
+      }
+
+      // PastWins table
+      if (!db.objectStoreNames.contains("PastWins")) {
+        const pastWinsStore = db.createObjectStore("PastWins", {
+          keyPath: "id",
+        });
+        pastWinsStore.createIndex("recorded_at", "recorded_at", { unique: false });
+        pastWinsStore.createIndex("focus_item", "focus_item", { unique: false });
       }
     };
   });

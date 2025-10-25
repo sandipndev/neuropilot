@@ -10,6 +10,7 @@ import { detectFocusDrift } from "./ai/focus-drift";
 import { generatePulse } from "./ai/pulse";
 import { generateQuizQuestions } from "./ai/quiz-questions";
 import { generateActivitySummary } from "./ai/activity-summary";
+import { generateWins } from "./ai/wins";
 import { WebsiteActivityWithAttention } from "../../db/utils/activity";
 import { hashString } from "../../db/utils/hash";
 import { getFocusData } from "../../api/queries/focus";
@@ -19,6 +20,7 @@ import { saveActivitySummary, deleteOldActivitySummaries } from "../../db/models
 import { getPulses } from "../../api/queries/pulse";
 import { getQuizQuestions } from "../../api/queries/quiz-questions";
 import { getActivitySummaries } from "../../api/queries/activity-summary";
+import { getWins } from "../../api/queries/wins";
 import { getCachedActivityUserAttentionImageCaptions } from "../../api/queries/image-captions";
 import { deleteImageCaption } from "../../db/models/image-captions";
 import { getActivityUserAttention } from "../../db/models/activity-user-attention";
@@ -84,6 +86,13 @@ class InferenceScheduler {
       type: "schedule-quiz-generation",
       execute: async () => {
         await this.scheduleQuizGeneration();
+      },
+    });
+    this.addTask({
+      id: `schedule-wins-generation-${Date.now()}`,
+      type: "schedule-wins-generation",
+      execute: async () => {
+        await this.scheduleWinsGeneration();
       },
     });
     this.addTask({
@@ -326,6 +335,18 @@ class InferenceScheduler {
     }
   }
 
+  private async scheduleWinsGeneration() {
+    console.debug("Scheduling wins generation");
+
+    // Generate wins from top focus items (clears and saves top 3)
+    const result = await generateWins();
+
+    console.debug("Wins generation completed", {
+      winsCount: result.wins.length,
+      updated: result.updated,
+    });
+  }
+
   private async scheduleImageCaptionCleanup() {
     console.debug("Scheduling image caption cleanup");
     const captions = await getCachedActivityUserAttentionImageCaptions();
@@ -348,8 +369,9 @@ class InferenceScheduler {
     const pulses = await getPulses();
     const quizQuestions = await getQuizQuestions();
     const activitySummaries = await getActivitySummaries();
+    const wins = await getWins();
 
-    console.info({ pulses, focusRecords, quizQuestions, activitySummaries });
+    console.info({ pulses, focusRecords, quizQuestions, activitySummaries, wins });
   }
 
   private async scheduleActivitySummaryGeneration() {

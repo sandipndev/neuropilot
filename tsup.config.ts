@@ -86,10 +86,14 @@ export default defineConfig({
           let targetPath: string;
 
           // assert it's index.html
-          assert(itemName === 'index.html', `Expected index.html, got ${itemName}`);
+          // assert(itemName === 'index.html', `Expected index.html, got ${itemName}`);
 
 
-          targetPath = `${targetDir}/${pageName}.html`;
+          if (itemName === 'index.html'){
+            targetPath = `${targetDir}/${pageName}.html`;
+          }else{
+            targetPath = `${targetDir}/${itemName}`;
+          }
           console.log(`  ✓ Copying ${itemName} to ${targetPath}`);
 
           copyFileSync(sourcePath, targetPath);

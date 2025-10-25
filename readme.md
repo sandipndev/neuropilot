@@ -1,147 +1,29 @@
-#### NeuroPilot — your AI co-pilot for focus
+# NeuroPilot
+> Your AI co-pilot for focus
 
-- Focus. Learn. Remember. 🚀
-- Turns chaotic browsing into mindful learning
-- Tracks what you read, senses drift, nudges you back
-- Builds your Knowledge Garden with recall mini-games
+NeuroPilot helps you stay focused and remember what you explore online. It quietly follows what you read or look at, understands where your attention lingers, and captures the themes you’ve been learning about. When your mind starts to wander, it offers small, friendly nudges or short recall questions to bring you back. Over time, NeuroPilot builds a simple trail of your interests and learning progress - turning scattered browsing into a clear, connected journey of ideas.
 
-### Architecture
+## Features
 
-```
-Background
-====================================
-BACKEND
+User Activity:
+- Track what the user is looking/reading about
+- If image, generate caption
 
-Event Triggered:
-- Data Extraction
-- Feature Extration
-- Time Series -> IndexedDB
-
-[BG] Activity Tracking
-[BG] Garbage Collector
-[BG] Last 10 min no activity = auto pause focus
-
-Inference Layer (background AI processes, Gemini Models):
-- [BG] Website summary
-- [BG] Focus detection
-  -> Focus Shift detection
-- [BG] Quiz generation
-- [BG] Pulse generation
-====================================
-
-.......... via the persistence layer [for time series/bg data] (IndexedDB)
-.......... via the persistence layer [for Settings and Key/value] (Local Storage)
-
-Foreground
-====================================
-API Layer:
-- Queries/Mutation for serving the frontend
-
-FRONTEND
-- Extension: Popup
-- Extension: Fullpage
-====================================
-```
-
-### DB Tables
-ActivityWebsitesVisited:
-- id
-- timestamp
-- url
-- title
-- metadata
-- summary
-- opened_time
-- closed_time
-- active_time
-
-ActivityUserAttention:
-- id
-- website_id
-- timestamp
-- text_content
-
-// Runs every 20s for the last 20s UserAttention
-AttentionSummaries:
-- id
-- timestamp
-- summary
-
-ChatMessages:
-- id
-- time
-- message: JSON
-
-QuizQuestions:
-- id
-- timestamp
-- question
-- option_1
-- option_2
-- is_answered
-- correct_option: 1 | 2
-
-Pulse:
-- id
-- message
+Attention:
+- We track activity to understand sustained attention on an image/readable text
 
 Focus:
-- id
-- focus_item: String // should be very small - 1/2 words
-- keywords: String[]
-- time_spent: Array<{
-  start: Timestamp
-  stop: Timestamp
-}>
+- One or two worded broad classification about the Attention over a longer period of time
 
-PastWeeksFocus:
-- id
-- focus_item: String
-- total_time_spent: Int
+Focus Drift:
+- Checking if new Attention info is related to one's previous Focus
 
-Wins: // Top 3 all time
-- id
-- focus_item: String
-- total_time_spent: Int
+Attention Summary:
+- Summary of accumulation of Attention over a small period of time
 
-### Local Storage Keys
-- User Name
-- Attention Time: 0.5s
-- Focus Time: 5 minute
-- Paused
+Pulse:
+- Short personalized learning progress updates to nudge user to stay focused
 
-### API Layer
-- mutation setUserName(name: String)
-- query getUserName()
-
-- query primeActivity {
-  state: PrimeActivityState -> "START_FOCUS" | "IN_SESSION" | "WIND_DOWN",
-  context: {
-    focus: [ Focus ],
-    totalFocusToday: Int,
-  }
-}
-
-type Focus {
-  id
-  focusItem
-  timeSpent: [ { start, stop }]
-}
-
-- query topActivities() -> Focus[]
-
-- mutation sendChatMessage(message: String) 
-- query chatMessages() -> ChatMessage[]
-
-- query quizQuestions() -> Quiz[]
-
-- query pulse() -> Pulse[]
-
-- query focus() -> Focus[]
-
-- mutation pomodoroStart()
-- mutation pomodoroStop()
-- query pomodoro()
-
-- query recentActivity() -> Activity[]
-- query wins() -> PastFocus[]
+Quiz:
+- Questions based on Attention and Focus
+- 2 options / one correct

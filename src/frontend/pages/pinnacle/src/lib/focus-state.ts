@@ -1,0 +1,71 @@
+// Focus state determination logic
+
+import type { FocusWithParsedData, FocusState } from '../types';
+import { isNightTime } from './time';
+
+// Constants for wind-down logic
+const WIND_DOWN_THRESHOLD = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
+
+/**
+ * Calculate total daily focus time (last 24 hours)
+ * @param focusHistory - Array of focus sessions
+ * @returns Total time in milliseconds
+ */
+export function calculateDailyFocusTime(focusHistory: FocusWithParsedData[]): number {
+  const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+  return focusHistory
+    .filter((f) => f.last_updated >= oneDayAgo)
+    .reduce((sum, f) => sum + f.total_time, 0);
+}
+
+/**
+ * Determine the current focus state based on activity and time
+ * @param currentFocus - Current active focus session or null
+ * @param focusHistory - Array of all focus sessions
+ * @returns The current focus state
+ */
+export function determineFocusState(
+  currentFocus: FocusWithParsedData | null,
+  focusHistory: FocusWithParsedData[]
+): FocusState {
+  // If no current focus and no history, show no-focus state
+  if (!currentFocus && focusHistory.length === 0) {
+    return 'no-focus';
+  }
+
+  // Calculate total daily focus time
+  const totalDailyFocusTime = calculateDailyFocusTime(focusHistory);
+
+  // Check if it's nighttime (after 8 PM)
+  const nightTime = isNightTime();
+
+  // If user has focused for 6+ hours today and it's nighttime, suggest wind-down
+  if (totalDailyFocusTime >= WIND_DOWN_THRESHOLD && nightTime) {
+    return 'wind-down';
+  }
+
+  // Otherwise, show active focus state
+  return 'active-focus';
+}
+
+/**
+ * Get the elapsed time for the current focus session
+ * @param currentFocus - Current active focus session
+ * @returns Elapsed time in milliseconds, or 0 if no active session
+ */
+export function getCurrentFocusElapsedTime(currentFocus: FocusWithParsedData | null): number {
+  if (!currentFocus || currentFocus.time_spent.length === 0) {
+    return 0;
+  }
+
+  // Get the most recent time entry
+  const latestEntry = currentFocus.time_spent[currentFocus.time_spent.length - 1];
+
+  // If there's an active session (stop is null), calculate elapsed time
+  if (latestEntry.stop === null) {
+    return Date.now() - latestEntry.start;
+  }
+
+  // Otherwise, return the total time
+  return currentFocus.total_time;
+}

@@ -6,8 +6,8 @@
 import {
   getAllActivitySummaries,
   getRecentActivitySummaries,
-  ActivitySummary,
 } from "../../db/models/activity-summary";
+import type { ActivitySummary } from "../../db/models/activity-summary";
 
 /**
  * Get all activity summaries

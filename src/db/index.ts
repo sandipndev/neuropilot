@@ -3,7 +3,7 @@
  */
 
 const DB_NAME = "NeuroPilotDB";
-const DB_VERSION = 9;
+const DB_VERSION = 10;
 
 let dbInstance: IDBDatabase | null = null;
 
@@ -107,6 +107,15 @@ export async function initDB(dbName = DB_NAME, dbVersion = DB_VERSION): Promise<
         });
         pastWinsStore.createIndex("recorded_at", "recorded_at", { unique: false });
         pastWinsStore.createIndex("focus_item", "focus_item", { unique: false });
+      }
+
+      // ChatMessages table
+      if (!db.objectStoreNames.contains("ChatMessages")) {
+        const chatStore = db.createObjectStore("ChatMessages", {
+          keyPath: "id",
+        });
+        chatStore.createIndex("timestamp", "timestamp", { unique: false });
+        chatStore.createIndex("role", "role", { unique: false });
       }
     };
   });

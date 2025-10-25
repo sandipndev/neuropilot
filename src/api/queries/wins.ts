@@ -51,6 +51,7 @@ export async function getWinsByFocusItem(focusItem: string): Promise<WinWithPars
  */
 export async function getTopWins(limit: number = 10): Promise<WinWithParsedData[]> {
   const allWins = await getWins();
+  console.log('[API] allWins', allWins)
 
   // Sort by time_spent descending and take top N
   return allWins.sort((a, b) => b.time_spent - a.time_spent).slice(0, limit);

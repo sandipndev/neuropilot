@@ -10,7 +10,6 @@ interface TreeAnimationSectionProps {
 export function TreeAnimationSection({ totalFocusTime }: TreeAnimationSectionProps) {
   const growthStage = getTreeGrowthStage(totalFocusTime);
   const [runtimeLoaded, setRuntimeLoaded] = useState(false);
-  console.log(growthStage);
 
   // Configure Rive to use local WASM files from extension
   useEffect(() => {
@@ -39,16 +38,13 @@ export function TreeAnimationSection({ totalFocusTime }: TreeAnimationSectionPro
 
     try {
       const stateMachineNames = rive.stateMachineNames;
-      console.log(stateMachineNames);
 
       if (stateMachineNames && stateMachineNames.length > 0) {
         const inputs = rive.stateMachineInputs(stateMachineNames[0]);
-        console.log(inputs);
 
         if (inputs && inputs.length > 0) {
           // Find the input named "input"
           const inputControl = inputs.find((input) => input.name === "input");
-          console.log(inputControl);
 
           if (inputControl) {
             // Map growth stage (0-1) to integer value (0-3 for seed/sapling/growing/mature)
@@ -79,7 +75,7 @@ export function TreeAnimationSection({ totalFocusTime }: TreeAnimationSectionPro
           animation: "sway 8s ease-in-out infinite",
         }}
       >
-        <div className="w-full h-full scale-150 opacity-20">
+        <div className="w-full h-full scale-150 -translate-x-[15%] bottom-0 opacity-20">
           <RiveComponent className="w-full h-full" />
         </div>
       </div>

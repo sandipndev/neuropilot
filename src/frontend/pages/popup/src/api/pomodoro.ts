@@ -15,8 +15,6 @@ export async function getPomodoroState(): Promise<PomodoroState> {
       type: 'GET_POMODORO_STATE'
     });
 
-    console.log('responsexxx18881: ' ,response)
-
     if (!response || !response.success || !response.data) {
       throw new Error(response?.error || 'Failed to get pomodoro state');
     }

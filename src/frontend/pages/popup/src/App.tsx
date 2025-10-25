@@ -47,7 +47,6 @@ function App() {
           getFocusHistory(),
           getWinsData(),
         ]);
-        console.log(currentFocus, history, winsData);
         setFocusData(currentFocus);
         setFocusHistory(history);
         setWins(winsData);
@@ -69,7 +68,6 @@ function App() {
           const isActive = currentFocus.time_spent[currentFocus.time_spent.length - 1].stop == null;
 
           if (isActive) {
-            console.log(`Updating... ${currentFocus}`);
             // update the time spent
             interval = setInterval(() => {
               updateTimeSpent(currentFocus);
@@ -142,7 +140,6 @@ function App() {
     return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   }, [pomodoroState]);
 
-  console.log(isLoading, focusData, pomodoroState, formattedPomodoroTime);
   if (isLoading) {
     return (
       <div className="w-[400px] h-[600px] flex items-center justify-center bg-linear-to-br from-gray-50 to-gray-100">
@@ -251,9 +248,7 @@ function App() {
                   <span className="font-bold text-gray-900 text-sm">
                     {win.focusItem
                       .split(" ")
-                      .map((w: string) => w[0])
                       .join("")
-                      .slice(0, 3)
                       .toUpperCase()}
                   </span>
                   <span className="text-gray-500 font-mono text-xs">

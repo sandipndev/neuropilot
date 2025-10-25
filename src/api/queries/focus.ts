@@ -48,7 +48,7 @@ export async function getFocusData(): Promise<FocusWithParsedData[]> {
 export async function getCurrentFocus(): Promise<FocusWithParsedData | null> {
   const focus = await getActiveFocus();
 
-  console.log(`[API] Current focus: ${focus}`)
+  console.log(`[API] Current focus: `, focus)
 
   if (!focus) {
     return null;

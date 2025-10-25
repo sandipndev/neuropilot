@@ -5,7 +5,7 @@
   "homepage": "https://github.com/sandipndev/neuropilot",
   "scripts": {
     "dev": "tsup --watch",
-    "build": "pnpm --filter './src/frontend/pages/*' run build && tsup && cp src/manifest.json dist/",
+    "build": "pnpm --filter './src/frontend/pages/*' run build && tsup && cp -r src/manifest.json src/assets dist/",
     "start": "web-ext run --source-dir dist --target chromium",
     "check": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx && prettier --check src",

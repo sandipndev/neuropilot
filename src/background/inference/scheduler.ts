@@ -13,6 +13,8 @@ import { hashString } from "../../db/utils/hash";
 import { getFocusData } from "../../api/queries/focus";
 import { savePulses } from "../../db/models/pulse";
 import { getPulses } from "../../api/queries/pulse";
+import { getCachedActivityUserAttentionImageCaptions } from "../../api/queries/image-captions";
+import { deleteImageCaption } from "../../db/models/image-captions";
 
 type Task = {
   id: string;
@@ -64,6 +66,13 @@ class InferenceScheduler {
       },
     });
     this.addTask({
+      id: `schedule-image-caption-cleanup-${Date.now()}`,
+      type: "schedule-image-caption-cleanup",
+      execute: async () => {
+        await this.scheduleImageCaptionCleanup();
+      },
+    });
+    this.addTask({
       id: `log-all-focus-${Date.now()}`,
       type: "log-all-focus",
       execute: async () => {
@@ -103,6 +112,7 @@ class InferenceScheduler {
   private async scheduleWebsiteSummarization() {
     console.debug("Scheduling website summarization");
     const websites = await getActivityWebsitesVisited();
+    const allImageCaptions = await getCachedActivityUserAttentionImageCaptions();
 
     for (const website of websites) {
       const attentionRecords = await getActivityUserAttentionByWebsite(website.id);
@@ -114,7 +124,10 @@ class InferenceScheduler {
           id: `summarize-${website.id}`,
           type: "website-summarization",
           execute: async () => {
-            const summary = await summarizeWebsiteActivity(website, attentionRecords);
+            const websiteImageCaptions = allImageCaptions.filter(
+              (img) => img.image_src.startsWith(website.url) || img.image_src.includes(new URL(website.url).hostname)
+            );
+            const summary = await summarizeWebsiteActivity(website, attentionRecords, websiteImageCaptions);
             await saveWebsiteVisit({
               ...website,
               summary,
@@ -154,14 +167,17 @@ class InferenceScheduler {
       )
     ).filter((x): x is WebsiteActivityWithAttention => Boolean(x));
 
+    const allImageCaptions = await getCachedActivityUserAttentionImageCaptions();
+    const recentImageCaptions = allImageCaptions.filter((img) => img.timestamp >= since);
+
     // === Task 2: Detect focus drift ===
     if (previousFocus) {
-      focusDrifted = await detectFocusDrift(previousFocus, activitySince);
+      focusDrifted = await detectFocusDrift(previousFocus, activitySince, recentImageCaptions);
     }
 
     // === Task 3: Handle no drift (continue or create focus) ===
     if (!focusDrifted) {
-      const updatedSlidingWindowFocus = await detectFocusArea(activitySince);
+      const updatedSlidingWindowFocus = await detectFocusArea(activitySince, recentImageCaptions);
       if (updatedSlidingWindowFocus) {
         const slidingWindowKeywords = previousFocus
           ? parseKeywords(previousFocus)
@@ -224,17 +240,37 @@ class InferenceScheduler {
       )
     ).filter((x): x is WebsiteActivityWithAttention => Boolean(x));
 
+    const allImageCaptions = await getCachedActivityUserAttentionImageCaptions();
+    const recentImageCaptions = allImageCaptions.slice(0, 10);
+
     // Only generate pulse if there's data to work with
     if (focusRecords.length > 0 || recentWebsites.length > 0) {
       const pulseMessages = await generatePulse({
         focusRecords,
         recentWebsites,
+        imageAttention: recentImageCaptions,
       });
 
       await savePulses(pulseMessages);
       console.debug("Pulse generated and saved", { pulseMessages });
     } else {
       console.debug("No data available for pulse generation");
+    }
+  }
+
+  private async scheduleImageCaptionCleanup() {
+    console.debug("Scheduling image caption cleanup");
+    const captions = await getCachedActivityUserAttentionImageCaptions();
+    
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    
+    for (const caption of captions) {
+      const age = now - caption.timestamp;
+      if (age > SEVEN_DAYS_MS) {
+        await deleteImageCaption(caption.image_src);
+        console.debug(`Deleted old image caption: ${caption.image_src}`);
+      }
     }
   }
 

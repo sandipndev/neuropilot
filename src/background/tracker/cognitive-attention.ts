@@ -54,6 +54,9 @@ interface TrackerState {
   lastActivity: number;
   currentTopElement: Element | null;
   topElementStartTime: number | null;
+  hoveredImage: HTMLImageElement | null;
+  imageHoverStartTime: number | null;
+  lastCaptionedImage: string | null;
 }
 
 interface TextElement {
@@ -101,6 +104,7 @@ class CognitiveAttentionTracker {
   private handleScroll: () => void;
   private handleVisibilityChange: () => void;
   private lastBroadcastedElement: Element | null = null;
+  private imageHoverCheckInterval?: ReturnType<typeof setInterval>;
 
   constructor(config: CognitiveAttentionConfig = {}) {
     this.onUpdateCallback = config.onUpdate;
@@ -178,6 +182,9 @@ class CognitiveAttentionTracker {
       lastActivity: Date.now(),
       currentTopElement: null,
       topElementStartTime: null,
+      hoveredImage: null,
+      imageHoverStartTime: null,
+      lastCaptionedImage: null,
     };
 
     this.textElements = [];
@@ -232,6 +239,10 @@ class CognitiveAttentionTracker {
       this.calculateAttention();
     }, this.config.updateInterval);
 
+    this.imageHoverCheckInterval = setInterval(() => {
+      this.checkImageHover();
+    }, 100);
+
     if (this.config.debugMode) {
       this.createDebugOverlay();
     }
@@ -241,6 +252,7 @@ class CognitiveAttentionTracker {
 
   destroy(): void {
     clearInterval(this.trackingInterval);
+    clearInterval(this.imageHoverCheckInterval);
     if (this.scrollTimeout) clearTimeout(this.scrollTimeout);
 
     document.removeEventListener("mousemove", this.handleMouseMove);
@@ -249,6 +261,9 @@ class CognitiveAttentionTracker {
 
     const overlay = document.getElementById("cog-attention-debug");
     if (overlay) overlay.remove();
+    
+    const captionOverlay = document.getElementById("image-caption-overlay");
+    if (captionOverlay) captionOverlay.remove();
   }
 
   private discoverTextElements(): void {
@@ -990,6 +1005,233 @@ class CognitiveAttentionTracker {
         }
       }
     }
+  }
+
+  private checkImageHover(): void {
+    const hoveredElement = document.elementFromPoint(
+      this.state.mousePosition.x,
+      this.state.mousePosition.y
+    );
+
+    let imageElement: HTMLImageElement | null = null;
+    if (hoveredElement instanceof HTMLImageElement) {
+      imageElement = hoveredElement;
+    } else if (hoveredElement) {
+      const parentImg = hoveredElement.closest("img");
+      if (parentImg instanceof HTMLImageElement) {
+        imageElement = parentImg;
+      }
+    }
+
+    if (imageElement && imageElement.complete && imageElement.naturalWidth > 0) {
+      if (this.state.hoveredImage !== imageElement) {
+        this.state.hoveredImage = imageElement;
+        this.state.imageHoverStartTime = Date.now();
+        this.showImageHoverHighlight(imageElement);
+      } else {
+        const hoverDuration = Date.now() - (this.state.imageHoverStartTime || 0);
+        this.updateImageHoverProgress(imageElement, hoverDuration);
+        
+        if (
+          hoverDuration >= 1500 &&
+          this.state.lastCaptionedImage !== imageElement.src
+        ) {
+          this.state.lastCaptionedImage = imageElement.src;
+          this.generateImageCaption(imageElement);
+        }
+      }
+    } else {
+      if (this.state.hoveredImage) {
+        this.state.hoveredImage = null;
+        this.state.imageHoverStartTime = null;
+        this.hideImageHoverHighlight();
+        this.hideImageCaptionOverlay();
+      }
+    }
+  }
+
+  private showImageHoverHighlight(image: HTMLImageElement): void {
+    this.hideImageHoverHighlight();
+
+    const bounds = image.getBoundingClientRect();
+    
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "image-hover-highlight image-hover-svg");
+    svg.style.cssText = `
+      position: fixed;
+      left: ${bounds.left}px;
+      top: ${bounds.top}px;
+      width: ${bounds.width}px;
+      height: ${bounds.height}px;
+      pointer-events: none;
+      z-index: 999997;
+    `;
+
+    // Calculate perimeter for the progress stroke
+    const width = bounds.width;
+    const height = bounds.height;
+    const perimeter = 2 * (width + height);
+
+    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rect.setAttribute("x", "0.5");
+    rect.setAttribute("y", "0.5");
+    rect.setAttribute("width", (width - 1).toString());
+    rect.setAttribute("height", (height - 1).toString());
+    rect.setAttribute("fill", "none");
+    rect.setAttribute("stroke", "#bfff00");
+    rect.setAttribute("stroke-width", "1");
+    rect.setAttribute("stroke-dasharray", perimeter.toString());
+    rect.setAttribute("stroke-dashoffset", perimeter.toString());
+    rect.setAttribute("class", "image-hover-progress");
+    rect.style.filter = "drop-shadow(0 0 4px rgba(191, 255, 0, 0.8))";
+
+    svg.appendChild(rect);
+    document.body.appendChild(svg);
+
+    const overlay = document.createElement("div");
+    overlay.className = "image-hover-highlight";
+    overlay.style.cssText = `
+      position: fixed;
+      left: ${bounds.left}px;
+      top: ${bounds.top}px;
+      width: ${bounds.width}px;
+      height: ${bounds.height}px;
+      background: rgba(191, 255, 0, 0.08);
+      pointer-events: none;
+      z-index: 999996;
+      border-radius: 2px;
+    `;
+    document.body.appendChild(overlay);
+  }
+
+  private updateImageHoverProgress(image: HTMLImageElement, hoverDuration: number): void {
+    const progressRect = document.querySelector(".image-hover-progress") as SVGRectElement;
+    const svg = document.querySelector(".image-hover-svg") as SVGElement;
+    const overlay = document.querySelectorAll(".image-hover-highlight")[1] as HTMLElement;
+    
+    if (!progressRect || !svg) return;
+
+    // Update position to track image on scroll
+    const bounds = image.getBoundingClientRect();
+    svg.style.left = `${bounds.left}px`;
+    svg.style.top = `${bounds.top}px`;
+    if (overlay) {
+      overlay.style.left = `${bounds.left}px`;
+      overlay.style.top = `${bounds.top}px`;
+    }
+
+    // Progress over 2 seconds (2000ms) - clockwise
+    const progress = Math.min(100, (hoverDuration / 2000) * 100);
+    const perimeter = parseFloat(progressRect.getAttribute("stroke-dasharray") || "0");
+    const offset = perimeter - (perimeter * progress) / 100;
+    progressRect.setAttribute("stroke-dashoffset", offset.toString());
+
+    if (progress >= 100) {
+      progressRect.style.animation = "pulse 0.5s ease-in-out infinite";
+      const style = document.createElement("style");
+      style.textContent = `
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.6; }
+        }
+      `;
+      if (!document.querySelector('style[data-image-pulse]')) {
+        style.setAttribute('data-image-pulse', 'true');
+        document.head.appendChild(style);
+      }
+    }
+  }
+
+  private hideImageHoverHighlight(): void {
+    document.querySelectorAll(".image-hover-highlight").forEach((el) => {
+      el.remove();
+    });
+  }
+
+  private async generateImageCaption(image: HTMLImageElement): Promise<void> {
+    try {
+      const src = image.src;
+      const alt = image.alt || "";
+      const title = image.title || "";
+
+      const response = await fetch(src);
+      const blob = await response.blob();
+
+      // Convert blob to base64 for message passing
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      
+      reader.onloadend = () => {
+        const base64data = reader.result as string;
+        
+        chrome.runtime.sendMessage(
+          {
+            type: "IMAGE_CAPTION_REQUEST",
+            data: {
+              src,
+              alt,
+              title,
+              imageData: base64data,
+              mimeType: blob.type,
+            },
+          },
+          (response) => {
+            if (chrome.runtime.lastError) {
+              console.error("[Image Caption Error]", chrome.runtime.lastError);
+              return;
+            }
+
+            if (response && response.caption) {
+              console.log("[Image Caption Generated]", {
+                src,
+                alt,
+                title,
+                caption: response.caption,
+              });
+
+              this.hideImageHoverHighlight();
+              this.showImageCaptionOverlay(image, response.caption);
+            }
+          }
+        );
+      };
+
+      reader.onerror = () => {
+        console.error("[Image Caption Error] Failed to read image blob");
+      };
+    } catch (error) {
+      console.error("[Image Caption Error]", error);
+    }
+  }
+
+  private showImageCaptionOverlay(image: HTMLImageElement, caption: string): void {
+    this.hideImageCaptionOverlay();
+
+    const bounds = image.getBoundingClientRect();
+    const overlay = document.createElement("div");
+    overlay.id = "image-caption-overlay";
+    overlay.style.cssText = `
+      position: fixed;
+      left: ${bounds.left}px;
+      top: ${bounds.bottom + 10}px;
+      background: rgba(0, 0, 0, 0.9);
+      color: #ffffff;
+      padding: 10px 15px;
+      border-radius: 6px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      z-index: 999999;
+      max-width: ${Math.min(bounds.width, 400)}px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      pointer-events: none;
+    `;
+    overlay.textContent = caption;
+    document.body.appendChild(overlay);
+  }
+
+  private hideImageCaptionOverlay(): void {
+    const overlay = document.getElementById("image-caption-overlay");
+    if (overlay) overlay.remove();
   }
 }
 

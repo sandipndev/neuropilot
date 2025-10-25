@@ -18,7 +18,7 @@ export function RefresherButton({
   const handleClick = () => {
     // Open the quiz page in a new tab
     chrome.tabs.create({
-      url: chrome.runtime.getURL('quiz.html')
+      url: chrome.runtime.getURL('pinnacle.html')
     });
   };
 

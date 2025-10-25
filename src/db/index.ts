@@ -7,16 +7,22 @@ const DB_VERSION = 8;
 
 let dbInstance: IDBDatabase | null = null;
 
-export async function initDB(): Promise<IDBDatabase> {
+export async function initDB(dbName = DB_NAME, dbVersion = DB_VERSION): Promise<IDBDatabase> {
   if (dbInstance) {
     return dbInstance;
   }
 
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    const request = indexedDB.open(dbName, dbVersion);
 
-    request.onerror = () => {
-      reject(new Error("Failed to open database"));
+    request.onerror = (err) => {
+      console.error("Database error:", err);
+      console.error("Request error:", request.error);
+      reject(new Error(`Failed to open database: ${request.error?.message || 'Unknown error'}`));
+    };
+
+    request.onblocked = () => {
+      console.warn("Database upgrade blocked. Please close all other tabs using this extension.");
     };
 
     request.onsuccess = () => {
@@ -85,6 +91,13 @@ export async function initDB(): Promise<IDBDatabase> {
           keyPath: "id",
         });
         activitySummaryStore.createIndex("timestamp", "timestamp", { unique: false });
+      }
+
+      // Pomodoro table
+      if (!db.objectStoreNames.contains("Pomodoro")) {
+        db.createObjectStore("Pomodoro", {
+          keyPath: "id",
+        });
       }
     };
   });

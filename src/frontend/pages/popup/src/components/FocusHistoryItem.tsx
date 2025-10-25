@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion';
-import type { FocusHistoryItem as FocusHistoryItemType } from '../types/focus';
+import type { FocusWithParsedData } from 'neuropilot-api';
 import { formatDuration } from '../utils/time';
 import { getOpacityForIndex } from '../utils/opacity';
 
 interface FocusHistoryItemProps {
-  item: FocusHistoryItemType;
+  item: FocusWithParsedData;
   index: number;
 }
 
@@ -31,8 +31,8 @@ function formatRelativeTime(timestamp: number): string {
 
 export function FocusHistoryItem({ item, index }: FocusHistoryItemProps) {
   const opacity = getOpacityForIndex(index);
-  const relativeTime = formatRelativeTime(item.timestamp);
-  const duration = formatDuration(item.duration);
+  const relativeTime = formatRelativeTime(item.last_updated);
+  const duration = formatDuration(item.total_time);
 
   return (
     <motion.li
@@ -46,9 +46,9 @@ export function FocusHistoryItem({ item, index }: FocusHistoryItemProps) {
         {/* Focus item text */}
         <p 
           className="text-sm font-medium text-gray-900 truncate"
-          title={item.focusItem}
+          title={item.focus_item}
         >
-          {item.focusItem}
+          {item.focus_item}
         </p>
         
         {/* Timestamp and duration */}
@@ -60,7 +60,7 @@ export function FocusHistoryItem({ item, index }: FocusHistoryItemProps) {
 
         {/* Screen reader description */}
         <span className="sr-only">
-          Focused on {item.focusItem} {relativeTime} for {duration}
+          Focused on {item.focus_item} {relativeTime} for {duration}
         </span>
       </div>
     </motion.li>

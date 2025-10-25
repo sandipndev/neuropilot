@@ -7,7 +7,17 @@ import { initDB } from "../db";
 import { handleAttentionUpdate } from "./handlers/attention-handler";
 import { handleWebsiteVisit } from "./handlers/website-visit-handler";
 import { handleImageCaptionRequest } from "./handlers/image-caption-handler";
+import { handleGetCurrentFocus, handleGetFocusHistory } from "./handlers/focus-handler";
+import {
+  handleGetPomodoroState,
+  handleStartPomodoro,
+  handleStopPomodoro,
+  handleResetPomodoro,
+  handleTickPomodoro
+} from "./handlers/pomodoro-handler";
 import { scheduler } from "./inference";
+
+import { pomodoroTimer } from "./services/pomodoro-timer";
 
 // Initialize database on extension load
 initDB()
@@ -15,6 +25,8 @@ initDB()
     console.debug("NeuroPilot Database initialized");
     scheduler.start();
     console.debug("Inference scheduler started");
+    pomodoroTimer.start(); // bg service to update remaining time etc for pomodoro
+    console.debug("Pomodoro timer service started");
   })
   .catch((error) => {
     console.error("Failed to initialize database:", error);
@@ -39,6 +51,41 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         case "IMAGE_CAPTION_REQUEST":
           const result = await handleImageCaptionRequest(message.data);
           sendResponse(result);
+          break;
+
+        case "GET_CURRENT_FOCUS":
+          const currentFocus = await handleGetCurrentFocus();
+          sendResponse(currentFocus);
+          break;
+
+        case "GET_FOCUS_HISTORY":
+          const focusHistory = await handleGetFocusHistory();
+          sendResponse(focusHistory);
+          break;
+
+        case "GET_POMODORO_STATE":
+          const pomodoroState = await handleGetPomodoroState();
+          sendResponse(pomodoroState);
+          break;
+
+        case "START_POMODORO":
+          const startedState = await handleStartPomodoro();
+          sendResponse(startedState);
+          break;
+
+        case "STOP_POMODORO":
+          const stoppedState = await handleStopPomodoro();
+          sendResponse(stoppedState);
+          break;
+
+        case "RESET_POMODORO":
+          const resetState = await handleResetPomodoro();
+          sendResponse(resetState);
+          break;
+
+        case "TICK_POMODORO":
+          const tickedState = await handleTickPomodoro();
+          sendResponse(tickedState);
           break;
 
         default:

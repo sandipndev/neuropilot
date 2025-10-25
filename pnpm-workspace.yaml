@@ -2,6 +2,7 @@ packages:
   # these pages have their own package.json, and are separate.. 
   # later we should do something similar for background and other jobs.
   - src/frontend/pages/*
+  - src/api/
 
 onlyBuiltDependencies:
   - '@parcel/watcher'

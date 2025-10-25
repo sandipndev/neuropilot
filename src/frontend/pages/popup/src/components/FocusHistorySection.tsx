@@ -1,9 +1,9 @@
 import { motion } from 'framer-motion';
-import type { FocusHistoryItem } from '../types/focus';
+import type { FocusWithParsedData } from 'neuropilot-api';
 import { FocusHistoryItem as HistoryItem } from './FocusHistoryItem';
 
 interface FocusHistorySectionProps {
-  historyItems: FocusHistoryItem[];
+  historyItems: FocusWithParsedData[];
   isLoading: boolean;
 }
 

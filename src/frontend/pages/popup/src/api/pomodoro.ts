@@ -1,35 +1,107 @@
 import type { PomodoroState } from '../types/pomodoro';
 
-/**
- * Fetch current Pomodoro state
- * TODO: Integrate with actual API - replace with chrome.runtime.sendMessage
- */
-export async function getPomodoroState(): Promise<PomodoroState> {
-  // TODO: Implement actual API call
-  return {
-    isActive: false,
-    remainingTime: 1500, // 25 minutes in seconds
-    state: 'idle',
-    totalPomodoros: 0,
-  };
-  
-  // TODO: Replace with actual implementation
-  // const response = await chrome.runtime.sendMessage({
-  //   type: 'GET_POMODORO_STATE'
-  // });
-  // return response.data;
+interface PomodoroResponse {
+  success: boolean;
+  data?: PomodoroState;
+  error?: string;
 }
 
 /**
- * Toggle Pomodoro timer
- * TODO: Integrate with actual API - replace with chrome.runtime.sendMessage
+ * Fetch current Pomodoro state
  */
-export async function togglePomodoro(): Promise<void> {
-  // TODO: Implement actual API call
-  console.log('Toggle Pomodoro - TODO: Implement actual API integration');
-  
-  // TODO: Replace with actual implementation
-  // await chrome.runtime.sendMessage({
-  //   type: 'TOGGLE_POMODORO'
-  // });
+export async function getPomodoroState(): Promise<PomodoroState> {
+  try {
+    const response: PomodoroResponse = await chrome.runtime.sendMessage({
+      type: 'GET_POMODORO_STATE'
+    });
+
+    console.log('responsexxx18881: ' ,response)
+
+    if (!response || !response.success || !response.data) {
+      throw new Error(response?.error || 'Failed to get pomodoro state');
+    }
+
+    return response.data;
+  } catch (error) {
+    console.error('Error getting pomodoro state:', error);
+    throw error;
+  }
+}
+
+/**
+ * Start Pomodoro timer
+ */
+export async function startPomodoro(): Promise<PomodoroState> {
+  try {
+    const response: PomodoroResponse = await chrome.runtime.sendMessage({
+      type: 'START_POMODORO'
+    });
+
+    if (!response || !response.success || !response.data) {
+      throw new Error(response?.error || 'Failed to start pomodoro');
+    }
+
+    return response.data;
+  } catch (error) {
+    console.error('Error starting pomodoro:', error);
+    throw error;
+  }
+}
+
+/**
+ * Stop Pomodoro timer
+ */
+export async function stopPomodoro(): Promise<PomodoroState> {
+  try {
+    const response: PomodoroResponse = await chrome.runtime.sendMessage({
+      type: 'STOP_POMODORO'
+    });
+
+    if (!response || !response.success || !response.data) {
+      throw new Error(response?.error || 'Failed to stop pomodoro');
+    }
+
+    return response.data;
+  } catch (error) {
+    console.error('Error stopping pomodoro:', error);
+    throw error;
+  }
+}
+
+/**
+ * Reset Pomodoro timer
+ */
+export async function resetPomodoro(): Promise<PomodoroState> {
+  try {
+    const response: PomodoroResponse = await chrome.runtime.sendMessage({
+      type: 'RESET_POMODORO'
+    });
+
+    if (!response || !response.success || !response.data) {
+      throw new Error(response?.error || 'Failed to reset pomodoro');
+    }
+
+    return response.data;
+  } catch (error) {
+    console.error('Error resetting pomodoro:', error);
+    throw error;
+  }
+}
+
+/**
+ * Toggle Pomodoro timer (start/stop)
+ */
+export async function togglePomodoro(): Promise<PomodoroState> {
+  try {
+    const currentState = await getPomodoroState();
+
+    if (currentState.isActive) {
+      return await stopPomodoro();
+    } else {
+      return await startPomodoro();
+    }
+  } catch (error) {
+    console.error('Error toggling pomodoro:', error);
+    throw error;
+  }
 }

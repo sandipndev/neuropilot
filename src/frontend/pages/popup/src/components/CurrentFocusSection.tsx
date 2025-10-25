@@ -1,9 +1,9 @@
 import { motion } from 'framer-motion';
-import type { FocusData } from '../types/focus';
+import type { FocusWithParsedData } from 'neuropilot-api';
 import { formatTime } from '../utils/time';
 
 interface CurrentFocusSectionProps {
-  focusData: FocusData | null;
+  focusData: FocusWithParsedData | null;
   isLoading: boolean;
 }
 
@@ -21,7 +21,7 @@ export function CurrentFocusSection({ focusData, isLoading }: CurrentFocusSectio
   }
 
   // No active focus state
-  if (!focusData || !focusData.isActive) {
+  if (!focusData) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -50,9 +50,9 @@ export function CurrentFocusSection({ focusData, isLoading }: CurrentFocusSectio
         {/* Focus item text */}
         <h2 
           className="text-2xl font-semibold text-gray-900 leading-tight truncate"
-          title={focusData.focusItem}
+          title={focusData.focus_item}
         >
-          {focusData.focusItem}
+          {focusData.focus_item}
         </h2>
 
         {/* Total focus time with ARIA live region */}
@@ -65,13 +65,13 @@ export function CurrentFocusSection({ focusData, isLoading }: CurrentFocusSectio
             Total Focus Time:
           </span>
           <span className="text-xl font-mono font-semibold text-indigo-700">
-            {formatTime(focusData.totalFocusTime)}
+            {formatTime(focusData.total_time)}
           </span>
         </div>
 
         {/* Screen reader description */}
         <span className="sr-only">
-          Currently focusing on {focusData.focusItem} for {formatTime(focusData.totalFocusTime)}
+          Currently focusing on {focusData.focus_item} for {formatTime(focusData.total_time)}
         </span>
       </div>
     </motion.div>

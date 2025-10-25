@@ -163,7 +163,7 @@ function App() {
 
       <div className="h-full overflow-y-auto relative z-10 flex flex-col">
         {/* Main Card Container */}
-        <div className="m-4 border-gray-900 overflow-hidden transition-all duration-300 animate-fade-in flex-shrink-0">
+        <div className="m-4 border-gray-900 overflow-hidden transition-all duration-300 animate-fade-in shrink-0">
           {/* Current Focus Header */}
           <div
             className="p-6 border-b border-gray-900"
@@ -181,31 +181,44 @@ function App() {
                 >
                   {focusData.focus_item}
                 </p>
-                <div className="flex items-center justify-between text-sm">
-                  <span
-                    className="font-mono font-bold text-lg text-gray-800"
-                    aria-label={`Focus time: ${formattedFocusTime}`}
-                  >
-                    {formattedFocusTime}
-                  </span>
-                  <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200 hover:bg-gray-100 transition-colors">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
                     <span
-                      className="text-xs text-gray-600 font-medium"
-                      aria-labl={`Pomodoro timer: ${formattedPomodoroTime} remaining`}
+                      className="font-mono font-bold text-lg text-gray-800"
+                      aria-label={`Focus time: ${formattedFocusTime}`}
                     >
-                      🍅 {formattedPomodoroTime}
+                      {formattedFocusTime}
                     </span>
-                    <button
-                      onClick={handlePomodoroToggle}
-                      className="text-gray-600 hover:text-gray-900 transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 rounded p-1"
-                      aria-label={
-                        pomodoroState.isActive ? "Pause Pomodoro timer" : "Start Pomodoro timer"
-                      }
-                      aria-pressed={pomodoroState.isActive}
-                    >
-                      {pomodoroState.isActive ? "⏸" : "▶️"}
-                    </button>
+                    <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200 hover:bg-gray-100 transition-colors">
+                      <span
+                        className="text-xs text-gray-600 font-medium"
+                        aria-label={`Pomodoro timer: ${formattedPomodoroTime} remaining`}
+                      >
+                        {pomodoroState.state === 'focus' ? '🍅' : '☕'} {formattedPomodoroTime}
+                      </span>
+                      <button
+                        onClick={handlePomodoroToggle}
+                        className="text-gray-600 hover:text-gray-900 transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 rounded p-1"
+                        aria-label={
+                          pomodoroState.isActive 
+                            ? `Pause ${pomodoroState.state}` 
+                            : pomodoroState.remainingTime === (pomodoroState.state === 'focus' ? 1500 : 300)
+                              ? `Start ${pomodoroState.state}`
+                              : `Resume ${pomodoroState.state}`
+                        }
+                        aria-pressed={pomodoroState.isActive}
+                      >
+                        {pomodoroState.isActive ? "⏸" : "▶️"}
+                      </button>
+                    </div>
                   </div>
+                  {!pomodoroState.isActive && pomodoroState.remainingTime === (pomodoroState.state === 'focus' ? 1500 : 300) && pomodoroState.state !== 'idle' && (
+                    <div className="text-xs text-center py-1 px-2 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 animate-pulse">
+                      {pomodoroState.state === 'focus' 
+                        ? '🎯 Ready to focus? Click ▶️ to start!' 
+                        : '☕ Time for a break! Click ▶️ when ready.'}
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (

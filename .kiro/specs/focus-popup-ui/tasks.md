@@ -1,0 +1,186 @@
+# Implementation Plan
+
+- [x] 1. Install dependencies and setup project structure
+  - Install @rive-app/react-webgl2 package for tree animation
+  - Create API directory structure at src/frontend/pages/popup/src/api/
+  - Create components directory structure at src/frontend/pages/popup/src/components/
+  - Create types directory at src/frontend/pages/popup/src/types/
+  - _Requirements: 4.1, 8.1_
+
+- [x] 2. Create TypeScript type definitions
+  - Create src/frontend/pages/popup/src/types/focus.ts with FocusData, FocusHistoryItem interfaces
+  - Create src/frontend/pages/popup/src/types/pomodoro.ts with PomodoroState interface
+  - Create src/frontend/pages/popup/src/types/wins.ts with WinItem interface
+  - _Requirements: 1.1, 2.1, 3.1, 5.1_
+
+- [x] 3. Implement API stub methods with hardcoded data
+  - [x] 3.1 Create getCurrentFocusData() in src/frontend/pages/popup/src/api/focus.ts
+    - Return hardcoded FocusData with "Learning about Figma" and 2:03:12 time
+    - Add TODO comment for actual API integration
+    - _Requirements: 1.1, 1.2, 8.1_
+  - [x] 3.2 Create getFocusHistory() in src/frontend/pages/popup/src/api/focus.ts
+    - Return empty array with TODO comment for implementation
+    - _Requirements: 2.1, 8.2_
+  - [x] 3.3 Create getWinsData() in src/frontend/pages/popup/src/api/wins.ts
+    - Return empty array with TODO comment for implementation
+    - _Requirements: 3.1, 8.3_
+  - [x] 3.4 Create getPomodoroState() in src/frontend/pages/popup/src/api/pomodoro.ts
+    - Return default idle state with TODO comment
+    - _Requirements: 5.1, 8.1_
+  - [x] 3.5 Create togglePomodoro() in src/frontend/pages/popup/src/api/pomodoro.ts
+    - Add console.log with TODO comment for implementation
+    - _Requirements: 5.2, 8.1_
+  - [x] 3.6 Create getCurrentTabTime() in src/frontend/pages/popup/src/api/tab.ts
+    - Return 0 with TODO comment for implementation
+    - _Requirements: 7.1, 8.1_
+
+- [x] 4. Create utility functions
+  - Create src/frontend/pages/popup/src/utils/time.ts with formatTime() and formatDuration() functions
+  - Create src/frontend/pages/popup/src/utils/tree.ts with getTreeGrowthStage() function
+  - Create src/frontend/pages/popup/src/utils/opacity.ts with getOpacityForIndex() function
+  - _Requirements: 1.2, 2.2, 4.2_
+
+- [x] 5. Build CurrentFocusSection component
+  - [x] 5.1 Create CurrentFocusSection component file
+    - Create src/frontend/pages/popup/src/components/CurrentFocusSection.tsx
+    - Implement component with FocusData props
+    - Add loading state handling
+    - _Requirements: 1.1, 1.2, 1.3_
+  - [x] 5.2 Implement focus display UI
+    - Display focus item text with large, prominent styling (text-2xl, font-semibold)
+    - Display total focus time in HH:MM:SS format using formatTime()
+    - Add placeholder state for no active focus
+    - Implement text truncation for long focus items
+    - _Requirements: 1.1, 1.2, 1.4, 1.5_
+  - [x] 5.3 Add accessibility features
+    - Use semantic heading (h2) for focus item
+    - Add ARIA live region for time updates (aria-live="polite")
+    - Add descriptive labels for screen readers
+    - _Requirements: 10.6, 10.8_
+  - [x] 5.4 Style with Tailwind and animations
+    - Apply card styling with rounded corners and subtle background
+    - Add fade-in animation on load using Framer Motion
+    - Ensure proper spacing and visual hierarchy
+    - _Requirements: 9.1, 9.2, 9.5_
+
+- [x] 6. Build PomodoroTimer component
+  - [x] 6.1 Create PomodoroTimer component file
+    - Create src/frontend/pages/popup/src/components/PomodoroTimer.tsx
+    - Implement component with PomodoroState props and onToggle callback
+    - _Requirements: 5.1, 5.2_
+  - [x] 6.2 Implement timer UI and interactions
+    - Display dynamic icon based on state (play/pause) using Lucide icons
+    - Display remaining time in MM:SS format
+    - Handle click and keyboard (Enter/Space) interactions
+    - Add visual feedback on state changes
+    - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
+  - [x] 6.3 Add accessibility features
+    - Add descriptive aria-label for button state
+    - Add aria-pressed attribute for toggle state
+    - Implement visible focus indicator
+    - Add ARIA live region for time announcements (updates every minute)
+    - _Requirements: 5.6, 10.2, 10.5, 10.6_
+
+- [ ] 7. Build TreeAnimationSection component
+  - [x] 7.1 Create TreeAnimationSection component file
+    - Create src/frontend/pages/popup/src/components/TreeAnimationSection.tsx
+    - Implement component with totalFocusTime prop. We use https://rive.app/marketplace/798-1554-tree-demo/. I've downloaded the assets and is accessible from /798-1554-tree-demo.riv
+    - _Requirements: 4.1, 4.2_
+  - [x] 7.2 Integrate Rive animation
+    - Import and configure useRive hook from @rive-app/react-webgl2
+    - Map totalFocusTime to tree growth stage using getTreeGrowthStage()
+    - Implement smooth transitions between growth stages
+    - Add loading state while animation initializes
+    - _Requirements: 4.1, 4.2, 4.3, 4.4_
+  - [x] 7.3 Implement error handling and fallback
+    - Add try-catch for Rive loading failures
+    - Create fallback static SVG tree component
+    - Handle graceful degradation
+    - _Requirements: 4.5_
+  - [x] 7.4 Add accessibility features
+    - Hide animation from screen readers (aria-hidden="true")
+    - Add descriptive alt text for fallback
+    - Respect prefers-reduced-motion media query
+    - _Requirements: 10.7_
+
+- [x] 8. Build FocusHistorySection component
+  - [x] 8.1 Create FocusHistoryList component file
+    - Create src/frontend/pages/popup/src/components/FocusHistorySection.tsx
+    - Implement component with historyItems array prop
+    - _Requirements: 2.1, 2.2_
+  - [x] 8.2 Create FocusHistoryItem component
+    - Create src/frontend/pages/popup/src/components/FocusHistoryItem.tsx
+    - Display focus text, timestamp, and duration
+    - Apply progressive opacity using getOpacityForIndex()
+    - _Requirements: 2.2, 2.3_
+  - [x] 8.3 Implement list rendering and states
+    - Render last 5 items with progressive opacity (100% → 20%)
+    - Handle empty state with encouraging message
+    - Add loading state with skeleton loaders
+    - Handle cases with fewer than 5 items
+    - _Requirements: 2.1, 2.2, 2.4, 2.5_
+  - [x] 8.4 Add accessibility features
+    - Use semantic ul/li structure
+    - Add heading "Recent Focus Activities"
+    - Add descriptive text for each item
+    - Ensure proper heading hierarchy
+    - _Requirements: 10.6, 10.10_
+
+- [ ] 9. Build WinsSection component
+  - [x] 9.1 Create WinsSection component file
+    - Create src/frontend/pages/popup/src/components/WinsSection.tsx
+    - Implement component with wins array prop
+    - _Requirements: 3.1, 3.2_
+  - [x] 9.2 Create WinItem component
+    - Create src/frontend/pages/popup/src/components/WinItem.tsx
+    - Display win text, timestamp, and type badge/icon
+    - Add subtle animation for new wins
+    - _Requirements: 3.2, 3.5_
+  - [x] 9.3 Implement wins list rendering
+    - Display 2-3 recent wins in compact format
+    - Handle empty state with encouraging message
+    - Add loading state
+    - _Requirements: 3.1, 3.3, 3.4_
+  - [x] 9.4 Add accessibility features
+    - Use semantic list structure
+    - Add heading "Recent Wins"
+    - Add descriptive labels for win types
+    - _Requirements: 10.6, 10.10_
+
+- [x] 11. Build Take a refresher button
+  - Implement button with on click we open /quiz
+  - Style prominently
+  - Add keyboard accessibility (Tab + Enter)
+  - Add visible focus indicator
+  - _Requirements: 6.1, 6.2, 10.2, 10.5_
+
+- [x] 13. Update App.tsx root component
+  - We will show this page as chrome extension pop up. restrict the size.
+  - _Requirements: 9.5_
+
+- [x] 15. Implement responsive design and polish
+  - [x] 15.1 Add Tailwind animations
+    - Configure custom animations in Tailwind config (fade-in, slide-up)
+    - Apply animations to components on mount
+    - _Requirements: 9.1_
+  - [x] 15.2 Ensure accessibility compliance
+    - Test keyboard navigation flow (Tab through all interactive elements)
+    - Verify all interactive elements have visible focus indicators
+    - Test with screen reader (announce all dynamic content)
+    - Verify WCAG AA color contrast ratios
+    - Test with prefers-reduced-motion
+    - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 10.7, 10.8, 10.9, 10.10_
+  - [x] 15.3 Optimize performance
+    - Add React.memo to expensive components
+    - Use useMemo for tree growth stage calculation
+    - Use useCallback for event handlers
+    - Debounce time updates to 1 second intervals
+    - Verify popup loads within 500ms
+    - _Requirements: 9.3_
+  - [x] 15.4 Final styling polish
+    - Ensure consistent spacing throughout (p-4, gap-4, mb-2)
+    - Verify typography hierarchy (headings, body, monospace for time)
+    - Add hover states to all interactive elements
+    - Ensure smooth transitions on all animations
+    - Verify popup fits 400×600px dimensions
+    - _Requirements: 9.1, 9.2, 9.4, 9.5_

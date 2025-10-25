@@ -62,13 +62,16 @@ export function StatsSection({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6"
+      className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-800/50 p-6 hover:shadow-xl transition-all duration-300"
     >
       {/* Header with toggle */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-          Focus Statistics
-        </h2>
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">📊</span>
+          <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+            Focus Statistics
+          </h2>
+        </div>
         <ViewToggle viewMode={viewMode} onToggle={setViewMode} />
       </div>
 
@@ -118,27 +121,31 @@ interface ViewToggleProps {
 
 function ViewToggle({ viewMode, onToggle }: ViewToggleProps) {
   return (
-    <div className="inline-flex rounded-lg bg-gray-100 dark:bg-gray-800 p-1">
-      <button
+    <div className="inline-flex rounded-xl bg-gray-100 dark:bg-gray-800 p-1 shadow-inner">
+      <motion.button
         onClick={() => onToggle('day')}
-        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
           viewMode === 'day'
-            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+            ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
             : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
         }`}
       >
         Day
-      </button>
-      <button
+      </motion.button>
+      <motion.button
         onClick={() => onToggle('week')}
-        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
           viewMode === 'week'
-            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+            ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
             : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
         }`}
       >
         Week
-      </button>
+      </motion.button>
     </div>
   );
 }
@@ -158,26 +165,42 @@ function PrimeActivityCard({ primeActivity }: PrimeActivityCardProps) {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
-      className="mb-6 p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg border border-blue-200 dark:border-blue-800"
+      className="mb-6 p-5 bg-gradient-to-br from-yellow-50 via-orange-50 to-pink-50 dark:from-yellow-900/20 dark:via-orange-900/20 dark:to-pink-900/20 rounded-xl border-2 border-yellow-300/50 dark:border-yellow-700/50 shadow-lg relative overflow-hidden"
     >
-      <div className="flex items-center gap-3 mb-2">
-        <div className="text-3xl">👑</div>
-        <div>
-          <h3 className="text-sm font-medium text-blue-700 dark:text-blue-300 uppercase tracking-wide">
-            Prime Activity
-          </h3>
-          <p className="text-xl font-bold text-gray-900 dark:text-gray-100 mt-1">
-            {primeActivity.name}
-          </p>
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-yellow-200/20 to-transparent rounded-full blur-2xl"></div>
+      <div className="relative">
+        <div className="flex items-center gap-3 mb-3">
+          <motion.div 
+            className="text-4xl"
+            animate={{ 
+              rotate: [0, -10, 10, -10, 0],
+              scale: [1, 1.1, 1]
+            }}
+            transition={{ 
+              duration: 2,
+              repeat: Infinity,
+              repeatDelay: 3
+            }}
+          >
+            👑
+          </motion.div>
+          <div>
+            <h3 className="text-xs font-bold text-yellow-700 dark:text-yellow-300 uppercase tracking-wider">
+              Prime Activity
+            </h3>
+            <p className="text-xl font-bold text-gray-900 dark:text-gray-100 mt-1">
+              {primeActivity.name}
+            </p>
+          </div>
         </div>
-      </div>
-      <div className="flex items-baseline gap-2 mt-3">
-        <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-          {formatDuration(primeActivity.totalTime)}
-        </span>
-        <span className="text-sm text-gray-600 dark:text-gray-400">
-          ({primeActivity.percentage.toFixed(1)}% of total time)
-        </span>
+        <div className="flex items-baseline gap-2 mt-3">
+          <span className="text-3xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 dark:from-yellow-400 dark:to-orange-400 bg-clip-text text-transparent">
+            {formatDuration(primeActivity.totalTime)}
+          </span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            ({primeActivity.percentage.toFixed(1)}% of total time)
+          </span>
+        </div>
       </div>
     </motion.div>
   );

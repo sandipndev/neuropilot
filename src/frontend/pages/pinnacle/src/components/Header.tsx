@@ -22,51 +22,64 @@ export function Header({ userName, onSettingsClick, onThemeToggle, isDarkMode }:
   }, []);
 
   const displayName = userName || 'there';
+  
+  // Get time-based greeting
+  const getGreeting = () => {
+    const hour = currentTime.getHours();
+    if (hour < 12) return { text: 'Good morning', emoji: '☀️' };
+    if (hour < 17) return { text: 'Good afternoon', emoji: '🌤️' };
+    if (hour < 21) return { text: 'Good evening', emoji: '🌆' };
+    return { text: 'Good evening..', emoji: '🌙' };
+  };
+
+  const greeting = getGreeting();
 
   return (
-    <header className="w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4">
-      <div className="flex items-center justify-between">
+    <header className="w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 px-6 py-3 shrink-0 z-40">
+      <div className="flex items-center justify-between max-w-[1800px] mx-auto">
         {/* Left: User Greeting */}
-        <div className="flex items-center gap-2">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-            Hi {displayName} 👋
-          </h1>
+        <div className="flex items-center gap-2.5">
+          <div className="text-2xl">{greeting.emoji}</div>
+          <div>
+            <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+              {greeting.text}, {displayName}
+            </h1>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">
+              {currentTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+            </p>
+          </div>
         </div>
 
-        {/* Center: Website Summaries placeholder */}
-        <div className="flex-1 flex justify-center">
-          <span className="text-sm text-gray-600 dark:text-gray-400">
-            {/* Website Summaries section will go here */}
-          </span>
-        </div>
-
-        {/* Right: Controls and Time */}
+        {/* Right: Time & Controls */}
         <div className="flex items-center gap-4">
-          {/* Settings Button */}
-          <button
-            onClick={onSettingsClick}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            aria-label="Settings"
-          >
-            <Settings className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-          </button>
-
-          {/* Theme Toggle Button */}
-          <button
-            onClick={onThemeToggle}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            {isDarkMode ? (
-              <Sun className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-            ) : (
-              <Moon className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-            )}
-          </button>
-
           {/* Current Time */}
-          <div className="text-lg font-semibold text-gray-900 dark:text-white tabular-nums">
-            {formatTime(currentTime)}
+          <div className="text-right">
+            <div className="text-xl font-bold text-gray-900 dark:text-white tabular-nums">
+              {formatTime(currentTime)}
+            </div>
+          </div>
+
+          {/* Controls */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onSettingsClick}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
+              aria-label="Settings"
+            >
+              <Settings className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+            </button>
+
+            <button
+              onClick={onThemeToggle}
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
+              aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {isDarkMode ? (
+                <Sun className="w-4 h-4 text-yellow-500" />
+              ) : (
+                <Moon className="w-4 h-4 text-indigo-600" />
+              )}
+            </button>
           </div>
         </div>
       </div>

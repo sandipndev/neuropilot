@@ -78,17 +78,25 @@ export function QuizSection({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6"
+      className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-800/50 p-6 hover:shadow-xl transition-all duration-300"
     >
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          <span className="text-2xl">🧠</span>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+          <motion.span 
+            className="text-2xl"
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 2, repeat: Infinity, repeatDelay: 4 }}
+          >
+            🧠
+          </motion.span>
+          <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
             Knowledge Recall
           </h2>
         </div>
-        <div className="text-sm text-gray-500 dark:text-gray-400">
-          {answeredCount} of {totalQuestions} answered
+        <div className="px-3 py-1 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-full border border-blue-200/50 dark:border-blue-800/50">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {answeredCount} / {totalQuestions}
+          </span>
         </div>
       </div>
 
@@ -123,8 +131,21 @@ function EmptyState({ totalAnswered }: EmptyStateProps) {
       transition={{ duration: 0.3 }}
       className="text-center py-8"
     >
-      <div className="text-6xl mb-4">🎉</div>
-      <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+      <motion.div 
+        className="text-6xl mb-4"
+        animate={{ 
+          scale: [1, 1.2, 1],
+          rotate: [0, 10, -10, 0]
+        }}
+        transition={{ 
+          duration: 2,
+          repeat: Infinity,
+          repeatDelay: 2
+        }}
+      >
+        🎉
+      </motion.div>
+      <h3 className="text-xl font-bold bg-gradient-to-r from-green-600 to-blue-600 dark:from-green-400 dark:to-blue-400 bg-clip-text text-transparent mb-2">
         All Caught Up!
       </h3>
       <p className="text-gray-600 dark:text-gray-400">

@@ -94,11 +94,23 @@ export function PulseSection({ pulses, isLoading = false }: PulseSectionProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.3 }}
-      className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6"
+      className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-800/50 p-6 hover:shadow-xl transition-all duration-300"
     >
       <div className="flex items-center gap-2 mb-6">
-        <span className="text-2xl">💓</span>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+        <motion.span 
+          className="text-2xl"
+          animate={{ 
+            scale: [1, 1.15, 1],
+          }}
+          transition={{ 
+            duration: 1.5,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        >
+          💓
+        </motion.span>
+        <h2 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-red-600 dark:from-pink-400 dark:to-red-400 bg-clip-text text-transparent">
           Pulse
         </h2>
       </div>
@@ -166,8 +178,8 @@ function PulseItem({ pulse, index }: PulseItemProps) {
         duration: 0.3,
         delay: index * 0.05,
       }}
-      whileHover={{ scale: 1.02 }}
-      className={`${bgClass} rounded-lg p-4 border border-gray-200 dark:border-gray-700 transition-all duration-200`}
+      whileHover={{ scale: 1.02, y: -2 }}
+      className={`${bgClass} rounded-xl p-4 border border-gray-200/50 dark:border-gray-700/50 transition-all duration-200 shadow-sm hover:shadow-md`}
     >
       <div className="flex items-start gap-3">
         {/* Category Icon */}

@@ -61,7 +61,7 @@ export function FocusStateSection({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6"
+      className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-800/50 p-6 hover:shadow-xl transition-all duration-300"
     >
       <AnimatePresence mode="wait">
         {focusState === 'no-focus' && (
@@ -96,16 +96,32 @@ function NoFocusState() {
       transition={{ duration: 0.3 }}
       className="text-center py-8"
     >
-      <div className="text-6xl mb-4">🎯</div>
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+      <motion.div 
+        className="text-6xl mb-4"
+        animate={{ 
+          rotate: [0, -10, 10, -10, 0],
+          scale: [1, 1.1, 1]
+        }}
+        transition={{ 
+          duration: 2,
+          repeat: Infinity,
+          repeatDelay: 3
+        }}
+      >
+        🎯
+      </motion.div>
+      <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent mb-2">
         Ready to Focus?
       </h2>
-      <p className="text-gray-600 dark:text-gray-400 text-lg">
+      <p className="text-gray-600 dark:text-gray-400 text-lg mb-4">
         Start your first focus session and build momentum!
       </p>
-      <p className="text-gray-500 dark:text-gray-500 text-sm mt-4">
-        Open the extension popup to begin tracking your focus time
-      </p>
+      <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-full border border-blue-200/50 dark:border-blue-800/50">
+        <span className="text-sm text-gray-600 dark:text-gray-400">
+          Open the extension to begin
+        </span>
+        <span className="text-lg">→</span>
+      </div>
     </motion.div>
   );
 }
@@ -134,34 +150,53 @@ function ActiveFocusState({
         transition={{ duration: 0.3 }}
         className="py-6"
       >
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="text-4xl">🔥</div>
+            <motion.div 
+              className="text-5xl"
+              animate={isActive ? { 
+                scale: [1, 1.15, 1],
+                rotate: [0, 5, -5, 0]
+              } : {}}
+              transition={{ 
+                duration: 2,
+                repeat: isActive ? Infinity : 0
+              }}
+            >
+              🔥
+            </motion.div>
             <div>
-              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
                 {isActive ? 'Currently Focusing On' : 'Last Focus Session'}
               </h3>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {currentFocus.focus_item}
               </h2>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 mt-4">
-          {isActive && (
-            <motion.div
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="w-3 h-3 bg-green-500 rounded-full"
-            />
-          )}
-          <span className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-            {formatDuration(elapsedTime)}
-          </span>
-          <span className="text-gray-500 dark:text-gray-400 text-sm ml-2">
-            {isActive ? 'elapsed' : 'total'}
-          </span>
+        <div className="relative">
+          <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-xl border border-blue-200/50 dark:border-blue-800/50">
+            {isActive && (
+              <motion.div
+                animate={{ 
+                  scale: [1, 1.3, 1],
+                  opacity: [1, 0.7, 1]
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="w-3 h-3 bg-green-500 rounded-full shadow-lg shadow-green-500/50"
+              />
+            )}
+            <div className="flex-1">
+              <span className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent tabular-nums">
+                {formatDuration(elapsedTime)}
+              </span>
+              <span className="text-gray-600 dark:text-gray-400 text-sm ml-3">
+                {isActive ? 'and counting...' : 'total time'}
+              </span>
+            </div>
+          </div>
         </div>
 
         {currentFocus.keywords.length > 0 && (

@@ -8,7 +8,7 @@ export type TextAttention = {
   timestamp: number
 }
 
-const handler: PlasmoMessaging.MessageHandler = async (req, res) => {
+const handler: PlasmoMessaging.MessageHandler = async (req) => {
   const url = req.body.url
   const text = req.body.text
   const timestamp = req.body.timestamp

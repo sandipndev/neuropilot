@@ -9,12 +9,12 @@ import {
   COGNITIVE_ATTENTION_WORDS_PER_MINUTE
 } from "~default-settings"
 
-import CognitiveAttentionTracker from "./monitor"
+import CognitiveAttentionTextTracker from "../cognitive-attention/monitor-text"
 
 const COGNITIVE_ATTENTION_TEXT_MESSAGE_NAME = "cognitive-attention-text"
 
 const storage = new Storage()
-let tracker: CognitiveAttentionTracker | null = null
+let textTracker: CognitiveAttentionTextTracker | null = null
 
 const URL = location.href
 
@@ -26,7 +26,7 @@ const parseNumber = (val: any, fallback: number) => {
 
 const readingProgressTracker = new Map<number, number>()
 
-const initTracker = async () => {
+const initTextTracker = async () => {
   const cognitiveAttentionThreshold = parseNumber(
     await storage.get(COGNITIVE_ATTENTION_SUSTAINED_TIME.key),
     COGNITIVE_ATTENTION_SUSTAINED_TIME.defaultValue
@@ -50,11 +50,11 @@ const initTracker = async () => {
     String(await storage.get(COGNITIVE_ATTENTION_SHOW_OVERLAY.key)) ===
       "true" || COGNITIVE_ATTENTION_SHOW_OVERLAY.defaultValue
 
-  if (tracker) {
-    tracker.destroy?.()
+  if (textTracker) {
+    textTracker.destroy?.()
   }
 
-  tracker = new CognitiveAttentionTracker({
+  textTracker = new CognitiveAttentionTextTracker({
     debugMode,
     showOverlay,
     cognitiveAttentionThreshold,
@@ -88,17 +88,16 @@ const initTracker = async () => {
     }
   })
 
-  tracker.init()
+  textTracker.init()
 }
 
-initTracker().then(() => {
-  // Recreate tracker whenever relevant settings change
+initTextTracker().then(() => {
   storage.watch({
-    [COGNITIVE_ATTENTION_SUSTAINED_TIME.key]: initTracker,
-    [COGNITIVE_ATTENTION_IDLE_THRESHOLD_TIME.key]: initTracker,
-    [COGNITIVE_ATTENTION_WORDS_PER_MINUTE.key]: initTracker,
-    [COGNITIVE_ATTENTION_DEBUG_MODE.key]: initTracker,
-    [COGNITIVE_ATTENTION_SHOW_OVERLAY.key]: initTracker
+    [COGNITIVE_ATTENTION_SUSTAINED_TIME.key]: initTextTracker,
+    [COGNITIVE_ATTENTION_IDLE_THRESHOLD_TIME.key]: initTextTracker,
+    [COGNITIVE_ATTENTION_WORDS_PER_MINUTE.key]: initTextTracker,
+    [COGNITIVE_ATTENTION_DEBUG_MODE.key]: initTextTracker,
+    [COGNITIVE_ATTENTION_SHOW_OVERLAY.key]: initTextTracker
   })
 })
 
@@ -110,4 +109,4 @@ const extractWords = (text: string, wordCount: number): string => {
 const hashString = (s: string) =>
   [...s].reduce((h, c) => (Math.imul(31, h) + c.charCodeAt(0)) | 0, 0) >>> 0
 
-export default tracker
+export { textTracker }

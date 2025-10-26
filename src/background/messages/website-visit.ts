@@ -13,7 +13,7 @@ export type WebsiteVisit = {
   summary_generated_with_n_attentions?: number
 }
 
-const handler: PlasmoMessaging.MessageHandler = async (req, res) => {
+const handler: PlasmoMessaging.MessageHandler = async (req) => {
   const body = req.body
   switch (body.event) {
     case "opened": {

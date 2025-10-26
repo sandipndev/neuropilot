@@ -32,7 +32,7 @@ type DebugData = {
   }
 }
 
-class CognitiveAttentionUI {
+class CognitiveAttentionTextUI {
   private config: UIConfig
   private debugOverlayId = "cog-attention-debug"
   private highlightClassName = "cog-attention-highlight"
@@ -298,4 +298,144 @@ class CognitiveAttentionUI {
   }
 }
 
-export default CognitiveAttentionUI
+// Separate UI class for image visualization
+type ImageUIConfig = {
+  showOverlay: boolean
+}
+
+class CognitiveAttentionImageUI {
+  private config: ImageUIConfig
+  private highlightClassName = "image-hover-highlight"
+  private svgClassName = "image-hover-svg"
+  private progressClassName = "image-hover-progress"
+
+  constructor(config: ImageUIConfig) {
+    this.config = config
+  }
+
+  updateConfig(config: Partial<ImageUIConfig>): void {
+    const wasShowOverlay = this.config.showOverlay
+    this.config = { ...this.config, ...config }
+
+    if (wasShowOverlay && !this.config.showOverlay) {
+      this.hideHighlight()
+    }
+  }
+
+  showHighlight(image: HTMLImageElement, progress: number): void {
+    if (!this.config.showOverlay) return
+
+    this.hideHighlight()
+
+    const bounds = image.getBoundingClientRect()
+
+    // Create SVG for progress border
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
+    svg.setAttribute("class", `${this.highlightClassName} ${this.svgClassName}`)
+    svg.style.cssText = `
+      position: fixed;
+      left: ${bounds.left}px;
+      top: ${bounds.top}px;
+      width: ${bounds.width}px;
+      height: ${bounds.height}px;
+      pointer-events: none;
+      z-index: 999997;
+    `
+
+    // Calculate perimeter for stroke animation
+    const width = bounds.width
+    const height = bounds.height
+    const perimeter = 2 * (width + height)
+
+    const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect")
+    rect.setAttribute("x", "0.5")
+    rect.setAttribute("y", "0.5")
+    rect.setAttribute("width", (width - 1).toString())
+    rect.setAttribute("height", (height - 1).toString())
+    rect.setAttribute("fill", "none")
+    rect.setAttribute("stroke", "#bfff00")
+    rect.setAttribute("stroke-width", "2")
+    rect.setAttribute("stroke-dasharray", perimeter.toString())
+    rect.setAttribute("stroke-dashoffset", perimeter.toString())
+    rect.setAttribute("class", this.progressClassName)
+    rect.style.filter = "drop-shadow(0 0 4px rgba(191, 255, 0, 0.8))"
+
+    svg.appendChild(rect)
+    document.body.appendChild(svg)
+
+    // Create background overlay
+    const overlay = document.createElement("div")
+    overlay.className = this.highlightClassName
+    overlay.style.cssText = `
+      position: fixed;
+      left: ${bounds.left}px;
+      top: ${bounds.top}px;
+      width: ${bounds.width}px;
+      height: ${bounds.height}px;
+      background: rgba(191, 255, 0, 0.08);
+      pointer-events: none;
+      z-index: 999996;
+      border-radius: 2px;
+    `
+    document.body.appendChild(overlay)
+  }
+
+  updateProgress(image: HTMLImageElement, progress: number): void {
+    if (!this.config.showOverlay) return
+
+    const progressRect = document.querySelector(
+      `.${this.progressClassName}`
+    ) as SVGRectElement
+    const svg = document.querySelector(`.${this.svgClassName}`) as SVGElement
+    const overlay = document.querySelectorAll(
+      `.${this.highlightClassName}`
+    )[1] as HTMLElement
+
+    if (!progressRect || !svg) return
+
+    // Update position to track image on scroll
+    const bounds = image.getBoundingClientRect()
+    svg.style.left = `${bounds.left}px`
+    svg.style.top = `${bounds.top}px`
+    if (overlay) {
+      overlay.style.left = `${bounds.left}px`
+      overlay.style.top = `${bounds.top}px`
+    }
+
+    // Animate progress clockwise around border
+    const perimeter = parseFloat(
+      progressRect.getAttribute("stroke-dasharray") || "0"
+    )
+    const offset = perimeter - (perimeter * progress) / 100
+    progressRect.setAttribute("stroke-dashoffset", offset.toString())
+
+    // Pulse animation when complete
+    if (progress >= 100) {
+      progressRect.style.animation = "pulse 0.5s ease-in-out infinite"
+
+      if (!document.querySelector("style[data-image-pulse]")) {
+        const style = document.createElement("style")
+        style.setAttribute("data-image-pulse", "true")
+        style.textContent = `
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+          }
+        `
+        document.head.appendChild(style)
+      }
+    }
+  }
+
+  hideHighlight(): void {
+    document
+      .querySelectorAll(`.${this.highlightClassName}`)
+      .forEach((el) => el.remove())
+  }
+
+  destroy(): void {
+    this.hideHighlight()
+  }
+}
+
+export { CognitiveAttentionTextUI, CognitiveAttentionImageUI }

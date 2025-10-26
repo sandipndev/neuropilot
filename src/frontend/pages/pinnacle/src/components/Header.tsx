@@ -21,7 +21,7 @@ export function Header({ userName, onSettingsClick, onThemeToggle, isDarkMode }:
     return () => clearInterval(interval);
   }, []);
 
-  const displayName = userName || 'there';
+  const displayName = userName || 'there'; // cc: Subham please fix this lol, take the user name as an input in the beginning walkthrough
   
   // Get time-based greeting
   const getGreeting = () => {

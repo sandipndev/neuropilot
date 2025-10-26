@@ -2,9 +2,25 @@
  * CompactQuizCard - Streamlined quiz for dashboard
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { QuizQuestion } from '../../../../../db/models/quiz-questions';
+
+// Shuffle options for a question to randomize order
+function shuffleOptions(question: QuizQuestion): { option: string; isCorrect: boolean; originalIndex: 1 | 2 }[] {
+  const options = [
+    { option: question.option_1, isCorrect: question.correct_answer === 1, originalIndex: 1 as 1 | 2 },
+    { option: question.option_2, isCorrect: question.correct_answer === 2, originalIndex: 2 as 1 | 2 },
+  ];
+  
+  // Fisher-Yates shuffle
+  for (let i = options.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [options[i], options[j]] = [options[j], options[i]];
+  }
+  
+  return options;
+}
 
 interface CompactQuizCardProps {
   questions: QuizQuestion[];
@@ -21,18 +37,49 @@ export function CompactQuizCard({
 }: CompactQuizCardProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [feedback, setFeedback] = useState<{ show: boolean; isCorrect: boolean } | null>(null);
-  const [selectedAnswer, setSelectedAnswer] = useState<1 | 2 | null>(null);
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [sessionScore, setSessionScore] = useState(0);
+  const [sessionQuestionsAnswered, setSessionQuestionsAnswered] = useState(0);
+  const previousUnansweredCount = useRef(unansweredQuestions.length);
+  const initialAnsweredCount = useRef(questions.length - unansweredQuestions.length);
 
   const currentQuestion = unansweredQuestions[currentIndex];
   const answeredCount = questions.length - unansweredQuestions.length;
+  
+  // Detect if user just completed questions in this session
+  const justCompletedSession = sessionQuestionsAnswered > 0 && unansweredQuestions.length === 0;
+  
+  // Reset session score when new questions become available
+  useEffect(() => {
+    if (unansweredQuestions.length > previousUnansweredCount.current) {
+      // New questions added, reset session
+      setSessionScore(0);
+      setSessionQuestionsAnswered(0);
+      initialAnsweredCount.current = answeredCount;
+    }
+    previousUnansweredCount.current = unansweredQuestions.length;
+  }, [unansweredQuestions.length, answeredCount]);
+  
+  // Shuffle options for current question (memoized to prevent re-shuffling on re-renders)
+  const shuffledOptions = useMemo(
+    () => currentQuestion ? shuffleOptions(currentQuestion) : [],
+    [currentQuestion?.id]
+  );
 
   const handleAnswer = useCallback(
-    (answer: 1 | 2) => {
+    (optionIndex: number) => {
       if (feedback || !currentQuestion) return;
 
-      setSelectedAnswer(answer);
-      const isCorrect = answer === currentQuestion.correct_answer;
+      setSelectedAnswer(optionIndex);
+      const selectedOption = shuffledOptions[optionIndex];
+      const isCorrect = selectedOption.isCorrect;
       setFeedback({ show: true, isCorrect });
+      
+      // Update session score and count
+      if (isCorrect) {
+        setSessionScore(prev => prev + 1);
+      }
+      setSessionQuestionsAnswered(prev => prev + 1);
 
       setTimeout(() => {
         onAnswerSubmit(currentQuestion.id);
@@ -43,7 +90,7 @@ export function CompactQuizCard({
         }
       }, 1500);
     },
-    [currentQuestion, feedback, onAnswerSubmit, currentIndex, unansweredQuestions.length]
+    [currentQuestion, feedback, onAnswerSubmit, currentIndex, unansweredQuestions.length, shuffledOptions]
   );
 
   if (isLoading) {
@@ -79,18 +126,50 @@ export function CompactQuizCard({
         {unansweredQuestions.length === 0 ? (
           <motion.div
             key="empty"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
             className="text-center py-6"
           >
-            <div className="text-4xl mb-2">🎉</div>
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-              All done!
-            </p>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-              Great work on {answeredCount} questions
-            </p>
+            {justCompletedSession ? (
+              // Show score if user just completed a quiz session
+              <>
+                <div className="text-5xl mb-3">🎉</div>
+                <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
+                  Quiz Complete!
+                </p>
+                <div className="mb-3">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full">
+                    <span className="text-2xl font-bold text-white">{sessionScore}</span>
+                    <span className="text-sm text-white/90">/</span>
+                    <span className="text-lg font-semibold text-white/90">{sessionQuestionsAnswered}</span>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                  {sessionScore === sessionQuestionsAnswered ? '🌟 Perfect score!' : 
+                   sessionScore >= sessionQuestionsAnswered * 0.8 ? '🎯 Excellent work!' :
+                   sessionScore >= sessionQuestionsAnswered * 0.6 ? '👍 Good job!' :
+                   '💪 Keep practicing!'}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-500">
+                  Total progress: {answeredCount}/{questions.length}
+                </p>
+              </>
+            ) : (
+              // Show "all caught up" message if no questions in current session
+              <>
+                <div className="text-4xl mb-3">✨</div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                  All caught up!
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  You've answered all available questions.
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                  Check back later for more! 🔄
+                </p>
+              </>
+            )}
           </motion.div>
         ) : (
           <motion.div
@@ -105,10 +184,9 @@ export function CompactQuizCard({
             </p>
 
             <div className="space-y-2">
-              {[1, 2].map((num) => {
-                const option = num === 1 ? currentQuestion.option_1 : currentQuestion.option_2;
-                const isSelected = selectedAnswer === num;
-                const isCorrect = currentQuestion.correct_answer === num;
+              {shuffledOptions.map((optionData, index) => {
+                const isSelected = selectedAnswer === index;
+                const isCorrect = optionData.isCorrect;
                 const showFeedback = feedback?.show || false;
 
                 let buttonClass = 'w-full text-left p-2.5 rounded-lg border text-sm transition-all ';
@@ -128,8 +206,8 @@ export function CompactQuizCard({
 
                 return (
                   <button
-                    key={num}
-                    onClick={() => handleAnswer(num as 1 | 2)}
+                    key={index}
+                    onClick={() => handleAnswer(index)}
                     disabled={feedback !== null}
                     className={buttonClass}
                   >
@@ -139,9 +217,9 @@ export function CompactQuizCard({
                           ? 'bg-green-500 text-white'
                           : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                       }`}>
-                        {num}
+                        {index + 1}
                       </div>
-                      <span className="flex-1 truncate">{option}</span>
+                      <span className="flex-1 truncate">{optionData.option}</span>
                       {showFeedback && isCorrect && <span>✓</span>}
                     </div>
                   </button>

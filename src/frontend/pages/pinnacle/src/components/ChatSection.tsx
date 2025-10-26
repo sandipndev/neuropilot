@@ -5,7 +5,8 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, AlertCircle, RefreshCw, Trash2, Info } from 'lucide-react';
+import { Send, AlertCircle, RefreshCw, Trash2, Info, ImagePlus, X, Upload } from 'lucide-react';
+import { getFileValidationError, createImageFile, cleanupImagePreview, type ImageFile } from '../lib/image-utils';
 import { ChatMessage } from './ChatMessage';
 import { sendChatMessage } from '../../../../../api/mutations/send-chat-message';
 import { getChatMessages } from '../../../../../api/queries/chat-messages';
@@ -36,8 +37,12 @@ export function ChatSection({ currentFocus, focusHistory = [] }: ChatSectionProp
   const [error, setError] = useState<string | null>(null);
   const [aiAvailable, setAiAvailable] = useState(false);
   const [aiStatus, setAiStatus] = useState<string>('Checking...');
+  const [selectedImage, setSelectedImage] = useState<ImageFile | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [dragActive, setDragActive] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check Chrome AI availability on mount
   useEffect(() => {
@@ -84,15 +89,29 @@ export function ChatSection({ currentFocus, focusHistory = [] }: ChatSectionProp
     const trimmedMessage = inputValue.trim();
     if (!trimmedMessage || isLoading) return;
 
-    // Clear input and error
+    // Store image reference before clearing
+    const imageToSend = selectedImage;
+
+    // Clear input, error, and image
     setInputValue('');
     setError(null);
+    setUploadError(null);
+    setSelectedImage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+
+    // Build user message content with image indicator
+    let userMessageContent = trimmedMessage;
+    if (imageToSend) {
+      userMessageContent = `${trimmedMessage}\n[Image attached: ${imageToSend.name}]`;
+    }
 
     // Add user message immediately
     const userMessage: ChatMessageType = {
       id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       role: 'user',
-      content: trimmedMessage,
+      content: userMessageContent,
       timestamp: Date.now(),
     };
 
@@ -104,10 +123,19 @@ export function ChatSection({ currentFocus, focusHistory = [] }: ChatSectionProp
     const assistantMessageId = `assistant_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
     try {
-      // Prepare context
+      // Convert image to base64 if present
+      let imageData: string | undefined;
+      if (imageToSend) {
+        imageData = imageToSend.preview;
+        // Clean up after sending
+        cleanupImagePreview(imageToSend);
+      }
+
+      // Prepare context with image
       const context = {
         currentFocus: currentFocus?.focus_item,
         recentActivities: focusHistory.slice(0, 5).map((f) => f.focus_item),
+        imageData,
       };
 
       // Send message and stream the response
@@ -200,6 +228,105 @@ export function ChatSection({ currentFocus, focusHistory = [] }: ChatSectionProp
         setError('Failed to clear chat messages. Please try again.');
       }
     }
+  }, []);
+
+  // Handle image selection
+  const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadError(null);
+
+    // Validate file
+    const validationError = getFileValidationError(file);
+    if (validationError) {
+      setUploadError(validationError);
+      return;
+    }
+
+    // Clean up previous image if exists
+    if (selectedImage) {
+      cleanupImagePreview(selectedImage);
+    }
+
+    // Create image file with preview
+    const imageFile = createImageFile(file);
+    setSelectedImage(imageFile);
+  }, [selectedImage]);
+
+  // Remove selected image
+  const handleRemoveImage = useCallback(() => {
+    if (selectedImage) {
+      cleanupImagePreview(selectedImage);
+    }
+    setSelectedImage(null);
+    setUploadError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, [selectedImage]);
+
+  // Drag and drop handlers
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.types.includes('Files')) {
+      setDragActive(true);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const target = e.currentTarget as HTMLElement;
+    const relatedTarget = e.relatedTarget as HTMLElement;
+    if (!target.contains(relatedTarget)) {
+      setDragActive(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    if (!aiAvailable || isLoading) return;
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length === 0) return;
+
+    const file = files[0]; // Only take first file
+    setUploadError(null);
+
+    // Validate file
+    const validationError = getFileValidationError(file);
+    if (validationError) {
+      setUploadError(validationError);
+      return;
+    }
+
+    // Clean up previous image if exists
+    if (selectedImage) {
+      cleanupImagePreview(selectedImage);
+    }
+
+    // Create image file with preview
+    const imageFile = createImageFile(file);
+    setSelectedImage(imageFile);
+  }, [aiAvailable, isLoading, selectedImage]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (selectedImage) {
+        cleanupImagePreview(selectedImage);
+      }
+    };
   }, []);
 
   return (
@@ -302,7 +429,63 @@ export function ChatSection({ currentFocus, focusHistory = [] }: ChatSectionProp
       </AnimatePresence>
 
       {/* Input Area */}
-      <div className="p-3 border-t border-gray-200/50 dark:border-gray-700/50 shrink-0">
+      <div 
+        className="p-3 border-t border-gray-200/50 dark:border-gray-700/50 shrink-0 relative"
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
+        {/* Drag Overlay */}
+        {dragActive && (
+          <div className="absolute inset-0 bg-blue-500/10 border-2 border-dashed border-blue-500 rounded-lg flex items-center justify-center z-10 pointer-events-none">
+            <div className="bg-white dark:bg-gray-800 px-4 py-3 rounded-lg shadow-lg">
+              <div className="flex items-center gap-2">
+                <Upload className="w-5 h-5 text-blue-500" />
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Drop image here</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Upload Error */}
+        {uploadError && (
+          <div className="mb-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0" />
+              <span className="text-xs text-red-700 dark:text-red-300">{uploadError}</span>
+              <button
+                onClick={() => setUploadError(null)}
+                className="ml-auto text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200"
+                aria-label="Dismiss error"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Image Preview */}
+        {selectedImage && (
+          <div className="mb-2 relative inline-block">
+            <img
+              src={selectedImage.preview}
+              alt={selectedImage.name}
+              className="h-20 w-20 object-cover rounded-lg border-2 border-blue-500"
+            />
+            <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs px-1 py-0.5 rounded-b-lg truncate">
+              {selectedImage.name}
+            </div>
+            <button
+              onClick={handleRemoveImage}
+              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+              aria-label="Remove image"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+        
         <div className="flex gap-2">
           <input
             ref={inputRef}
@@ -315,6 +498,28 @@ export function ChatSection({ currentFocus, focusHistory = [] }: ChatSectionProp
             className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             aria-label="Chat message input"
           />
+          
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelect}
+            className="hidden"
+            aria-label="Upload image"
+          />
+          
+          {/* Image upload button */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isLoading || !aiAvailable}
+            className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1.5"
+            aria-label="Upload image for context"
+            title="Upload image for context"
+          >
+            <ImagePlus className="w-4 h-4" />
+          </button>
+          
           <button
             onClick={handleSendMessage}
             disabled={!inputValue.trim() || isLoading || !aiAvailable}

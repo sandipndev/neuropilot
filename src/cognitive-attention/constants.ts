@@ -3,6 +3,7 @@ export const MOUSE_HOVER_THRESHOLD = 1000
 export const SCROLL_VELOCITY_THRESHOLD = 500
 export const MIN_TEXT_LENGTH = 20
 export const READING_PROGRESS_INTERVAL = 1000
+export const IMAGE_HOVER_THRESHOLD = 2000
 export const IGNORE_SELECTORS = [
   "nav",
   "header",

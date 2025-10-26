@@ -14,7 +14,7 @@ import {
   SCROLL_VELOCITY_THRESHOLD,
   UPDATE_INTERVAL
 } from "./constants"
-import CognitiveAttentionUI from "./ui"
+import { CognitiveAttentionTextUI } from "./ui"
 
 type Config = {
   cognitiveAttentionThreshold: number // Sustained attention time
@@ -77,7 +77,7 @@ type SustainedAttentionHistory = {
   lastEmittedTime: number
 }
 
-class CognitiveAttentionTracker {
+class CognitiveAttentionTextTracker {
   public config: Omit<Config, "onSustainedAttentionChange"> & {
     cognitiveAttentionThreshold: number
     idleThreshold: number
@@ -96,7 +96,7 @@ class CognitiveAttentionTracker {
   private scrollTimeout: ReturnType<typeof setTimeout> | null = null
   private trackingInterval?: ReturnType<typeof setInterval>
   private lastBroadcastedElement: Element | null = null
-  private ui: CognitiveAttentionUI
+  private ui: CognitiveAttentionTextUI
 
   constructor(config?: Partial<Config>) {
     this.onSustainedAttentionChange = config?.onSustainedAttentionChange
@@ -117,7 +117,7 @@ class CognitiveAttentionTracker {
         config?.showOverlay || COGNITIVE_ATTENTION_SHOW_OVERLAY.defaultValue
     }
 
-    this.ui = new CognitiveAttentionUI({
+    this.ui = new CognitiveAttentionTextUI({
       debugMode: this.config.debugMode,
       showOverlay: this.config.showOverlay
     })
@@ -691,4 +691,4 @@ class CognitiveAttentionTracker {
   }
 }
 
-export default CognitiveAttentionTracker
+export default CognitiveAttentionTextTracker

@@ -4,9 +4,12 @@ const db = new Dexie("Neuropilot")
 
 db.version(1).stores({
   // User Activity
-  websiteVisits: "&url",
+  websiteVisits: "&url, opened_at",
   textAttention: "++id, url, timestamp",
-  imageAttention: "++id, url, timestamp"
+  imageAttention: "++id, url, timestamp",
+
+  // Inference Results
+  focus: "++id"
 })
 
 export default db

@@ -35,3 +35,21 @@ export const allUserActivityForLastMs = async (
     imageAttentions: imageAttentions.filter((ia) => ia.url === website.url)
   }))
 }
+
+export const attentionContent = (recentActivity: UserActivity[]) =>
+  recentActivity
+    .map(
+      (a, index) => `
+Title ${index + 1}: ${a.title}
+URL ${index + 1}: ${a.url}
+Content ${index + 1} user is paying attention to in this page:
+${a.textAttentions.map((r) => r.text).join(" ")}
+${
+  a.imageAttentions.length > 0
+    ? `Image Descriptions ${index + 1} user is paying attention to in this page:
+${a.imageAttentions.map((r) => r.caption).join(" ")}`
+    : ""
+}
+`
+    )
+    .join("\n\n---\n\n")

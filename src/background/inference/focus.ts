@@ -1,11 +1,13 @@
-import { join } from "path/win32"
-
 import db from "~background/db"
 
 import { getLanguageModel } from "./model"
-import { allUserActivityForLastMs, type UserActivity } from "./utils"
+import {
+  allUserActivityForLastMs,
+  attentionContent,
+  type UserActivity
+} from "./utils"
 
-type Focus = {
+export type Focus = {
   id?: number
   item: string
   keywords: string[]
@@ -80,24 +82,6 @@ const getActiveFocus = async () =>
     return lastTimeEntry && lastTimeEntry.end === null
   })
 
-const attentionContent = (recentActivity: UserActivity[]) =>
-  recentActivity
-    .map(
-      (a, index) => `
-Title ${index + 1}: ${a.title}
-URL ${index + 1}: ${a.url}
-Content ${index + 1} user is paying attention to in this page:
-${a.textAttentions.map((r) => r.text).join(" ")}
-${
-  a.imageAttentions.length > 0
-    ? `Image Descriptions ${index + 1} user is paying attention to in this page:
-${a.imageAttentions.map((r) => r.caption).join(" ")}`
-    : ""
-}
-`
-    )
-    .join("\n\n---\n\n")
-
 // Focus Drift Detection
 const detectFocusDrift = async (
   previousFocus: Focus,
@@ -125,8 +109,6 @@ If it is even related or still part of the same domain then answer no (still foc
 Otherwise, if you don't find a relation between the previous focus and current attention, then answer yes (shifted).
 
 Answer in one word (yes/no) only, no reasoning.`
-
-  console.log("Detecting focus drift with prompt:", { PROMPT })
 
   const session = await getLanguageModel()
   const response = await session.prompt(PROMPT.trim())

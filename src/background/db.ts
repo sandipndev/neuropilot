@@ -4,7 +4,8 @@ const db = new Dexie("Neuropilot")
 
 db.version(1).stores({
   // User Activity
-  websiteVisits: "&url"
+  websiteVisits: "&url",
+  textAttention: "++id, url, timestamp"
 })
 
 export default db

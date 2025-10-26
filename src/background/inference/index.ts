@@ -1,5 +1,6 @@
 import PQueue from "p-queue"
 
+import activitySummaryInferenceTask from "./activity-summary"
 import focusInferenceTask from "./focus"
 import pulseInferenceTask from "./pulse"
 import websiteSummarizerTask from "./website-summarizer"
@@ -12,6 +13,7 @@ const scheduleBackgroundInferenceTasks = () => {
   queue.add(async () => websiteSummarizerTask())
   queue.add(async () => focusInferenceTask())
   queue.add(async () => pulseInferenceTask())
+  queue.add(async () => activitySummaryInferenceTask())
 }
 
 queue.add(() => scheduleBackgroundInferenceTasks())

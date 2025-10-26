@@ -3,6 +3,7 @@ import PQueue from "p-queue"
 import activitySummaryInferenceTask from "./activity-summary"
 import focusInferenceTask from "./focus"
 import pulseInferenceTask from "./pulse"
+import quizQuestionsInferenceTask from "./quiz-questions"
 import websiteSummarizerTask from "./website-summarizer"
 
 const TASK_CONCURRENCY = 1
@@ -14,6 +15,7 @@ const scheduleBackgroundInferenceTasks = () => {
   queue.add(async () => focusInferenceTask())
   queue.add(async () => pulseInferenceTask())
   queue.add(async () => activitySummaryInferenceTask())
+  queue.add(async () => quizQuestionsInferenceTask())
 }
 
 queue.add(() => scheduleBackgroundInferenceTasks())

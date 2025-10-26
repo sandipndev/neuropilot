@@ -11,16 +11,12 @@ type Pulse = {
 
 const pulseInferenceTask = async () => {
   const ONE_DAY_MS = 24 * 60 * 60 * 1000
-
-  // Get all activity from the last day
   const recentActivity = await allUserActivityForLastMs(ONE_DAY_MS)
 
   if (recentActivity.length === 0) {
-    console.log("[Pulse] No recent activity found")
     return
   }
 
-  // Get focus topics from the last day
   const focusData = await db
     .table<Focus>("focus")
     .where("last_updated")
@@ -30,7 +26,6 @@ const pulseInferenceTask = async () => {
   const focusTopics =
     focusData.map((f) => f.item).join(", ") || "various topics"
 
-  // Calculate total time spent
   const totalActiveTime = recentActivity.reduce(
     (sum, activity) => sum + (activity.active_time || 0),
     0
@@ -38,27 +33,23 @@ const pulseInferenceTask = async () => {
   const hoursSpent = (totalActiveTime / (1000 * 60 * 60)).toFixed(1)
   const minutesSpent = Math.round(totalActiveTime / (1000 * 60))
 
-  // Get website count and titles
   const websiteCount = recentActivity.length
   const recentWebsiteTitles = recentActivity
     .slice(0, 5)
     .map((a) => a.title)
     .filter(Boolean)
 
-  // Get website summaries (key learnings)
   const websiteSummaries = recentActivity
     .filter((a) => a.summary)
     .map((a) => a.summary)
     .join("\n")
 
-  // Extract key text learnings from attentions
   const keyTextLearnings = recentActivity
     .flatMap((a) => a.textAttentions.map((ta) => ta.text))
     .filter((text) => text && text.length > 20)
     .slice(0, 10)
     .join("\n")
 
-  // Extract image insights
   const imageInsights = recentActivity
     .flatMap((a) => a.imageAttentions.map((ia) => ia.caption))
     .filter((caption) => caption && caption.length > 10)

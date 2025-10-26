@@ -11,7 +11,8 @@ db.version(1).stores({
   // Inference Results
   focus: "++id, last_updated",
   pulse: "++id, timestamp",
-  activitySummary: "++id, timestamp"
+  activitySummary: "++id, timestamp",
+  quizQuestions: "++id, timestamp"
 })
 
 export default db

@@ -51,6 +51,7 @@ const initImageTracker = async () => {
           ]
         }
       ])
+      session.destroy()
 
       drawCaption(data.imageElement, caption)
       await sendToBackground({

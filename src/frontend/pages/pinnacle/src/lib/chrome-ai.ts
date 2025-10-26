@@ -4,7 +4,8 @@
  */
 
 export interface AILanguageModelSession {
-  prompt(input: string): Promise<string>;
+  prompt(input: string | { text: string; image?: Blob | string }): Promise<string>;
+  promptStreaming(input: string | { text: string; image?: Blob | string }): AsyncIterable<string>;
   destroy(): void;
 }
 const MULTIMODAL_EXPECTED_INPUTS = [
@@ -162,7 +163,7 @@ export async function createAISession(config: AISessionConfig): Promise<AILangua
 }
 
 /**
- * Send a message to the AI and get a response
+ * Send a message to the AI and get a response (streaming enabled)
  */
 export async function sendAIMessage(
   session: AILanguageModelSession,
@@ -170,11 +171,11 @@ export async function sendAIMessage(
   context?: {
     currentFocus?: string;
     recentActivities?: string[];
+    imageData?: string; // Base64 encoded image
+    onChunk?: (chunk: string, done: boolean) => void;
   }
 ): Promise<string> {
-  console.log(`Sending AI message...`)
   try {
-    // Build context-aware prompt
     let prompt = message;
 
     if (context) {
@@ -193,10 +194,85 @@ export async function sendAIMessage(
       }
     }
 
-    const response = await session.prompt(prompt);
+    // Convert base64 image to Blob if present
+    let imageBlob: Blob | undefined;
+    if (context?.imageData) {
+      try {
+        // Extract base64 data (remove data:image/...;base64, prefix)
+        const base64Data = context.imageData.split(',')[1] || context.imageData;
+        const binaryString = atob(base64Data);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        // Detect image type from base64 prefix
+        const mimeMatch = context.imageData.match(/data:([^;]+);/);
+        const mimeType = mimeMatch ? mimeMatch[1] : 'image/png';
+        imageBlob = new Blob([bytes], { type: mimeType });
+        console.log('Image converted to Blob:', { size: imageBlob.size, type: imageBlob.type });
+      } catch (error) {
+        console.error('Failed to convert image:', error);
+        // Add error to prompt so AI can inform user
+        prompt = `${prompt}\n\n[Note: Image upload failed to process. Please describe the image or ask about your browsing history instead.]`;
+      }
+    }
+
+    // Build multimodal input if image is present
+    // Note: Chrome AI multimodal support is experimental and may not work yet
+    const input = imageBlob 
+      ? { text: prompt, image: imageBlob }
+      : prompt;
+    
+    if (imageBlob) {
+      console.log('Sending multimodal input to Chrome AI:', { hasImage: true, textLength: prompt.length });
+    }
+
+    // Use streaming if callback is provided
+    if (context?.onChunk) {
+      return await streamAIMessage(session, input, context.onChunk);
+    }
+
+    // Otherwise use regular prompt
+    const response = await session.prompt(input);
     return response;
   } catch (error) {
     throw new Error(`Failed to get AI response: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Stream AI message response chunk by chunk
+ */
+async function streamAIMessage(
+  session: AILanguageModelSession,
+  prompt: string | { text: string; image: Blob },
+  onChunk: (chunk: string, done: boolean) => void
+): Promise<string> {
+  try {
+    const stream = session.promptStreaming(prompt);
+    let fullResponse = '';
+    let previousChunk = '';
+
+    // Process the async iterable stream
+    for await (const chunk of stream) {
+      // Handle chunk deduplication (Chrome AI sends cumulative chunks)
+      const newChunk = chunk.startsWith(previousChunk) 
+        ? chunk.slice(previousChunk.length) 
+        : chunk;
+      
+      if (newChunk) {
+        fullResponse += newChunk;
+        onChunk(newChunk, false);
+      }
+      
+      previousChunk = chunk;
+    }
+
+    // Signal completion
+    onChunk('', true);
+    return fullResponse;
+  } catch (error) {
+    throw new Error(`Failed to stream AI response: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 

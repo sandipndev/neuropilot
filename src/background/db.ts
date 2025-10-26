@@ -9,7 +9,8 @@ db.version(1).stores({
   imageAttention: "++id, url, timestamp",
 
   // Inference Results
-  focus: "++id"
+  focus: "++id, last_updated",
+  pulse: "++id"
 })
 
 export default db

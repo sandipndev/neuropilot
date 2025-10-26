@@ -2,7 +2,7 @@ import type { PlasmoMessaging } from "@plasmohq/messaging"
 
 import db from "~background/db"
 
-type WebsiteVisit = {
+export type WebsiteVisit = {
   url: string
   title: string
   metadata: Record<string, string>

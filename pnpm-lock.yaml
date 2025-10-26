@@ -17,6 +17,9 @@ importers:
       dexie:
         specifier: ^4.2.1
         version: 4.2.1
+      p-queue:
+        specifier: ^9.0.0
+        version: 9.0.0
       plasmo:
         specifier: 0.90.5
         version: 0.90.5(@swc/core@1.13.5(@swc/helpers@0.5.17))(@swc/helpers@0.5.17)(@types/node@20.11.5)(postcss@8.5.6)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -1965,6 +1968,9 @@ packages:
   estree-walker@3.0.3:
     resolution: {integrity: sha512-7RUKfXgSMMkzt6ZuXmqapOurLGPPfgj6l9uRZ7lRGolvk0y2yocc35LdcxKC5PQZdn2DMqioAQ2NoWcrTKmm6g==}
 
+  eventemitter3@5.0.1:
+    resolution: {integrity: sha512-GWkBvjiSZK87ELrYOSESUYeVIc9mvLLf/nXalMOS5dYrgZq9o5OVkbZAVM06CVxYsCwH9BDZFPlQTlPA1j4ahA==}
+
   events@3.3.0:
     resolution: {integrity: sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==}
     engines: {node: '>=0.8.x'}
@@ -2588,6 +2594,14 @@ packages:
   p-cancelable@4.0.1:
     resolution: {integrity: sha512-wBowNApzd45EIKdO1LaU+LrMBwAcjfPaYtVzV3lmfM3gf8Z4CHZsiIqlM8TZZ8okYvh5A1cP6gTfCRQtwUpaUg==}
     engines: {node: '>=14.16'}
+
+  p-queue@9.0.0:
+    resolution: {integrity: sha512-KO1RyxstL9g1mK76530TExamZC/S2Glm080Nx8PE5sTd7nlduDQsAfEl4uXX+qZjLiwvDauvzXavufy3+rJ9zQ==}
+    engines: {node: '>=20'}
+
+  p-timeout@7.0.1:
+    resolution: {integrity: sha512-AxTM2wDGORHGEkPCt8yqxOTMgpfbEHqF51f/5fJCmwFC3C/zNcGT63SymH2ttOAaiIws2zVg4+izQCjrakcwHg==}
+    engines: {node: '>=20'}
 
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
@@ -5277,6 +5291,8 @@ snapshots:
     dependencies:
       '@types/estree': 1.0.8
 
+  eventemitter3@5.0.1: {}
+
   events@3.3.0: {}
 
   execa@5.1.1:
@@ -5841,6 +5857,13 @@ snapshots:
   p-cancelable@3.0.0: {}
 
   p-cancelable@4.0.1: {}
+
+  p-queue@9.0.0:
+    dependencies:
+      eventemitter3: 5.0.1
+      p-timeout: 7.0.1
+
+  p-timeout@7.0.1: {}
 
   package-json-from-dist@1.0.1: {}
 

@@ -12,7 +12,6 @@ class WebsiteTracker {
   private url = location.href
 
   start() {
-    console.debug("[NP|WebsiteVisit] Tracking", this.url)
     this.emit("opened", {
       url: this.url,
       title: document.title,
@@ -71,7 +70,6 @@ class WebsiteTracker {
       ...data
     }
 
-    console.debug(`[NP|WebsiteVisit] ${event}`, body)
     try {
       await sendToBackground({ name: WEBSITE_VISIT_MESSAGE_NAME, body })
     } catch (e) {

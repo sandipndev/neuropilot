@@ -5,6 +5,7 @@
 
 export interface AILanguageModelSession {
   prompt(input: string): Promise<string>;
+  promptStreaming(input: string): AsyncIterable<string>;
   destroy(): void;
 }
 const MULTIMODAL_EXPECTED_INPUTS = [
@@ -162,7 +163,7 @@ export async function createAISession(config: AISessionConfig): Promise<AILangua
 }
 
 /**
- * Send a message to the AI and get a response
+ * Send a message to the AI and get a response (streaming enabled)
  */
 export async function sendAIMessage(
   session: AILanguageModelSession,
@@ -170,11 +171,10 @@ export async function sendAIMessage(
   context?: {
     currentFocus?: string;
     recentActivities?: string[];
+    onChunk?: (chunk: string, done: boolean) => void;
   }
 ): Promise<string> {
-  console.log(`Sending AI message...`)
   try {
-    // Build context-aware prompt
     let prompt = message;
 
     if (context) {
@@ -193,10 +193,52 @@ export async function sendAIMessage(
       }
     }
 
+    // Use streaming if callback is provided
+    if (context?.onChunk) {
+      return await streamAIMessage(session, prompt, context.onChunk);
+    }
+
+    // Otherwise use regular prompt
     const response = await session.prompt(prompt);
     return response;
   } catch (error) {
     throw new Error(`Failed to get AI response: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Stream AI message response chunk by chunk
+ */
+async function streamAIMessage(
+  session: AILanguageModelSession,
+  prompt: string,
+  onChunk: (chunk: string, done: boolean) => void
+): Promise<string> {
+  try {
+    const stream = session.promptStreaming(prompt);
+    let fullResponse = '';
+    let previousChunk = '';
+
+    // Process the async iterable stream
+    for await (const chunk of stream) {
+      // Handle chunk deduplication (Chrome AI sends cumulative chunks)
+      const newChunk = chunk.startsWith(previousChunk) 
+        ? chunk.slice(previousChunk.length) 
+        : chunk;
+      
+      if (newChunk) {
+        fullResponse += newChunk;
+        onChunk(newChunk, false);
+      }
+      
+      previousChunk = chunk;
+    }
+
+    // Signal completion
+    onChunk('', true);
+    return fullResponse;
+  } catch (error) {
+    throw new Error(`Failed to stream AI response: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 

@@ -11,7 +11,16 @@ import { sendChatMessage } from '../../../../../api/mutations/send-chat-message'
 import { getChatMessages } from '../../../../../api/queries/chat-messages';
 import { clearChatMessages } from '../../../../../api/mutations/clear-chat-messages';
 import { checkChromeAIAvailability } from '../lib/chrome-ai';
-import type { ChatMessage as ChatMessageType, FocusWithParsedData } from '../types';
+import type { FocusWithParsedData } from '../types';
+
+// Extended ChatMessage type with streaming support
+interface ChatMessageType {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: number;
+  isStreaming?: boolean;
+}
 
 interface ChatSectionProps {
   currentFocus?: FocusWithParsedData | null;
@@ -22,6 +31,7 @@ export function ChatSection({ currentFocus, focusHistory = [] }: ChatSectionProp
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [aiAvailable, setAiAvailable] = useState(false);
@@ -88,6 +98,10 @@ export function ChatSection({ currentFocus, focusHistory = [] }: ChatSectionProp
 
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
+    setIsWaitingForResponse(true);
+
+    // Create a temporary assistant message for streaming (but don't add it yet)
+    const assistantMessageId = `assistant_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
     try {
       // Prepare context
@@ -96,24 +110,45 @@ export function ChatSection({ currentFocus, focusHistory = [] }: ChatSectionProp
         recentActivities: focusHistory.slice(0, 5).map((f) => f.focus_item),
       };
 
-      console.log(`sedingx`)
-      // Send message and get response
-      const response = await sendChatMessage({
+      // Send message and stream the response
+      let hasStartedStreaming = false;
+      await sendChatMessage({
         message: trimmedMessage,
         context,
+        onChunk: (chunk: string, done: boolean) => {
+          // On first chunk, hide loading indicator and add assistant message
+          if (!hasStartedStreaming && chunk) {
+            hasStartedStreaming = true;
+            setIsWaitingForResponse(false);
+            
+            // Add the assistant message with first chunk
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: assistantMessageId,
+                role: 'assistant',
+                content: chunk,
+                timestamp: Date.now(),
+                isStreaming: true,
+              },
+            ]);
+          } else if (hasStartedStreaming) {
+            // Update the assistant's message with subsequent chunks
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === assistantMessageId
+                  ? {
+                      ...msg,
+                      content: msg.content + chunk,
+                      isStreaming: !done,
+                      timestamp: Date.now(),
+                    }
+                  : msg
+              )
+            );
+          }
+        },
       });
-      console.log(`sedingx2`)
-
-
-      // Add assistant response
-      const assistantMessage: ChatMessageType = {
-        id: response.id,
-        role: response.role,
-        content: response.content,
-        timestamp: response.timestamp,
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
     } catch (err) {
       console.error('Error sending chat message:', err);
       setError(
@@ -123,6 +158,7 @@ export function ChatSection({ currentFocus, focusHistory = [] }: ChatSectionProp
       );
     } finally {
       setIsLoading(false);
+      setIsWaitingForResponse(false);
       inputRef.current?.focus();
     }
   }, [inputValue, isLoading, currentFocus, focusHistory]);
@@ -234,8 +270,8 @@ export function ChatSection({ currentFocus, focusHistory = [] }: ChatSectionProp
           </AnimatePresence>
         )}
 
-        {/* Loading Indicator */}
-        {isLoading && <LoadingIndicator />}
+        {/* Loading Indicator - Only show when waiting for first response */}
+        {isWaitingForResponse && <LoadingIndicator />}
 
         {/* Scroll anchor */}
         <div ref={messagesEndRef} />

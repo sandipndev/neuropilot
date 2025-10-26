@@ -8,7 +8,7 @@ import { formatRelativeTime } from '../lib/time';
 import type { ChatMessage as ChatMessageType } from '../types';
 
 interface ChatMessageProps {
-  message: ChatMessageType;
+  message: ChatMessageType & { isStreaming?: boolean };
 }
 
 export function ChatMessage({ message }: ChatMessageProps) {
@@ -39,6 +39,9 @@ export function ChatMessage({ message }: ChatMessageProps) {
       >
         <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
           {message.content}
+          {message.isStreaming && (
+            <span className="inline-block w-0.5 h-4 ml-1 bg-blue-500 animate-pulse" />
+          )}
         </p>
         <div
           className={`text-xs mt-2 ${

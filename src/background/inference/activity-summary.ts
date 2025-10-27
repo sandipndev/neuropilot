@@ -1,7 +1,6 @@
 import db from "~background/db"
-
-import { getLanguageModel } from "./model"
-import { allUserActivityForLastMs, attentionContent } from "./utils"
+import { getLanguageModel } from "~model"
+import { allUserActivityForLastMs, attentionContent } from "~utils"
 
 type ActivitySummary = {
   summary: string

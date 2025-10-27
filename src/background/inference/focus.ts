@@ -1,11 +1,10 @@
 import db from "~background/db"
-
-import { getLanguageModel } from "./model"
+import { getLanguageModel } from "~model"
 import {
   allUserActivityForLastMs,
   attentionContent,
   type UserActivity
-} from "./utils"
+} from "~utils"
 
 export type Focus = {
   id?: number

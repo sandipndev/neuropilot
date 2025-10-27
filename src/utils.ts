@@ -1,7 +1,14 @@
+import type { Focus } from "~background/inference/focus"
 import type { ImageAttention } from "~background/messages/cognitive-attention-image"
 import type { TextAttention } from "~background/messages/cognitive-attention-text"
 import type { WebsiteVisit } from "~background/messages/website-visit"
 import db from "~db"
+
+export const getActiveFocus = async () =>
+  (await db.table<Focus>("focus").reverse().toArray()).find((focus) => {
+    const lastTimeEntry = focus.time_spent[focus.time_spent.length - 1]
+    return lastTimeEntry && lastTimeEntry.end === null
+  })
 
 export interface UserActivity extends WebsiteVisit {
   textAttentions: TextAttention[]

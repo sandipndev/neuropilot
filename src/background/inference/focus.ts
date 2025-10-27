@@ -3,6 +3,7 @@ import { getLanguageModel } from "~model"
 import {
   allUserActivityForLastMs,
   attentionContent,
+  getActiveFocus,
   type UserActivity
 } from "~utils"
 
@@ -74,12 +75,6 @@ const focusInferenceTask = async () => {
 }
 
 export default focusInferenceTask
-
-const getActiveFocus = async () =>
-  (await db.table<Focus>("focus").reverse().toArray()).find((focus) => {
-    const lastTimeEntry = focus.time_spent[focus.time_spent.length - 1]
-    return lastTimeEntry && lastTimeEntry.end === null
-  })
 
 // Focus Drift Detection
 const detectFocusDrift = async (
@@ -160,7 +155,8 @@ What is the single greatest common factor between these:
 
 ${keywords.join(", ")}
 
-Note: Be specific enough to be meaningful. Consider both direct and indirect relationships. If no clear commonality exists, identify the most significant or dominant term.`
+Note: Be specific enough to be meaningful. Consider both direct and indirect relationships.
+If no clear commonality exists, identify the most significant or dominant term.`
 
   const session = await getLanguageModel()
   const focus = await session.prompt(PROMPT.trim())

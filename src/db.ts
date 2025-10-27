@@ -14,7 +14,8 @@ db.version(1).stores({
   activitySummary: "++id, timestamp",
   quizQuestions: "++id, timestamp",
 
-  chatMessages: "++id, timestamp"
+  chatMessages: "++id, timestamp",
+  pastWins: "++id"
 })
 
 export default db

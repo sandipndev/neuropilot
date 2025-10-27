@@ -167,7 +167,7 @@ const Popup = () => {
 
   return (
     <div
-      className="relative min-h-screen overflow-hidden bg-linear-to-br from-gray-50 to-gray-100"
+      className="relative h-screen overflow-hidden bg-linear-to-br from-gray-50 to-gray-100"
       role="main">
       {/* Tree Animation Background */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
@@ -252,7 +252,7 @@ const Popup = () => {
           <div className="p-6" role="region" aria-label="Quiz suggestions">
             <div className="space-y-2">
               <div className="text-sm text-gray-700 leading-relaxed">
-                <p className="mb-2">
+                <div className="mb-2">
                   {focusHistory.length >= 1 ? (
                     <>
                       <p className="font-semibold mb-2">
@@ -273,7 +273,7 @@ const Popup = () => {
                       </div>
                     </div>
                   )}
-                </p>
+                </div>
               </div>
               <RefresherButton isDisabled={focusHistory.length < 1} />
             </div>

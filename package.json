@@ -58,7 +58,8 @@
     ],
     "permissions": [
       "activeTab",
-      "storage"
+      "storage",
+      "alarms"
     ],
     "web_accessible_resources": [
       {

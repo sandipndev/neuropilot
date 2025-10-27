@@ -146,7 +146,7 @@ class CognitiveAttentionImageTracker {
 
           const attention: SustainedImageAttention = {
             src: imageElement.src,
-            alt: imageElement.alt || "",
+            alt: getImageDescription(imageElement),
             title: imageElement.title || "",
             width: imageElement.naturalWidth,
             height: imageElement.naturalHeight,
@@ -225,4 +225,30 @@ const getMimeType = async (img: HTMLImageElement): Promise<string | null> => {
   } catch {
     return null
   }
+}
+
+const getImageDescription = (imageElement: HTMLImageElement) => {
+  if (imageElement.tagName === "IMG") {
+    const altText = imageElement.getAttribute("alt")
+    if (altText && altText.trim() !== "") {
+      return altText.trim()
+    }
+  }
+
+  const figure = imageElement.closest("figure")
+  if (figure) {
+    const figcaption = figure.querySelector("figcaption")
+    if (figcaption) {
+      return figcaption.innerText.trim()
+    }
+  }
+
+  if (imageElement.tagName === "FIGURE") {
+    const figcaption = imageElement.querySelector("figcaption")
+    if (figcaption) {
+      return figcaption.innerText.trim()
+    }
+  }
+
+  return ""
 }

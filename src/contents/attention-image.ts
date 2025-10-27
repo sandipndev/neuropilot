@@ -2,6 +2,7 @@ import { sendToBackground } from "@plasmohq/messaging"
 import { Storage } from "@plasmohq/storage"
 
 import { COGNITIVE_ATTENTION_SHOW_OVERLAY } from "~default-settings"
+import { getImageModel } from "~model"
 
 import CognitiveAttentionImageTracker from "../cognitive-attention/monitor-image"
 
@@ -37,6 +38,8 @@ const initImageTracker = async () => {
         type: data.mimeType || "image/jpeg"
       })
 
+      const PROMPT = `Describe this image in one concise sentence (max 15 words).`
+
       const session = await getImageModel()
       const caption = await session.prompt([
         {
@@ -45,8 +48,7 @@ const initImageTracker = async () => {
             { type: "image", value: imageFile },
             {
               type: "text",
-              value:
-                "Describe this image in one concise sentence (max 15 words)."
+              value: PROMPT.trim()
             }
           ]
         }
@@ -79,30 +81,6 @@ initImageTracker().then(() => {
 
 export { imageTracker }
 
-const getImageModel = async () => {
-  const LanguageModel = (self as any).LanguageModel as any
-
-  if (!LanguageModel) {
-    throw new Error("Chrome AI not available")
-  }
-
-  const availability = await LanguageModel.availability({
-    expectedInputs: [{ type: "image" }, { type: "text" }],
-    expectedOutputs: [{ type: "text" }]
-  })
-
-  if (availability !== "available") {
-    throw new Error(`Image processing not available: ${availability}`)
-  }
-
-  return await LanguageModel.create({
-    expectedInputs: [{ type: "image" }, { type: "text" }],
-    expectedOutputs: [{ type: "text" }],
-    systemPrompt:
-      "You are an image captioning assistant. Generate brief, descriptive captions."
-  })
-}
-
 const drawCaption = (imageElement: HTMLImageElement, caption: string) => {
   const captionId = "image-caption-overlay"
 
@@ -131,6 +109,10 @@ const drawCaption = (imageElement: HTMLImageElement, caption: string) => {
   const rect = imageElement.getBoundingClientRect()
   captionDiv.style.left = rect.left + window.scrollX + "px"
   captionDiv.style.top = rect.bottom + window.scrollY + "px"
+
+  captionDiv.onclick = () => {
+    document.body.removeChild(captionDiv)
+  }
 
   // Add to document
   document.body.appendChild(captionDiv)

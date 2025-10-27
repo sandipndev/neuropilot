@@ -1,7 +1,6 @@
 import db from "~background/db"
 import type { WebsiteVisit } from "~background/messages/website-visit"
-
-import { getLanguageModel } from "./model"
+import { getLanguageModel } from "~model"
 
 const PROMPT = (website: WebsiteVisit) => `
 Summarize my activity for this website in a concise manner:

@@ -1,8 +1,8 @@
 import db from "~background/db"
+import { getLanguageModel } from "~model"
+import { allUserActivityForLastMs } from "~utils"
 
 import type { Focus } from "./focus"
-import { getLanguageModel } from "./model"
-import { allUserActivityForLastMs } from "./utils"
 
 type Pulse = {
   message: string

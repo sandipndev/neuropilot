@@ -15,7 +15,60 @@ db.version(1).stores({
   quizQuestions: "++id, timestamp",
 
   chatMessages: "++id, timestamp",
-  pastWins: "++id"
+  pastWins: "++id",
+  pomodoro: "&id, lastUpdated"
 })
 
-export default db
+export default db;
+
+
+export type Focus = {
+  id?: number
+  item: string
+  keywords: string[]
+  time_spent: {
+    start: number
+    end: number | null
+  }[]
+  last_updated: number
+}
+
+
+export type Pulse = {
+  message: string
+  timestamp: number
+}
+
+export type QuizQuestion = {
+  question: string
+  option_1: string
+  option_2: string
+  correct_answer: number
+  timestamp: number
+}
+
+export type ActivitySummary = {
+  summary: string
+  timestamp: number
+}
+
+export type PastWin = {
+  id?: number
+  focus_item: string
+  time_spent: number
+  time_spent_hours: number
+  recorded_at: number
+}
+
+export type PomodoroStateType = "idle" | "focus" | "break"
+
+export type PomodoroState = {
+  id: string
+  isActive: boolean
+  remainingTime: number // seconds
+  state: PomodoroStateType
+  startTime: number | null // timestamp when timer started
+  totalPomodoros: number
+  lastUpdated: number
+}
+

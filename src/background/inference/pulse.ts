@@ -2,12 +2,7 @@ import db from "~db"
 import { getLanguageModel } from "~model"
 import { allUserActivityForLastMs } from "~utils"
 
-import type { Focus } from "./focus"
-
-type Pulse = {
-  message: string
-  timestamp: number
-}
+import type { Focus, Pulse } from "~db"
 
 const pulseInferenceTask = async () => {
   const ONE_DAY_MS = 24 * 60 * 60 * 1000

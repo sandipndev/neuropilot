@@ -1,4 +1,4 @@
-import type { Focus } from "~background/inference/focus"
+import type { Focus } from "~db"
 import type { ImageAttention } from "~background/messages/cognitive-attention-image"
 import type { TextAttention } from "~background/messages/cognitive-attention-text"
 import type { WebsiteVisit } from "~background/messages/website-visit"

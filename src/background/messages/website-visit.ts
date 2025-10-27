@@ -9,6 +9,7 @@ export type WebsiteVisit = {
   opened_at: number
   closed_at: number | null
   active_time: number
+  referrer: string | null
   summary?: string
   summary_generated_with_n_attentions?: number
 }
@@ -22,6 +23,7 @@ const handler: PlasmoMessaging.MessageHandler = async (req) => {
         title: body.title,
         metadata: body.metadata,
         opened_at: body.timestamp,
+        referrer: body.url === body.referrer ? null : body.referrer,
         closed_at: null,
         active_time: 0
       })

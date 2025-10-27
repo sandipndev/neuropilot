@@ -15,7 +15,8 @@ class WebsiteTracker {
     this.emit("opened", {
       url: this.url,
       title: document.title,
-      metadata: getWebsiteMetadata()
+      metadata: getWebsiteMetadata(),
+      referrer: document.referrer
     })
     this.updateActivityState()
 

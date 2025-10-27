@@ -72,8 +72,8 @@ export function TreeAnimationSection({
           animation: "sway 8s ease-in-out infinite"
         }}>
         <div
-          className="w-full h-full scale-150 -translate-x-[15%] bottom-0 opacity-20"
-          style={{ filter: "hue-rotate(120deg)" }}>
+          className="w-full h-full scale-300 bottom-0 opacity-20"
+          style={{ filter: "hue-rotate(120deg)", animation: "sway 8s ease-in-out infinite" }}>
           <RiveComponent className="w-full h-full" />
         </div>
       </div>

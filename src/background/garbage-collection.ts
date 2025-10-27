@@ -3,6 +3,8 @@ import { Storage } from "@plasmohq/storage"
 import db from "~db"
 import { GARBAGE_COLLECTION_INTERVAL } from "~default-settings"
 
+import updatePastWinsTask from "./update-past-wins"
+
 const storage = new Storage()
 
 const LAST_RUN_KEY = "garbage-collection-last-run"
@@ -23,24 +25,19 @@ const garbageCollectionTask = async () => {
 
   const cutoffTime = now - interval
 
+  await updatePastWinsTask()
+
   await db.table("websiteVisits").where("opened_at").below(cutoffTime).delete()
-
   await db.table("textAttention").where("timestamp").below(cutoffTime).delete()
-
   await db.table("imageAttention").where("timestamp").below(cutoffTime).delete()
-
   await db.table("focus").where("last_updated").below(cutoffTime).delete()
-
   await db.table("pulse").where("timestamp").below(cutoffTime).delete()
-
   await db
     .table("activitySummary")
     .where("timestamp")
     .below(cutoffTime)
     .delete()
-
   await db.table("quizQuestions").where("timestamp").below(cutoffTime).delete()
-
   await db.table("chatMessages").where("timestamp").below(cutoffTime).delete()
 
   await storage.set(LAST_RUN_KEY, now.toString())

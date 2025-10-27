@@ -48,6 +48,10 @@ const initImageTracker = async () => {
             { type: "image", value: imageFile },
             {
               type: "text",
+              value: data.alt
+            },
+            {
+              type: "text",
               value: PROMPT.trim()
             }
           ]

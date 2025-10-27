@@ -12,7 +12,9 @@ db.version(1).stores({
   focus: "++id, last_updated",
   pulse: "++id, timestamp",
   activitySummary: "++id, timestamp",
-  quizQuestions: "++id, timestamp"
+  quizQuestions: "++id, timestamp",
+
+  chatMessages: "++id, timestamp"
 })
 
 export default db

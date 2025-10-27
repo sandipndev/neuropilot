@@ -11,8 +11,10 @@ interface TreeAnimationSectionProps {
 export function TreeAnimationSection({
   totalFocusTime
 }: TreeAnimationSectionProps) {
-  const growthStage = getTreeGrowthStage(totalFocusTime)
+  const baseGrowthStage = getTreeGrowthStage(totalFocusTime)
   const [runtimeLoaded, setRuntimeLoaded] = useState(false)
+  const [animatedGrowthStage, setAnimatedGrowthStage] =
+    useState(baseGrowthStage)
 
   // Configure Rive to use local WASM files from extension
   useEffect(() => {
@@ -25,13 +27,37 @@ export function TreeAnimationSection({
     })
   }, [])
 
+  // Oscillate growth stage to make tree appear moving
+  useEffect(() => {
+    let animationFrame: number
+    let startTime = Date.now()
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime
+      // Oscillate slowly over 8 seconds
+      const offset = Math.sin((elapsed / 8000) * Math.PI * 2) * 0.5
+      const newStage = Math.max(0, baseGrowthStage + offset)
+      setAnimatedGrowthStage(newStage)
+
+      animationFrame = requestAnimationFrame(animate)
+    }
+
+    animate()
+
+    return () => {
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame)
+      }
+    }
+  }, [baseGrowthStage])
+
   const { RiveComponent, rive } = useRive({
     src: "/assets/8178-15744-focusforest.riv",
     autoplay: true,
     stateMachines: ["State Machine 1"]
   })
 
-  // Update animation state based on growth stage
+  // Update animation state based on animated growth stage
   useEffect(() => {
     if (!rive) return
 
@@ -47,14 +73,14 @@ export function TreeAnimationSection({
 
           if (inputControl) {
             // Map growth stage (0-1) to integer value (0-3 for seed/sapling/growing/mature)
-            inputControl.value = growthStage
+            inputControl.value = animatedGrowthStage
           }
         }
       }
     } catch (error) {
       console.error("Error updating Rive animation:", error)
     }
-  }, [rive, growthStage])
+  }, [rive, animatedGrowthStage])
 
   if (!runtimeLoaded) {
     return (

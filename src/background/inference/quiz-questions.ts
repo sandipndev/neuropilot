@@ -1,4 +1,4 @@
-import db from "~background/db"
+import db from "~db"
 import { getLanguageModel } from "~model"
 import { allUserActivityForLastMs } from "~utils"
 

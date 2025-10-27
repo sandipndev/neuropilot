@@ -1,6 +1,6 @@
 import type { PlasmoMessaging } from "@plasmohq/messaging"
 
-import db from "~background/db"
+import db from "~db"
 
 export type ImageAttention = {
   url: string

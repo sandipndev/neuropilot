@@ -1,7 +1,7 @@
-import db from "~background/db"
 import type { ImageAttention } from "~background/messages/cognitive-attention-image"
 import type { TextAttention } from "~background/messages/cognitive-attention-text"
 import type { WebsiteVisit } from "~background/messages/website-visit"
+import db from "~db"
 
 export interface UserActivity extends WebsiteVisit {
   textAttentions: TextAttention[]

@@ -28,6 +28,11 @@ export const DOOMSCROLLING_TIME_WINDOW = {
   defaultValue: 30000
 }
 
+export const GARBAGE_COLLECTION_INTERVAL = {
+  key: "setting-garbage-collection-interval",
+  defaultValue: 2 * 24 * 60 * 60 * 1000 // 2 days
+}
+
 // These are storage watch keys
 export const NOTIFICATION_STORAGE_KEY = "notification-storage-key"
 export enum NotificationMessageType {

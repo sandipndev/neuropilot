@@ -19,7 +19,7 @@ const LAST_DOOMSCROLL_NOTIFICATION_KEY =
 const doomscrollingDetectionTask = async () => {
   const timeWindowValue = await storage.get(DOOMSCROLLING_TIME_WINDOW.key)
   const timeWindow = Number(
-    timeWindowValue ?? DOOMSCROLLING_TIME_WINDOW.defaultValue
+    timeWindowValue || DOOMSCROLLING_TIME_WINDOW.defaultValue
   )
 
   const itemsThresholdValue = await storage.get(

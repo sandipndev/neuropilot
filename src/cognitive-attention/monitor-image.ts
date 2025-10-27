@@ -41,7 +41,7 @@ class CognitiveAttentionImageTracker {
     this.onSustainedImageAttention = config?.onSustainedImageAttention
 
     this.config = {
-      showOverlay: config?.showOverlay ?? false
+      showOverlay: config?.showOverlay || false
     }
 
     this.state = {

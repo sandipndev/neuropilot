@@ -1,3 +1,4 @@
+import garbageCollectionTask from "../garbage-collection"
 import activitySummaryInferenceTask from "./activity-summary"
 import doomscrollingDetectionTask from "./doomscrolling"
 import focusInferenceTask from "./focus"
@@ -11,5 +12,6 @@ export const backgroundInferenceTasks = [
   pulseInferenceTask,
   activitySummaryInferenceTask,
   quizQuestionsInferenceTask,
-  doomscrollingDetectionTask
+  doomscrollingDetectionTask,
+  garbageCollectionTask
 ]

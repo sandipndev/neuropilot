@@ -2,15 +2,7 @@ import db from "~db"
 import { getLanguageModel } from "~model"
 import { allUserActivityForLastMs } from "~utils"
 
-import type { Focus } from "./focus"
-
-type QuizQuestion = {
-  question: string
-  option_1: string
-  option_2: string
-  correct_answer: number
-  timestamp: number
-}
+import type { Focus, QuizQuestion } from "~db"
 
 const quizQuestionsInferenceTask = async () => {
   const ONE_DAY_MS = 24 * 60 * 60 * 1000

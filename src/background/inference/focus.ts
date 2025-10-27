@@ -1,4 +1,4 @@
-import db from "~db"
+import db, { type Focus } from "~db"
 import { getLanguageModel } from "~model"
 import {
   allUserActivityForLastMs,
@@ -6,17 +6,6 @@ import {
   getActiveFocus,
   type UserActivity
 } from "~utils"
-
-export type Focus = {
-  id?: number
-  item: string
-  keywords: string[]
-  time_spent: {
-    start: number
-    end: number | null
-  }[]
-  last_updated: number
-}
 
 const focusInferenceTask = async () => {
   const previousFocus = await getActiveFocus()

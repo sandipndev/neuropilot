@@ -1,11 +1,6 @@
-import db from "~db"
+import db, { type ActivitySummary } from "~db"
 import { getLanguageModel } from "~model"
 import { allUserActivityForLastMs, attentionContent } from "~utils"
-
-type ActivitySummary = {
-  summary: string
-  timestamp: number
-}
 
 const activitySummaryInferenceTask = async () => {
   const ONE_MINUTE_MS = 1 * 60 * 1000

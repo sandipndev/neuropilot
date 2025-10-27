@@ -85,36 +85,39 @@ export { imageTracker }
 const drawCaption = (imageElement: HTMLImageElement, caption: string) => {
   const captionId = "image-caption-overlay"
 
-  // Check if caption already exists and remove it
   const existingCaption = document.getElementById(captionId)
   if (existingCaption) {
     existingCaption.remove()
   }
 
-  // Create caption element
   const captionDiv = document.createElement("div")
   captionDiv.id = captionId
   captionDiv.textContent = caption
 
-  // Style the caption
-  captionDiv.style.position = "absolute"
+  captionDiv.style.position = "fixed"
   captionDiv.style.backgroundColor = "black"
   captionDiv.style.color = "white"
   captionDiv.style.padding = "8px 12px"
-  captionDiv.style.width = imageElement.offsetWidth + "px"
   captionDiv.style.boxSizing = "border-box"
   captionDiv.style.textAlign = "center"
   captionDiv.style.fontSize = "14px"
 
-  // Position it under the image
-  const rect = imageElement.getBoundingClientRect()
-  captionDiv.style.left = rect.left + window.scrollX + "px"
-  captionDiv.style.top = rect.bottom + window.scrollY + "px"
+  const updatePosition = () => {
+    const rect = imageElement.getBoundingClientRect()
+    captionDiv.style.left = rect.left + "px"
+    captionDiv.style.top = rect.bottom + "px"
+    captionDiv.style.width = rect.width + "px"
+  }
+
+  updatePosition()
+  window.addEventListener("resize", updatePosition)
+  window.addEventListener("scroll", updatePosition, true)
 
   captionDiv.onclick = () => {
+    window.removeEventListener("resize", updatePosition)
+    window.removeEventListener("scroll", updatePosition, true)
     document.body.removeChild(captionDiv)
   }
 
-  // Add to document
   document.body.appendChild(captionDiv)
 }

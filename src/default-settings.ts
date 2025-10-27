@@ -18,3 +18,18 @@ export const COGNITIVE_ATTENTION_SHOW_OVERLAY = {
   key: "setting-cognitive-attention-show-overlay",
   defaultValue: false
 }
+
+export const DOOMSCROLLING_ATTENTION_ITEMS_THRESHOLD = {
+  key: "setting-doomscrolling-attention-items-threshold",
+  defaultValue: 5
+}
+export const DOOMSCROLLING_TIME_WINDOW = {
+  key: "setting-doomscrolling-time-window",
+  defaultValue: 30000
+}
+
+// These are storage watch keys
+export const NOTIFICATION_STORAGE_KEY = "notification-storage-key"
+export enum NotificationMessageType {
+  DOOMSCROLLING_DETECTED = "DOOMSCROLLING_DETECTED"
+}

@@ -1,6 +1,8 @@
 import { Award, Flame, Trophy } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 
+import type { PomodoroState } from "~db"
+
 import {
   getCurrentFocusData,
   getFocusHistory,
@@ -10,7 +12,6 @@ import { getPomodoroState, togglePomodoro } from "./api/pomodoro"
 import { getWinsData } from "./api/wins"
 import { RefresherButton } from "./components/RefresherButton"
 import { TreeAnimationSection } from "./components/TreeAnimationSection"
-import type { PomodoroState } from "~db"
 import type { WinItem } from "./types/wins"
 
 import "./index.css"
@@ -42,7 +43,6 @@ const Popup = () => {
     setFormattedFocusTime(strxx)
   }
 
-
   console.log(`Yoo`)
   // Fetch data on mount
   useEffect(() => {
@@ -59,7 +59,7 @@ const Popup = () => {
         setFocusHistory(history)
         setWins(winsData)
 
-        console.log('currentFocus', currentFocus, history, winsData)
+        console.log("currentFocus", currentFocus, history, winsData)
 
         // Fetch pomodoro state separately with error handling
         try {

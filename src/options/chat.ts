@@ -15,7 +15,8 @@ export const streamResponse = async (
   images: File[] | null = null,
   onChunk?: (chunk: string, done: boolean) => void
 ) => {
-  const prompt = SYSTEM_PROMPT(await chatContext())
+  const LAST_DAY = 24 * 60 * 60 * 1000
+  const prompt = SYSTEM_PROMPT(await chatContext(LAST_DAY))
   const model = await getChatModel(prompt, [])
 
   const content: ChatMessageItem["content"] = []
@@ -59,9 +60,8 @@ export const streamResponse = async (
   return response.trim()
 }
 
-const chatContext = async () => {
-  const LAST_DAY = 24 * 60 * 60 * 1000
-  const activity = await allUserActivityForLastMs(LAST_DAY)
+const chatContext = async (ms: number) => {
+  const activity = await allUserActivityForLastMs(ms)
 
   return activity
     .map(
@@ -102,9 +102,9 @@ FORMAT:
   - Use bullet points only if listing multiple items
   - Include URLs when referencing specific sites
   - Be conversational but professional
+
+All this context is NOT another previous conversation, it is the user's current activity.
   
 HERE IS WHAT THE USER HAS VISITED PRIMARILY:
 ${activityContent}
-
-All this context is NOT another previous conversation, it is the user's current activity.
 `

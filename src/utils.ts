@@ -29,11 +29,31 @@ export const allUserActivityForLastMs = async (
     .above(Date.now() - ms)
     .toArray()
 
-  return websites.map((website) => ({
-    ...website,
-    textAttentions: textAttentions.filter((ta) => ta.url === website.url),
-    imageAttentions: imageAttentions.filter((ia) => ia.url === website.url)
-  }))
+  return websites
+    .map((website) => {
+      const websiteTextAttentions = textAttentions.filter(
+        (ta) => ta.url === website.url
+      )
+      const websiteImageAttentions = imageAttentions.filter(
+        (ia) => ia.url === website.url
+      )
+
+      // Find the latest activity timestamp for this website
+      const latestActivity = Math.max(
+        website.closed_at || website.opened_at,
+        website.active_time || 0,
+        ...websiteTextAttentions.map((ta) => ta.timestamp),
+        ...websiteImageAttentions.map((ia) => ia.timestamp)
+      )
+
+      return {
+        ...website,
+        textAttentions: websiteTextAttentions,
+        imageAttentions: websiteImageAttentions,
+        latestActivity
+      }
+    })
+    .sort((a, b) => b.latestActivity - a.latestActivity)
 }
 
 export const attentionContent = (recentActivity: UserActivity[]) =>

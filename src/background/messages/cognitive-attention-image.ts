@@ -9,6 +9,7 @@ export type ImageAttention = {
   title: string
   width: number
   caption: string
+  timestamp: number
 }
 
 const handler: PlasmoMessaging.MessageHandler = async (req, res) => {
@@ -18,7 +19,8 @@ const handler: PlasmoMessaging.MessageHandler = async (req, res) => {
     alt: req.body.alt,
     title: req.body.title,
     width: req.body.width,
-    caption: req.body.caption
+    caption: req.body.caption,
+    timestamp: req.body.timestamp
   })
 }
 

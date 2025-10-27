@@ -64,7 +64,8 @@ const initImageTracker = async () => {
           alt: data.alt,
           title: data.title,
           width: data.width,
-          caption
+          caption,
+          timestamp: Date.now()
         }
       })
     }

@@ -15,7 +15,7 @@ db.version(1).stores({
   quizQuestions: "++id, timestamp",
 
   chatMessages: "++id, timestamp",
-  pastWins: "++id",
+  pastWins: "++id, time_spent",
   pomodoro: "&id, lastUpdated"
 })
 
@@ -70,5 +70,12 @@ export type PomodoroState = {
   startTime: number | null // timestamp when timer started
   totalPomodoros: number
   lastUpdated: number
+}
+
+export type ChatMessage = {
+  id?: number
+  role: 'user' | 'assistant'
+  content: string
+  timestamp: number
 }
 

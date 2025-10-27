@@ -2,13 +2,12 @@ import PQueue from "p-queue"
 
 import { backgroundInferenceTasks } from "./inference"
 
-const TASK_CONCURRENCY = 1
+const TASK_CONCURRENCY = 2
 
 const queue = new PQueue({ concurrency: TASK_CONCURRENCY })
 
 const scheduleBackgroundInferenceTasks = async () => {
   for (const task of backgroundInferenceTasks) {
-    console.log("scheduling task", task.name)
     queue.add(async () => task())
   }
 }

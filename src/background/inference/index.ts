@@ -1,4 +1,5 @@
 import activitySummaryInferenceTask from "./activity-summary"
+import doomscrollingDetectionTask from "./doomscrolling"
 import focusInferenceTask from "./focus"
 import pulseInferenceTask from "./pulse"
 import quizQuestionsInferenceTask from "./quiz-questions"
@@ -9,5 +10,6 @@ export const backgroundInferenceTasks = [
   focusInferenceTask,
   pulseInferenceTask,
   activitySummaryInferenceTask,
-  quizQuestionsInferenceTask
+  quizQuestionsInferenceTask,
+  doomscrollingDetectionTask
 ]

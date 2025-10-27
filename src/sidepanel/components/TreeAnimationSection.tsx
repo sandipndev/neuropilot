@@ -1,81 +1,79 @@
 /// <reference types="chrome"/>
-import { useEffect, useState } from "react";
-import { useRive, RuntimeLoader } from "@rive-app/react-webgl2";
-import { getTreeGrowthStage } from "../utils/tree";
+import { RuntimeLoader, useRive } from "@rive-app/react-webgl2"
+import { useEffect, useState } from "react"
+
+import { getTreeGrowthStage } from "../utils/tree"
 
 interface TreeAnimationSectionProps {
-  totalFocusTime: number; // milliseconds
+  totalFocusTime: number // milliseconds
 }
 
-export function TreeAnimationSection({ totalFocusTime }: TreeAnimationSectionProps) {
-  const growthStage = getTreeGrowthStage(totalFocusTime);
-  const [runtimeLoaded, setRuntimeLoaded] = useState(false);
+export function TreeAnimationSection({
+  totalFocusTime
+}: TreeAnimationSectionProps) {
+  const growthStage = getTreeGrowthStage(totalFocusTime)
+  const [runtimeLoaded, setRuntimeLoaded] = useState(false)
 
   // Configure Rive to use local WASM files from extension
   useEffect(() => {
-    RuntimeLoader.setWasmUrl("/assets/rive.wasm");
+    RuntimeLoader.setWasmUrl("/assets/rive.wasm")
     // RuntimeLoader.setWasmUrl("rive-wasm/rive_fallback.wasm");
 
     RuntimeLoader.getInstance(() => {
-      console.log("Rive runtime loaded successfully");
-      setRuntimeLoaded(true);
-    });
-  }, []);
-
-  
+      console.log("Rive runtime loaded successfully")
+      setRuntimeLoaded(true)
+    })
+  }, [])
 
   const { RiveComponent, rive } = useRive({
     src: "/assets/8178-15744-focusforest.riv",
     autoplay: true,
-    stateMachines: ["State Machine 1"],
-  });
-
-
+    stateMachines: ["State Machine 1"]
+  })
 
   // Update animation state based on growth stage
   useEffect(() => {
-    if (!rive) return;
+    if (!rive) return
 
     try {
-      const stateMachineNames = rive.stateMachineNames;
+      const stateMachineNames = rive.stateMachineNames
 
       if (stateMachineNames && stateMachineNames.length > 0) {
-        const inputs = rive.stateMachineInputs(stateMachineNames[0]);
+        const inputs = rive.stateMachineInputs(stateMachineNames[0])
 
         if (inputs && inputs.length > 0) {
           // Find the input named "input"
-          const inputControl = inputs.find((input) => input.name === "input");
+          const inputControl = inputs.find((input) => input.name === "input")
 
           if (inputControl) {
             // Map growth stage (0-1) to integer value (0-3 for seed/sapling/growing/mature)
-            inputControl.value = growthStage;
+            inputControl.value = growthStage
           }
         }
       }
     } catch (error) {
-      console.error("Error updating Rive animation:", error);
+      console.error("Error updating Rive animation:", error)
     }
-  }, [rive, growthStage]);
+  }, [rive, growthStage])
 
-
-    if (!runtimeLoaded) {
+  if (!runtimeLoaded) {
     return (
       <div className="absolute inset-0 flex items-center justify-center text-white/50">
         Loading...
       </div>
-    );
+    )
   }
-
 
   return (
     <div className="absolute inset-0 overflow-hidden">
       <div
         className="absolute inset-0 flex items-center justify-center"
         style={{
-          animation: "sway 8s ease-in-out infinite",
-        }}
-      >
-        <div className="w-full h-full scale-150 -translate-x-[15%] bottom-0 opacity-20">
+          animation: "sway 8s ease-in-out infinite"
+        }}>
+        <div
+          className="w-full h-full scale-150 -translate-x-[15%] bottom-0 opacity-20"
+          style={{ filter: "hue-rotate(120deg)" }}>
           <RiveComponent className="w-full h-full" />
         </div>
       </div>
@@ -93,5 +91,5 @@ export function TreeAnimationSection({ totalFocusTime }: TreeAnimationSectionPro
         }
       `}</style>
     </div>
-  );
+  )
 }

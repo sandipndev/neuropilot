@@ -11,6 +11,8 @@ import pulseInferenceTask from "~background/inference/pulse"
 import quizQuestionsInferenceTask from "~background/inference/quiz-questions"
 import websiteSummarizerTask from "~background/inference/website-summarizer"
 
+import "~background/context"
+
 const TASK_CONCURRENCY = 1
 const queue = new PQueue({ concurrency: TASK_CONCURRENCY })
 queue.pause()
@@ -103,87 +105,6 @@ chrome.runtime.onInstalled.addListener(() => {
   chrome.alarms.create("pulse-task", { periodInMinutes: 5 })
   chrome.alarms.create("quiz-task", { periodInMinutes: 2 })
   chrome.alarms.create("garbage-collection-task", { periodInMinutes: 60 * 24 })
-
-  // context menus
-  const menus = [
-    {
-      id: "add-image-to-chat",
-      title: "Add this image to chat",
-      contexts: ["image"]
-    },
-    {
-      id: "add-selection-to-chat",
-      title: "Add selected text to chat",
-      contexts: ["selection"]
-    },
-    {
-      id: "analyze-selection",
-      title: "Analyze selected text",
-      contexts: ["selection"]
-    },
-    {
-      id: "summarize-page",
-      title: "Summarize this page",
-      contexts: ["page"]
-    },
-    {
-      id: "chat-with-this-page",
-      title: "Chat with this page",
-      contexts: ["page"]
-    }
-  ]
-
-  menus.forEach((m) =>
-    chrome.contextMenus.create(m as chrome.contextMenus.CreateProperties)
-  )
-})
-
-chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  const message = { source: "contextMenu", tabId: tab?.id }
-  chrome.sidePanel.open({ tabId: tab?.id })
-
-  switch (info.menuItemId) {
-    case "add-image-to-chat":
-      if (info.srcUrl)
-        chrome.runtime.sendMessage({
-          ...message,
-          type: "ADD_IMAGE_TO_CHAT",
-          payload: info.srcUrl
-        })
-      break
-
-    case "add-selection-to-chat":
-      if (info.selectionText)
-        chrome.runtime.sendMessage({
-          ...message,
-          type: "ADD_SELECTION_TO_CHAT",
-          payload: info.selectionText
-        })
-      break
-
-    case "analyze-selection":
-      if (info.selectionText)
-        chrome.runtime.sendMessage({
-          ...message,
-          type: "ANALYZE_SELECTION",
-          payload: info.selectionText
-        })
-      break
-
-    case "summarize-page":
-      chrome.runtime.sendMessage({
-        ...message,
-        type: "SUMMARIZE_PAGE"
-      })
-      break
-
-    case "chat-with-this-page":
-      chrome.runtime.sendMessage({
-        ...message,
-        type: "CHAT_WITH_THIS_PAGE"
-      })
-      break
-  }
 })
 
 // side panel open on icon click

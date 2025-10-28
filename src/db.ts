@@ -95,7 +95,8 @@ class NeuropilotDB extends Dexie {
       chat: "&id, timestamp",
       chatMessages: "++id, chatId",
       pastWins: "++id, time_spent",
-      pomodoro: "&id, lastUpdated"
+      pomodoro: "&id, lastUpdated",
+      intentQueue: "++id, timestamp"
     })
   }
 }

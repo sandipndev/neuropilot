@@ -57,3 +57,4 @@ export enum NotificationMessageType {
   FOCUS_DRIFT_DETECTED = "FOCUS_DRIFT_DETECTED",
   FOCUS_INACTIVITY_DETECTED = "FOCUS_INACTIVITY_DETECTED"
 }
+export const INTENT_QUEUE_NOTIFY = "intent-queue-notify"

@@ -61,7 +61,8 @@
     "permissions": [
       "activeTab",
       "storage",
-      "alarms"
+      "alarms",
+      "contextMenus"
     ],
     "web_accessible_resources": [
       {

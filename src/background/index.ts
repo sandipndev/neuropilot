@@ -1,5 +1,6 @@
 import PQueue from "p-queue"
 
+import focusInactivityTask from "~background/focus-inactivity"
 import garbageCollectionTask from "~background/garbage-collection"
 import activitySummaryInferenceTask from "~background/inference/activity-summary"
 import doomscrollingDetectionTask from "~background/inference/doomscrolling"
@@ -17,6 +18,7 @@ const backgroundInferenceTasks = [
   activitySummaryInferenceTask,
   doomscrollingDetectionTask,
   focusInferenceTask,
+  focusInactivityTask,
   websiteSummarizerTask
 ]
 

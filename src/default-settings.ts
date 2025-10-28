@@ -33,6 +33,11 @@ export const GARBAGE_COLLECTION_INTERVAL = {
   defaultValue: 2 * 24 * 60 * 60 * 1000 // 2 days
 }
 
+export const FOCUS_INACTIVITY_THRESHOLD = {
+  key: "setting-focus-inactivity-threshold",
+  defaultValue: 5 * 60 * 1000 // 5 minutes
+}
+
 // These are storage watch keys
 export const NOTIFICATION_STORAGE_KEY = "notification-storage-key"
 export enum NotificationMessageType {

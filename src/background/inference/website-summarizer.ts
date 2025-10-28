@@ -2,16 +2,14 @@ import type { ImageAttention } from "~background/messages/cognitive-attention-im
 import type { TextAttention } from "~background/messages/cognitive-attention-text"
 import type { WebsiteVisit } from "~background/messages/website-visit"
 import db from "~db"
-import { getLanguageModel } from "~model"
+import { getSummarizer } from "~model"
 
-const PROMPT = (
+const DATA = (
   website: WebsiteVisit,
   textAttentions: TextAttention[],
   imageAttentions: ImageAttention[],
   n_attentions: number
 ) => `
-Summarize my activity for this website in a concise manner:
-
 Title: ${website.title}
 URL: ${website.url}
 
@@ -23,8 +21,6 @@ ${
 ${imageAttentions.map((ia) => ia.caption).join("\n")}`
     : ""
 }
-
-Provide a concise summary of what the website is and how I paid attention to it in a few words.
 `
 
 const websiteSummarizerTask = async () => {
@@ -51,15 +47,21 @@ const websiteSummarizerTask = async () => {
       continue
     }
 
-    const prompt = PROMPT(
+    const data = DATA(
       website,
       textAttentions,
       imageAttentions,
       n_attentions
     ).trim()
-    const session = await getLanguageModel()
-    const summary = await session.prompt(prompt)
-    session.destroy()
+
+    const prompt = `Summarize my activity for the given website in a concise manner
+Provide a concise summary of what the website is and how I paid attention to it in a few words.`
+
+    const summarizer = await getSummarizer("tldr")
+    const summary = await summarizer.summarize(data, {
+      context: prompt.trim()
+    })
+    summarizer.destroy()
 
     await db
       .table<WebsiteVisit>("websiteVisits")

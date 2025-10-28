@@ -6,6 +6,8 @@ import { hashArray, hashString } from "~utils"
 
 const storage = new Storage()
 
+//////// PROMPT API ////////
+
 const MULTIMODAL_CONFIG = {
   expectedInputs: [
     { type: "text", languages: ["en"] },
@@ -15,7 +17,7 @@ const MULTIMODAL_CONFIG = {
   expectedOutputs: [{ type: "text", languages: ["en"] }]
 } as const
 
-const getModelOptions = async () => {
+const getLanguageModelOptions = async () => {
   const LanguageModel = (self as any).LanguageModel
 
   // Get topK from storage or use default
@@ -36,10 +38,7 @@ const getModelOptions = async () => {
     temperatureMultiplier = MODEL_TEMPERATURE_MULTIPLIER.defaultValue
   }
 
-  // Ensure it's a number
   temperatureMultiplier = Number(temperatureMultiplier)
-
-  // Get default temperature from model params
   const params = await LanguageModel.params()
   const temperature = Number(params.defaultTemperature) * temperatureMultiplier
 
@@ -49,7 +48,7 @@ const getModelOptions = async () => {
   }
 }
 
-const checkAvailability = async (config?: any) => {
+const checkLanguageModelAvailability = async (config?: any) => {
   const LanguageModel = (self as any).LanguageModel
   if (!LanguageModel) throw new Error("Chrome AI not available")
 
@@ -61,8 +60,8 @@ const checkAvailability = async (config?: any) => {
 }
 
 export const getLanguageModel = async () => {
-  const LanguageModel = await checkAvailability()
-  const options = await getModelOptions()
+  const LanguageModel = await checkLanguageModelAvailability()
+  const options = await getLanguageModelOptions()
   return await LanguageModel.create(options)
 }
 
@@ -71,8 +70,8 @@ export const getImageModel = async () => {
     expectedInputs: [{ type: "image" }, { type: "text" }],
     expectedOutputs: [{ type: "text" }]
   }
-  const LanguageModel = await checkAvailability(config)
-  const options = await getModelOptions()
+  const LanguageModel = await checkLanguageModelAvailability(config)
+  const options = await getLanguageModelOptions()
   return await LanguageModel.create({
     ...config,
     ...options,
@@ -86,8 +85,8 @@ export const getAudioModel = async () => {
     expectedInputs: [{ type: "audio" }, { type: "text" }],
     expectedOutputs: [{ type: "text" }]
   }
-  const LanguageModel = await checkAvailability(config)
-  const options = await getModelOptions()
+  const LanguageModel = await checkLanguageModelAvailability(config)
+  const options = await getLanguageModelOptions()
   return await LanguageModel.create({
     ...config,
     ...options,
@@ -115,8 +114,8 @@ export const getChatModel = async (
     return chatModelCache.get(cacheKey)
   }
 
-  const LanguageModel = await checkAvailability(MULTIMODAL_CONFIG)
-  const options = await getModelOptions()
+  const LanguageModel = await checkLanguageModelAvailability(MULTIMODAL_CONFIG)
+  const options = await getLanguageModelOptions()
   const model = await LanguageModel.create({
     initialPrompts: [
       { role: "system", content: systemPrompt },
@@ -128,4 +127,21 @@ export const getChatModel = async (
 
   chatModelCache.set(cacheKey, model)
   return model
+}
+
+//////// SUMMARIZER API ////////
+const checkSummarizerAvailability = async () => {
+  const Summarizer = (self as any).Summarizer
+  if (!Summarizer) throw new Error("Summarizer not available")
+  return Summarizer
+}
+
+export const getSummarizer = async (
+  type: "tldr" | "teaser" | "key-points" | "headline"
+) => {
+  const Summarizer = await checkSummarizerAvailability()
+  return await Summarizer.create({
+    type,
+    format: "plain-text"
+  })
 }

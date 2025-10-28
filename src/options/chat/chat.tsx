@@ -256,10 +256,10 @@ export const Chat: React.FC<ChatProps> = ({
         key={message.id}
         className={`flex ${isUser ? "justify-end" : "justify-start"} mb-4 animate-fadeIn`}>
         <div
-          className={`max-w-xs lg:max-w-md xl:max-w-lg px-4 py-3 rounded-2xl shadow-sm ${
+          className={`max-w-xs lg:max-w-md xl:max-w-lg px-4 py-3 backdrop-blur-sm rounded-2xl shadow-sm ${
             isUser
               ? "bg-blue-600 text-white rounded-br-sm"
-              : "bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-bl-sm"
+              : " text-slate-900 dark:text-slate-100 rounded-bl-sm"
           }`}>
           {message.type === "text" && (
             <div
@@ -296,7 +296,7 @@ export const Chat: React.FC<ChatProps> = ({
             {messages.map(renderMessage)}
             {isStreaming && streamingMessage && (
               <div className="flex justify-start mb-4 animate-fadeIn">
-                <div className="max-w-xs lg:max-w-md xl:max-w-lg px-4 py-3 rounded-2xl shadow-sm bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-bl-sm">
+                <div className="max-w-xs lg:max-w-md xl:max-w-lg px-4 py-3 rounded-2xl shadow-sm backdrop-blur-sm bg-transparent text-slate-900 dark:text-slate-100 rounded-bl-sm">
                   <div
                     className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2"
                     dangerouslySetInnerHTML={{

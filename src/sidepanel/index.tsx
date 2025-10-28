@@ -192,6 +192,41 @@ const Popup = () => {
 
   const renderInsightsTab = () => (
     <div className="flex-1 overflow-y-auto p-2 space-y-4">
+      {/* Refresher Quiz Section */}
+      <div className="bg-white/40 dark:bg-slate-700/40 rounded-xl border border-gray-300/50 dark:border-slate-600/50 p-5">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-purple-100/80 dark:bg-purple-900/40 backdrop-blur-sm rounded-lg border border-purple-200/50 dark:border-purple-800/50">
+            <Award className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            Refresher Quiz
+          </h3>
+        </div>
+        {focusDataDex && focusDataDex.length > 0 ? (
+          <div className="space-y-3">
+            <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
+              You've learnt a lot recently... let's take a refresher! 🧠
+            </p>
+            <button
+              onClick={() => {
+                chrome.tabs.create({ url: "/tabs/dashboard.html" })
+              }}
+              className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-medium py-3 px-4 rounded-lg transition-all shadow-md hover:shadow-lg">
+              Start Refresher Quiz
+            </button>
+          </div>
+        ) : (
+          <div className="text-sm text-gray-600 dark:text-gray-400 text-center py-2">
+            <p className="mb-2">
+              It will get active once you've enough focus 😔
+            </p>
+            <p className="text-xs italic">
+              Complete some focus sessions to unlock the quiz
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* Activity Summaries Section */}
       <div className="bg-white/40 dark:bg-slate-700/40 rounded-xl border border-gray-300/50 dark:border-slate-600/50 p-5">
         <div className="flex items-center gap-3 mb-4">
@@ -479,7 +514,7 @@ const Popup = () => {
           </div>
 
           {/* Tab Content */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-scroll py-4">
             {activeTab === "focus" && renderFocusTab()}
             {activeTab === "insights" && renderInsightsTab()}
             {activeTab === "explore" && renderExploreTab()}

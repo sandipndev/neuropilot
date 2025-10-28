@@ -19,7 +19,7 @@ export function ProgressIndicator({
         {/* Progress line */}
         <div className="absolute top-5 left-0 right-0 h-0.5 bg-border">
           <div
-            className="h-full bg-primary transition-all duration-400 ease-in-out"
+            className="h-full bg-chart-4 transition-all duration-400 ease-in-out"
             style={{
               width: `${(currentStep / (totalSteps - 1)) * 100}%`,
             }}
@@ -49,7 +49,7 @@ export function ProgressIndicator({
                       isCompleted
                         ? "bg-chart-4 text-white"
                         : isCurrent
-                        ? "bg-primary text-primary-foreground"
+                        ? "bg-chart-4 text-white"
                         : "bg-muted border-2 border-border text-muted-foreground"
                     }
                     ${

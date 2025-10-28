@@ -1,31 +1,39 @@
-import { OnboardingProvider } from "./contexts/OnboardingContext";
-import { ProgressIndicator } from "./components/ProgressIndicator";
-import { IntroductionStep } from "./components/steps/IntroductionStep";
-import { FlagsConfigurationStep } from "./components/steps/FlagsConfigurationStep";
-import { ModelDownloadStep } from "./components/steps/ModelDownloadStep";
-import { UserInfoStep } from "./components/steps/UserInfoStep";
-import { CompletionStep } from "./components/steps/CompletionStep";
-import { useState, useEffect } from "react";
-import { getInitialStep } from "./utils/onboarding-status";
-import './index.css'
+import { useEffect, useState } from "react"
+
+import { ProgressIndicator } from "./components/ProgressIndicator"
+import { CompletionStep } from "./components/steps/CompletionStep"
+import { FlagsConfigurationStep } from "./components/steps/FlagsConfigurationStep"
+import { IntroductionStep } from "./components/steps/IntroductionStep"
+import { ModelDownloadStep } from "./components/steps/ModelDownloadStep"
+import { UserInfoStep } from "./components/steps/UserInfoStep"
+import { OnboardingProvider } from "./contexts/OnboardingContext"
+import { useGetInitialStep } from "./utils/onboarding-status"
+
+import "./index.css"
 
 function App() {
-  const [currentStep, setCurrentStep] = useState<number | null>(null);
-  const stepLabels = ["Introduction", "Configure Flags", "Download Model", "User Info", "Complete"];
+  const [currentStep, setCurrentStep] = useState<number | null>(null)
+  const stepLabels = [
+    "Introduction",
+    "Configure Flags",
+    "Download Model",
+    "User Info",
+    "Complete"
+  ]
 
   // Initialize step based on onboarding status
   useEffect(() => {
-    const initialStep = getInitialStep();
-    setCurrentStep(initialStep);
-  }, []);
+    const initialStep = useGetInitialStep()
+    setCurrentStep(initialStep)
+  }, [])
 
   const handleContinue = () => {
-    setCurrentStep((prev) => (prev !== null ? prev + 1 : 0));
-  };
+    setCurrentStep((prev) => (prev !== null ? prev + 1 : 0))
+  }
 
   const handleNavigateToStep = (step: number) => {
-    setCurrentStep(step);
-  };
+    setCurrentStep(step)
+  }
 
   // Show loading state while determining initial step
   if (currentStep === null) {
@@ -36,7 +44,7 @@ function App() {
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -52,15 +60,23 @@ function App() {
             />
           )}
 
-          {currentStep === 0 && <IntroductionStep onContinue={handleContinue} />}
-          {currentStep === 1 && <FlagsConfigurationStep onContinue={handleContinue} />}
-          {currentStep === 2 && <ModelDownloadStep onContinue={handleContinue} />}
+          {currentStep === 0 && (
+            <IntroductionStep onContinue={handleContinue} />
+          )}
+          {currentStep === 1 && (
+            <FlagsConfigurationStep onContinue={handleContinue} />
+          )}
+          {currentStep === 2 && (
+            <ModelDownloadStep onContinue={handleContinue} />
+          )}
           {currentStep === 3 && <UserInfoStep onComplete={handleContinue} />}
-          {currentStep === 4 && <CompletionStep onNavigateToStep={handleNavigateToStep} />}
+          {currentStep === 4 && (
+            <CompletionStep onNavigateToStep={handleNavigateToStep} />
+          )}
         </div>
       </div>
     </OnboardingProvider>
-  );
+  )
 }
 
-export default App;
+export default App

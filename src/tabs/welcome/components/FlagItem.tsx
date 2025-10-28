@@ -29,10 +29,10 @@ export const FlagItem: React.FC<FlagItemProps> = ({
   };
 
   return (
-    <Card className={`border-2 transition-colors ${
+    <Card className={`border-2 transition-colors backdrop-blur-sm ${
       enabled 
         ? 'border-chart-4/30 bg-chart-4/5' 
-        : 'border-chart-1/30 bg-chart-1/5'
+        : 'border-chart-4/30 bg-chart-4/5'
     }`}>
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
@@ -41,7 +41,7 @@ export const FlagItem: React.FC<FlagItemProps> = ({
             {enabled ? (
               <CheckCircle2 className="w-6 h-6 text-chart-4" />
             ) : (
-              <AlertCircle className="w-6 h-6 text-chart-1" />
+              <AlertCircle className="w-6 h-6 text-chart-4" />
             )}
           </div>
 
@@ -59,7 +59,7 @@ export const FlagItem: React.FC<FlagItemProps> = ({
               <div className={`shrink-0 px-2 py-1 rounded text-xs font-medium ${
                 enabled 
                   ? 'bg-chart-4/20 text-chart-4' 
-                  : 'bg-chart-1/20 text-chart-1'
+                  : 'bg-chart-4/20 text-chart-4'
               }`}>
                 {enabled ? 'Enabled' : 'Disabled'}
               </div>

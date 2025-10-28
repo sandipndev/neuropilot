@@ -1,95 +1,106 @@
-import { useState, useEffect } from "react";
-import { Button } from "../../components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
-import { RefreshCw, ChevronDown, Info } from "lucide-react";
-import { FlagItem } from "../../components/FlagItem";
-import { useOnboarding } from "../../contexts/OnboardingContext";
-import { checkChromeAIAvailability } from "../../utils/chrome-ai";
+import { ChevronDown, Info, RefreshCw } from "lucide-react"
+import { useEffect, useState } from "react"
+
+import { FlagItem } from "../../components/FlagItem"
+import { Button } from "../../components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "../../components/ui/card"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger
+} from "../../components/ui/collapsible"
+import { useOnboarding } from "../../contexts/OnboardingContext"
+import { checkChromeAIAvailability } from "../../utils/chrome-ai"
 
 interface FlagsConfigurationStepProps {
-  onContinue: () => void;
+  onContinue: () => void
 }
 
 const FLAGS_CONFIG = [
   {
-    key: 'promptApi' as const,
-    name: 'Prompt API for Gemini Nano',
-    description: 'Enables the core Chrome AI language model API',
-    flagUrl: 'chrome://flags/#prompt-api-for-gemini-nano',
+    key: "promptApi" as const,
+    name: "Prompt API for Gemini Nano",
+    description: "Enables the core Chrome AI language model API",
+    flagUrl: "chrome://flags/#prompt-api-for-gemini-nano"
   },
   {
-    key: 'multimodalInput' as const,
-    name: 'Multimodal Input Support',
-    description: 'Enables multimodal capabilities for the AI model',
-    flagUrl: 'chrome://flags/#prompt-api-for-gemini-nano-multimodal-input',
+    key: "multimodalInput" as const,
+    name: "Multimodal Input Support",
+    description: "Enables multimodal capabilities for the AI model",
+    flagUrl: "chrome://flags/#prompt-api-for-gemini-nano-multimodal-input"
   },
   {
-    key: 'optimizationGuide' as const,
-    name: 'Optimization Guide On-Device Model',
-    description: 'Enables on-device model optimization',
-    flagUrl: 'chrome://flags/#optimization-guide-on-device-model',
-  },
-];
+    key: "optimizationGuide" as const,
+    name: "Optimization Guide On-Device Model",
+    description: "Enables on-device model optimization",
+    flagUrl: "chrome://flags/#optimization-guide-on-device-model"
+  }
+]
 
-export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({ 
-  onContinue 
+export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({
+  onContinue
 }) => {
-  const { state, updateFlagsStatus } = useOnboarding();
-  const [isChecking, setIsChecking] = useState(false);
-  const [isInstructionsOpen, setIsInstructionsOpen] = useState(false);
+  const { state, updateFlagsStatus } = useOnboarding()
+  const [isChecking, setIsChecking] = useState(false)
+  const [isInstructionsOpen, setIsInstructionsOpen] = useState(false)
 
   // Check flags status on mount
   useEffect(() => {
-    checkFlagsStatus();
-  }, []);
+    checkFlagsStatus()
+  }, [])
 
   const checkFlagsStatus = async () => {
-    setIsChecking(true);
-    
+    setIsChecking(true)
+
     try {
       // Check if LanguageModel.availability exists - this indicates flags are properly set
-      const aiCheck = await checkChromeAIAvailability();
-      
+      const aiCheck = await checkChromeAIAvailability()
+
       if (aiCheck.available) {
         // If LanguageModel.availability exists, all required flags are enabled
         updateFlagsStatus({
           promptApi: true,
           multimodalInput: true,
-          optimizationGuide: true,
-        });
+          optimizationGuide: true
+        })
       } else {
         // If not available, one or more flags are not enabled
         // Note: We can't check individual flags, so we mark all as disabled
         updateFlagsStatus({
           promptApi: false,
           multimodalInput: false,
-          optimizationGuide: false,
-        });
+          optimizationGuide: false
+        })
       }
     } catch (error) {
-      console.error('Error checking flags:', error);
+      console.error("Error checking flags:", error)
       // On error, assume flags are not enabled
       updateFlagsStatus({
         promptApi: false,
         multimodalInput: false,
-        optimizationGuide: false,
-      });
+        optimizationGuide: false
+      })
     } finally {
-      setIsChecking(false);
+      setIsChecking(false)
     }
-  };
+  }
 
-  const allFlagsEnabled = 
-    state.flagsStatus.promptApi && 
-    state.flagsStatus.multimodalInput && 
-    state.flagsStatus.optimizationGuide;
+  const allFlagsEnabled =
+    state.flagsStatus.promptApi &&
+    state.flagsStatus.multimodalInput &&
+    state.flagsStatus.optimizationGuide
 
   const handleContinue = () => {
     if (allFlagsEnabled) {
-      onContinue();
+      onContinue()
     }
-  };
+  }
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -99,13 +110,13 @@ export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({
           Enable Chrome AI Flags
         </h2>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          To use NeuroPilot's on-device AI features, you need to enable three Chrome flags. 
-          Don't worry, we'll guide you through it!
+          To use NeuroPilot's on-device AI features, you need to enable three
+          Chrome flags. Don't worry, we'll guide you through it!
         </p>
       </div>
 
       {/* What are Chrome Flags Info Card */}
-      <Card className="border-primary/20 bg-primary/5">
+      <Card className="border-chart-4/20 bg-chart-4/5 backdrop-blur-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Info className="w-5 h-5" />
@@ -114,9 +125,10 @@ export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Chrome flags are experimental features that aren't enabled by default. 
-            They allow you to test cutting-edge capabilities like on-device AI. 
-            Enabling these flags is safe and can be reversed at any time.
+            Chrome flags are experimental features that aren't enabled by
+            default. They allow you to test cutting-edge capabilities like
+            on-device AI. Enabling these flags is safe and can be reversed at
+            any time.
           </p>
         </CardContent>
       </Card>
@@ -132,10 +144,11 @@ export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({
             size="sm"
             onClick={checkFlagsStatus}
             disabled={isChecking}
-            className="gap-2"
-          >
-            <RefreshCw className={`w-4 h-4 ${isChecking ? 'animate-spin' : ''}`} />
-            {isChecking ? 'Checking...' : 'Refresh Status'}
+            className="gap-2">
+            <RefreshCw
+              className={`w-4 h-4 ${isChecking ? "animate-spin" : ""}`}
+            />
+            {isChecking ? "Checking..." : "Refresh Status"}
           </Button>
         </div>
 
@@ -156,19 +169,16 @@ export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({
       {!allFlagsEnabled && (
         <Collapsible
           open={isInstructionsOpen}
-          onOpenChange={setIsInstructionsOpen}
-        >
-          <Card className="border-chart-1/30">
+          onOpenChange={setIsInstructionsOpen}>
+          <Card className="border-chart-4/30 backdrop-blur-sm bg-card/80">
             <CollapsibleTrigger asChild>
               <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">
-                    How to Enable Flags
-                  </CardTitle>
-                  <ChevronDown 
+                  <CardTitle className="text-lg">How to Enable Flags</CardTitle>
+                  <ChevronDown
                     className={`w-5 h-5 transition-transform ${
-                      isInstructionsOpen ? 'rotate-180' : ''
-                    }`} 
+                      isInstructionsOpen ? "rotate-180" : ""
+                    }`}
                   />
                 </div>
                 <CardDescription>
@@ -178,9 +188,12 @@ export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({
             </CollapsibleTrigger>
             <CollapsibleContent>
               <CardContent className="space-y-4 pt-0">
-                <div className="p-3 bg-chart-1/10 border border-chart-1/30 rounded-md mb-4">
+                <div className="p-3 bg-chart-4/10 border border-chart-4/30 rounded-md mb-4">
                   <p className="text-xs text-muted-foreground">
-                    ⚠️ <span className="font-medium">Note:</span> Chrome doesn't allow extensions to open chrome:// URLs programmatically for security reasons. You'll need to manually copy and paste the URLs into your address bar.
+                    ⚠️ <span className="font-medium">Note:</span> Chrome doesn't
+                    allow extensions to open chrome:// URLs programmatically for
+                    security reasons. You'll need to manually copy and paste the
+                    URLs into your address bar.
                   </p>
                 </div>
 
@@ -194,7 +207,8 @@ export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({
                         Copy the flag URL from each disabled flag above
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Click "Copy URL" button and paste it into your browser's address bar
+                        Click "Copy URL" button and paste it into your browser's
+                        address bar
                       </p>
                     </div>
                   </div>
@@ -208,7 +222,8 @@ export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({
                         Change the dropdown to "Enabled"
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Look for the dropdown menu next to the flag name and select "Enabled"
+                        Look for the dropdown menu next to the flag name and
+                        select "Enabled"
                       </p>
                     </div>
                   </div>
@@ -222,7 +237,8 @@ export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({
                         Repeat for all three flags
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Enable all three flags before restarting Chrome to save time
+                        Enable all three flags before restarting Chrome to save
+                        time
                       </p>
                     </div>
                   </div>
@@ -236,7 +252,8 @@ export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({
                         Restart Chrome when prompted
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        After enabling all flags, Chrome will show a "Relaunch" button. Click it to apply changes
+                        After enabling all flags, Chrome will show a "Relaunch"
+                        button. Click it to apply changes
                       </p>
                     </div>
                   </div>
@@ -250,7 +267,8 @@ export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({
                         Return here and click "Refresh Status"
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        After Chrome restarts, come back to this page and refresh to verify the flags are enabled
+                        After Chrome restarts, come back to this page and
+                        refresh to verify the flags are enabled
                       </p>
                     </div>
                   </div>
@@ -258,7 +276,9 @@ export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({
 
                 <div className="p-3 bg-muted rounded-md">
                   <p className="text-xs text-muted-foreground">
-                    💡 <span className="font-medium">Tip:</span> Keep this tab open while you enable the flags so you can easily return here after restarting
+                    💡 <span className="font-medium">Tip:</span> Keep this tab
+                    open while you enable the flags so you can easily return
+                    here after restarting
                   </p>
                 </div>
               </CardContent>
@@ -269,7 +289,7 @@ export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({
 
       {/* Success Message */}
       {allFlagsEnabled && (
-        <Card className="border-chart-4/30 bg-chart-4/5 animate-fade-in-up">
+        <Card className="border-chart-4/30 bg-chart-4/5 backdrop-blur-sm animate-fade-in-up">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="shrink-0 w-10 h-10 rounded-full bg-chart-4 flex items-center justify-center">
@@ -294,11 +314,10 @@ export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({
           size="lg"
           onClick={handleContinue}
           disabled={!allFlagsEnabled}
-          className="text-lg px-8 py-6"
-        >
+          className="text-lg px-8 py-6">
           Continue to Model Download
         </Button>
       </div>
     </div>
-  );
-};
+  )
+}

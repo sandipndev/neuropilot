@@ -2,8 +2,9 @@ import { motion } from 'framer-motion';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { CheckCircle2, Flag, Download, User, Sparkles } from 'lucide-react';
-import { getUserName, getUserAge } from '../../api/user-data';
-
+import { USER_NAME_KEY } from '../../api/user-data';
+import { useStorage } from '@plasmohq/storage/hook';
+import { useEffect } from 'react';
 
 interface CompletionStepProps {
   onNavigateToStep: (step: number) => void;
@@ -37,8 +38,22 @@ const STEPS_INFO = [
 ];
 
 export const CompletionStep: React.FC<CompletionStepProps> = ({ onNavigateToStep }) => {
-  const userName = getUserName();
-  const userAge = getUserAge();
+  const [userName, __] = useStorage(USER_NAME_KEY);
+
+
+  // Redirect to User Info step if name is not provided
+  useEffect(() => {
+    if(userName === undefined) return;
+
+    if (!userName || userName.trim().length === 0) {
+      onNavigateToStep(3); // Navigate to User Info step
+    }
+  }, [userName, onNavigateToStep]);
+
+  // Don't render if no user name
+  if (!userName || userName.trim().length === 0) {
+    return null;
+  }
 
   return (
     <div className="flex items-center justify-center min-h-[600px]">
@@ -77,7 +92,7 @@ export const CompletionStep: React.FC<CompletionStepProps> = ({ onNavigateToStep
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <Card>
+          <Card className="backdrop-blur-sm bg-card/80">
             <CardHeader>
               <CardTitle>You're All Set!</CardTitle>
               <CardDescription>
@@ -88,10 +103,8 @@ export const CompletionStep: React.FC<CompletionStepProps> = ({ onNavigateToStep
               {/* User Info Summary */}
               <div className="p-4 bg-muted rounded-lg space-y-2">
                 <p className="text-sm font-medium text-foreground">Your Profile</p>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <span>Name: <span className="font-medium text-foreground">{userName}</span></span>
-                  <span>•</span>
-                  <span>Age: <span className="font-medium text-foreground">{userAge}</span></span>
                 </div>
               </div>
 
@@ -130,9 +143,9 @@ export const CompletionStep: React.FC<CompletionStepProps> = ({ onNavigateToStep
               </div>
 
               {/* Next Steps */}
-              <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-2">
+              <div className="p-4 bg-chart-4/5 border border-chart-4/20 rounded-lg space-y-2">
                 <p className="text-sm font-medium text-foreground flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-primary" />
+                  <Sparkles className="w-4 h-4 text-chart-4" />
                   What's Next?
                 </p>
                 <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">

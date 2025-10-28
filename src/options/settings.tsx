@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import { useStorage } from "@plasmohq/storage/hook"
 
@@ -11,7 +11,9 @@ import {
   DOOMSCROLLING_ATTENTION_ITEMS_THRESHOLD,
   DOOMSCROLLING_TIME_WINDOW,
   FOCUS_INACTIVITY_THRESHOLD,
-  GARBAGE_COLLECTION_INTERVAL
+  GARBAGE_COLLECTION_INTERVAL,
+  MODEL_TEMPERATURE_MULTIPLIER,
+  MODEL_TOPK
 } from "~default-settings"
 
 const Settings = () => {
@@ -57,9 +59,33 @@ const Settings = () => {
     FOCUS_INACTIVITY_THRESHOLD.defaultValue
   )
 
-  const [saveMessage, setSaveMessage] = useState("")
+  // Model Settings
+  const [modelTopK, setModelTopK] = useStorage(MODEL_TOPK.key, (v) => v ?? null)
+  const [modelTempMultiplier, setModelTempMultiplier] = useStorage(
+    MODEL_TEMPERATURE_MULTIPLIER.key,
+    MODEL_TEMPERATURE_MULTIPLIER.defaultValue
+  )
+  const [defaultTopK, setDefaultTopK] = useState<number | null>(null)
 
-  const handleResetToDefaults = () => {
+  const [saveMessage, setSaveMessage] = useState("")
+  const [modelSettingsSaved, setModelSettingsSaved] = useState(false)
+
+  // Load default topK on mount
+  useEffect(() => {
+    const loadDefaultTopK = async () => {
+      try {
+        if (typeof MODEL_TOPK.defaultValue === "function") {
+          const value = await MODEL_TOPK.defaultValue()
+          setDefaultTopK(value)
+        }
+      } catch (error) {
+        console.error("Failed to load default topK:", error)
+      }
+    }
+    loadDefaultTopK()
+  }, [])
+
+  const handleResetToDefaults = async () => {
     setSustainedTime(COGNITIVE_ATTENTION_SUSTAINED_TIME.defaultValue)
     setIdleThreshold(COGNITIVE_ATTENTION_IDLE_THRESHOLD_TIME.defaultValue)
     setWordsPerMinute(COGNITIVE_ATTENTION_WORDS_PER_MINUTE.defaultValue)
@@ -69,6 +95,8 @@ const Settings = () => {
     setTimeWindow(DOOMSCROLLING_TIME_WINDOW.defaultValue)
     setGcInterval(GARBAGE_COLLECTION_INTERVAL.defaultValue)
     setFocusInactivityThreshold(FOCUS_INACTIVITY_THRESHOLD.defaultValue)
+    setModelTopK(null)
+    setModelTempMultiplier(MODEL_TEMPERATURE_MULTIPLIER.defaultValue)
 
     setSaveMessage("All settings reset to defaults!")
     setTimeout(() => setSaveMessage(""), 3000)
@@ -77,6 +105,17 @@ const Settings = () => {
   const showSaveMessage = () => {
     setSaveMessage("Settings saved!")
     setTimeout(() => setSaveMessage(""), 2000)
+  }
+
+  const showModelSettingsSaveMessage = () => {
+    setModelSettingsSaved(true)
+    setSaveMessage(
+      "Model settings saved! Please restart Chrome for changes to take effect."
+    )
+    setTimeout(() => {
+      setSaveMessage("")
+      setModelSettingsSaved(false)
+    }, 5000)
   }
 
   return (
@@ -91,15 +130,36 @@ const Settings = () => {
       </div>
 
       {saveMessage && (
-        <div className="animate-fadeIn bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 px-4 py-3 rounded-lg flex items-center gap-2">
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fillRule="evenodd"
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-              clipRule="evenodd"
-            />
-          </svg>
-          {saveMessage}
+        <div
+          className={`animate-fadeIn ${
+            modelSettingsSaved
+              ? "bg-yellow-50 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200"
+              : "bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200"
+          } border px-4 py-3 rounded-lg flex items-center gap-2`}>
+          {modelSettingsSaved ? (
+            <svg
+              className="w-5 h-5 flex-shrink-0"
+              fill="currentColor"
+              viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                clipRule="evenodd"
+              />
+            </svg>
+          ) : (
+            <svg
+              className="w-5 h-5 flex-shrink-0"
+              fill="currentColor"
+              viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clipRule="evenodd"
+              />
+            </svg>
+          )}
+          <span>{saveMessage}</span>
         </div>
       )}
 
@@ -445,6 +505,119 @@ const Settings = () => {
                 {(gcInterval / (24 * 60 * 60 * 1000)).toFixed(0)} days
               </span>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-6 border-2 border-yellow-200 dark:border-yellow-800 rounded-lg p-6 bg-yellow-50/50 dark:bg-yellow-900/10">
+        <div className="space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+              <svg
+                className="w-5 h-5 text-yellow-600 dark:text-yellow-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-1">
+                Model Settings (Advanced)
+              </h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                These settings control the AI model behavior. Only modify if you
+                understand their impact.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-yellow-100 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 rounded-lg p-4">
+            <div className="flex gap-2">
+              <svg
+                className="w-5 h-5 text-yellow-700 dark:text-yellow-400 flex-shrink-0 mt-0.5"
+                fill="currentColor"
+                viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <div className="text-sm text-yellow-800 dark:text-yellow-300">
+                <strong>Warning:</strong> Changing these settings requires a
+                Chrome restart to take effect. Incorrect values may degrade
+                model performance.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4 pl-12">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Top K
+              <span className="text-slate-500 dark:text-slate-400 font-normal ml-2">
+                Number of top tokens to consider during generation
+              </span>
+            </label>
+            <div className="flex items-center gap-3">
+              <input
+                type="range"
+                value={modelTopK ?? defaultTopK ?? 1}
+                onChange={(e) => {
+                  setModelTopK(Number(e.target.value))
+                  showModelSettingsSaveMessage()
+                }}
+                min="1"
+                max="40"
+                step="1"
+                disabled={defaultTopK === null}
+                className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              <span className="min-w-[100px] px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-md text-sm font-mono">
+                {modelTopK ?? defaultTopK ?? "Loading..."}
+              </span>
+            </div>
+            {defaultTopK !== null && (
+              <p className="text-xs text-slate-500 dark:text-slate-400 pl-1">
+                Default: {defaultTopK}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Temperature Multiplier
+              <span className="text-slate-500 dark:text-slate-400 font-normal ml-2">
+                Controls randomness in output (higher = more creative)
+              </span>
+            </label>
+            <div className="flex items-center gap-3">
+              <input
+                type="range"
+                value={modelTempMultiplier}
+                onChange={(e) => {
+                  setModelTempMultiplier(Number(e.target.value))
+                  showModelSettingsSaveMessage()
+                }}
+                min="0.1"
+                max="2.0"
+                step="0.1"
+                className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-yellow-600"
+              />
+              <span className="min-w-[100px] px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-md text-sm font-mono">
+                {modelTempMultiplier.toFixed(1)}x
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 pl-1">
+              Default: {MODEL_TEMPERATURE_MULTIPLIER.defaultValue.toFixed(1)}x
+            </p>
           </div>
         </div>
       </section>

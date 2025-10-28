@@ -38,6 +38,18 @@ export const FOCUS_INACTIVITY_THRESHOLD = {
   defaultValue: 5 * 60 * 1000 // 5 minutes
 }
 
+export const MODEL_TOPK = {
+  key: "setting-model-topk",
+  defaultValue: async () => {
+    const params = await (self as any).LanguageModel.params()
+    return params.defaultTopK
+  }
+}
+export const MODEL_TEMPERATURE_MULTIPLIER = {
+  key: "setting-model-temperature-multiplier",
+  defaultValue: 1.0
+}
+
 // These are storage watch keys
 export const NOTIFICATION_STORAGE_KEY = "notification-storage-key"
 export enum NotificationMessageType {

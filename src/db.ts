@@ -7,6 +7,7 @@ db.version(1).stores({
   websiteVisits: "&url, opened_at",
   textAttention: "++id, url, timestamp",
   imageAttention: "++id, url, timestamp",
+  youtubeAttention: "&id, timestamp",
 
   // Inference Results
   focus: "++id, last_updated",
@@ -19,8 +20,7 @@ db.version(1).stores({
   pomodoro: "&id, lastUpdated"
 })
 
-export default db;
-
+export default db
 
 export type Focus = {
   id?: number
@@ -32,7 +32,6 @@ export type Focus = {
   }[]
   last_updated: number
 }
-
 
 export type Pulse = {
   message: string
@@ -74,8 +73,7 @@ export type PomodoroState = {
 
 export type ChatMessage = {
   id?: number
-  role: 'user' | 'assistant'
+  role: "user" | "assistant"
   content: string
   timestamp: number
 }
-

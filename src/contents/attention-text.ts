@@ -1,3 +1,5 @@
+import type { PlasmoCSConfig } from "plasmo"
+
 import { sendToBackground } from "@plasmohq/messaging"
 import { Storage } from "@plasmohq/storage"
 
@@ -10,6 +12,12 @@ import {
 } from "~default-settings"
 
 import CognitiveAttentionTextTracker from "../cognitive-attention/monitor-text"
+
+export const config: PlasmoCSConfig = {
+  matches: ["<all_urls>"],
+  exclude_matches: ["*://*.youtube.com/*"],
+  all_frames: false
+}
 
 const COGNITIVE_ATTENTION_TEXT_MESSAGE_NAME = "cognitive-attention-text"
 

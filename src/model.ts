@@ -95,25 +95,10 @@ export const getAudioModel = async () => {
   })
 }
 
-const chatModelCache = new Map<string, any>()
-const generateChatCacheKey = (
-  systemPrompt: string,
-  previousConversation: ChatMessageItem[]
-): string => {
-  const arrayHash = hashArray(previousConversation)
-  const content = systemPrompt + arrayHash
-  return hashString(content)
-}
-
 export const getChatModel = async (
   systemPrompt: string,
   previousConversation: ChatMessageItem[] = []
 ) => {
-  const cacheKey = generateChatCacheKey(systemPrompt, previousConversation)
-  if (chatModelCache.has(cacheKey)) {
-    return chatModelCache.get(cacheKey)
-  }
-
   const LanguageModel = await checkLanguageModelAvailability(MULTIMODAL_CONFIG)
   const options = await getLanguageModelOptions()
   const model = await LanguageModel.create({
@@ -124,8 +109,6 @@ export const getChatModel = async (
     ...MULTIMODAL_CONFIG,
     ...options
   })
-
-  chatModelCache.set(cacheKey, model)
   return model
 }
 
@@ -142,6 +125,41 @@ export const getSummarizer = async (
   const Summarizer = await checkSummarizerAvailability()
   return await Summarizer.create({
     type,
+    format: "plain-text"
+  })
+}
+
+//////// REWRITE API ////////
+
+const checkRewriterAvailability = async () => {
+  const Rewriter = (self as any).Rewriter
+  if (!Rewriter) throw new Error("Rewriter not available")
+  return Rewriter
+}
+
+export const getRewriter = async (
+  tone: "formal" | "as-is" | "more-casual",
+  length: "shorter" | "as-is" | "longer"
+) => {
+  const Rewriter = await checkRewriterAvailability()
+  return await Rewriter.create({
+    tone,
+    length,
+    format: "plain-text"
+  })
+}
+
+//////// WRITER API ////////
+const checkWriterAvailability = async () => {
+  const Writer = (self as any).Writer
+  if (!Writer) throw new Error("Writer not available")
+  return Writer
+}
+
+export const getWriter = async (tone: "formal" | "neutral" | "casual") => {
+  const Writer = await checkWriterAvailability()
+  return await Writer.create({
+    tone,
     format: "plain-text"
   })
 }

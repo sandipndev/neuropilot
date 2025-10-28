@@ -77,6 +77,9 @@
     ],
     "content_security_policy": {
       "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
-    }
+    },
+    "trial_tokens": [
+      "A3sEIRgJGRyotci4mvhXI4YCGoQCkJiUfnvs7DV7Ce8kir/Q00TjxcY8EbMdlz7sqtPcbEGwghsrocsD6rAu/gwAAACAeyJvcmlnaW4iOiJjaHJvbWUtZXh0ZW5zaW9uOi8va2NvcGtwZ2FnbGZicG5hbGRqbmhnbmRhaWVoa2llb24iLCJmZWF0dXJlIjoiQUlXcml0ZXJBUEkiLCJleHBpcnkiOjE3Njk0NzIwMDAsImlzVGhpcmRQYXJ0eSI6dHJ1ZX0="
+    ]
   }
 }

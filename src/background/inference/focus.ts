@@ -1,3 +1,5 @@
+import crypto from "crypto"
+
 import db, { type Focus } from "~db"
 import { NotificationMessageType } from "~default-settings"
 import { getLanguageModel } from "~model"
@@ -8,6 +10,8 @@ import {
   sendNotification,
   type UserActivity
 } from "~utils"
+
+const alreadyProcessedFocuses = new Set<string>()
 
 const LAST_FOCUS_DRIFT_NOTIFICATION_KEY =
   "last-focus-drift-notification-timestamp"
@@ -22,6 +26,9 @@ const focusInferenceTask = async () => {
   const recentActivity = await allUserActivityForLastMs(TEN_MINUTES_MS)
 
   if (recentActivity.length === 0) return
+
+  const hashOfRecentActivity = hashArray(recentActivity)
+  if (alreadyProcessedFocuses.has(hashOfRecentActivity)) return
 
   if (previousFocus) {
     focusDrifted = await detectFocusDrift(previousFocus, recentActivity)
@@ -75,6 +82,8 @@ const focusInferenceTask = async () => {
       LAST_FOCUS_DRIFT_NOTIFICATION_KEY
     )
   }
+
+  alreadyProcessedFocuses.add(hashOfRecentActivity)
 }
 
 export default focusInferenceTask
@@ -167,3 +176,19 @@ If no clear commonality exists, identify the most significant or dominant term.`
 
   return focus.trim()
 }
+
+// Helper to hash the recent activity (optimization)
+const stableStringify = (obj: any) => {
+  if (Array.isArray(obj)) {
+    return `[${obj.map(stableStringify).join(",")}]`
+  } else if (obj && typeof obj === "object") {
+    return `{${Object.keys(obj)
+      .sort()
+      .map((k) => `"${k}":${stableStringify(obj[k])}`)
+      .join(",")}}`
+  }
+  return JSON.stringify(obj)
+}
+
+const hashArray = (arr: any) =>
+  crypto.createHash("sha256").update(stableStringify(arr)).digest("hex")

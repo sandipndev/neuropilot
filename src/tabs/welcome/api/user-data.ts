@@ -3,43 +3,51 @@
  * Uses localStorage for persistence
  */
 
-const USER_NAME_KEY = 'neuropilot_user_name';
-const USER_AGE_KEY = 'neuropilot_user_age';
+import { Storage } from "@plasmohq/storage"
+
+const USER_NAME_KEY = "neuropilot_user_name"
+const USER_AGE_KEY = "neuropilot_user_age"
 
 interface SetUserNameParams {
-  name: string;
-  age: number;
+  name: string
+  age: number
 }
 
 interface SetUserNameResult {
-  success: boolean;
-  error?: string;
+  success: boolean
+  error?: string
 }
+
+const storage = new Storage()
 
 /**
  * Save user name and age to localStorage
  */
-export async function setUserName(params: SetUserNameParams): Promise<SetUserNameResult> {
+export async function setUserName(
+  params: SetUserNameParams
+): Promise<SetUserNameResult> {
   try {
-    const { name, age } = params;
-    
+    const { name, age } = params
+
     // Validate inputs
     if (!name || name.trim().length === 0) {
-      return { success: false, error: 'Name is required' };
+      return { success: false, error: "Name is required" }
     }
-    
+
     if (!age || age < 1 || age > 150) {
-      return { success: false, error: 'Invalid age' };
+      return { success: false, error: "Invalid age" }
     }
-    
+
     // Save to localStorage
-    localStorage.setItem(USER_NAME_KEY, name.trim());
-    localStorage.setItem(USER_AGE_KEY, age.toString());
-    
-    return { success: true };
+    localStorage.setItem(USER_NAME_KEY, name.trim())
+    localStorage.setItem(USER_AGE_KEY, age.toString())
+
+    await storage.set("onboarded", true)
+
+    return { success: true }
   } catch (error) {
-    console.error('Error saving user data:', error);
-    return { success: false, error: 'Failed to save user data' };
+    console.error("Error saving user data:", error)
+    return { success: false, error: "Failed to save user data" }
   }
 }
 
@@ -48,10 +56,10 @@ export async function setUserName(params: SetUserNameParams): Promise<SetUserNam
  */
 export function getUserName(): string | null {
   try {
-    return localStorage.getItem(USER_NAME_KEY);
+    return localStorage.getItem(USER_NAME_KEY)
   } catch (error) {
-    console.error('Error getting user name:', error);
-    return null;
+    console.error("Error getting user name:", error)
+    return null
   }
 }
 
@@ -60,11 +68,11 @@ export function getUserName(): string | null {
  */
 export function getUserAge(): number | null {
   try {
-    const age = localStorage.getItem(USER_AGE_KEY);
-    return age ? parseInt(age, 10) : null;
+    const age = localStorage.getItem(USER_AGE_KEY)
+    return age ? parseInt(age, 10) : null
   } catch (error) {
-    console.error('Error getting user age:', error);
-    return null;
+    console.error("Error getting user age:", error)
+    return null
   }
 }
 
@@ -73,9 +81,9 @@ export function getUserAge(): number | null {
  */
 export function clearUserData(): void {
   try {
-    localStorage.removeItem(USER_NAME_KEY);
-    localStorage.removeItem(USER_AGE_KEY);
+    localStorage.removeItem(USER_NAME_KEY)
+    localStorage.removeItem(USER_AGE_KEY)
   } catch (error) {
-    console.error('Error clearing user data:', error);
+    console.error("Error clearing user data:", error)
   }
 }

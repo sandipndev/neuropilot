@@ -1,5 +1,7 @@
 import PQueue from "p-queue"
 
+import { Storage } from "@plasmohq/storage"
+
 import focusInactivityTask from "~background/focus-inactivity"
 import garbageCollectionTask from "~background/garbage-collection"
 import activitySummaryInferenceTask from "~background/inference/activity-summary"
@@ -12,6 +14,9 @@ import websiteSummarizerTask from "~background/inference/website-summarizer"
 const TASK_CONCURRENCY = 1
 const continuousTasksQueue = new PQueue({ concurrency: TASK_CONCURRENCY })
 const cronTasksQueue = new PQueue({ concurrency: TASK_CONCURRENCY })
+
+continuousTasksQueue.pause()
+cronTasksQueue.pause()
 
 // to run frequently
 const backgroundInferenceTasks = [
@@ -66,11 +71,23 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   }
 })
 
+const startScheduler = () => {
+  continuousTasksQueue.start()
+  cronTasksQueue.start()
+}
+
+const storage = new Storage()
+storage.watch({
+  onboarded: startScheduler
+})
+
+const init = async () => {
+  // startScheduler() // comment this line to onboarding scheduler on
+  if (await storage.get("onboarded")) startScheduler()
+}
+init().catch(console.error)
+
 // side panel open on icon click
 chrome.action.onClicked.addListener((tab) => {
   chrome.sidePanel.open({ windowId: tab.windowId })
 })
-
-// For faster dev
-continuousTasksQueue.pause()
-cronTasksQueue.pause()

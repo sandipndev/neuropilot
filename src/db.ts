@@ -1,5 +1,7 @@
 import { Dexie } from "dexie"
 
+import type { UserActivity } from "~utils"
+
 const db = new Dexie("Neuropilot")
 
 db.version(1).stores({
@@ -76,7 +78,7 @@ export type PomodoroState = {
 export type Chat = {
   id: string
   title?: string
-  userActivity: any
+  userActivity: UserActivity[]
   timestamp: number
 }
 

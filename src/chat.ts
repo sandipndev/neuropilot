@@ -1,8 +1,12 @@
+import type { Chat, ChatMessage } from "~db"
+import db from "~db"
 import { getChatModel } from "~model"
-import { allUserActivityForLastMs } from "~utils"
+import { allUserActivityForLastMs, type UserActivity } from "~utils"
+
+export const DEFAULT_CHAT_TITLE = "New Chat"
 
 export type ChatMessageItem = {
-  role: "system" | "user"
+  role: "system" | "user" | "assistant"
   content: (
     | string
     | { type: "text"; value: string }
@@ -11,60 +15,150 @@ export type ChatMessageItem = {
   )[]
 }
 
-export const streamResponse = async (
-  message: string,
-  images: File[] | null = null,
-  audio: File | null = null,
-  onChunk?: (chunk: string, done: boolean) => void
-) => {
-  const LAST_DAY = 24 * 60 * 60 * 1000
-  const prompt = SYSTEM_PROMPT(await chatContext(LAST_DAY))
-  const model = await getChatModel(prompt, [])
+export class ChatService {
+  private chatId: string
+  private contextWindowMs: number = 24 * 60 * 60 * 1000 // 1 day
+  private _session: any | null = null
 
-  const content: ChatMessageItem["content"] = []
-  if (message) {
-    content.push({ type: "text", value: message })
+  constructor(chatId: string) {
+    this.chatId = chatId
   }
-  if (images?.length) {
-    images.forEach((img) => content.push({ type: "image", value: img }))
+
+  setContextWindowMs(contextWindowMs: number) {
+    this.contextWindowMs = contextWindowMs
   }
-  await model.append([{ role: "user", content }])
 
-  const userPrompt = images?.length
-    ? "Please analyze the content and images provided."
-    : message
+  private async session() {
+    if (this._session) return this._session
 
-  // Use streaming if callback provided
-  if (onChunk) {
-    const stream = model.promptStreaming(userPrompt)
-    let fullResponse = ""
-    let previousChunk = ""
+    const chat = await db.table<Chat>("chat").get(this.chatId)
 
-    for await (const chunk of stream) {
-      const newChunk = chunk.startsWith(previousChunk)
-        ? chunk.slice(previousChunk.length)
-        : chunk
+    // new conversaion
+    if (!chat) {
+      const activity = await allUserActivityForLastMs(this.contextWindowMs)
+      const prompt = SYSTEM_PROMPT(systemPromptContext(activity))
+      this._session = await getChatModel(prompt, [])
 
-      if (newChunk) {
-        fullResponse += newChunk
-        onChunk(newChunk, false)
-      }
+      await db.table<Chat>("chat").put({
+        id: this.chatId,
+        title: DEFAULT_CHAT_TITLE,
+        userActivity: activity,
+        timestamp: Date.now()
+      })
 
-      previousChunk = chunk
+      return this._session
     }
 
-    onChunk("", true)
-    return fullResponse.trim()
+    // existing conversation
+    const messages = await db
+      .table<ChatMessage>("chatMessages")
+      .where("chatId")
+      .equals(this.chatId)
+      .toArray()
+
+    const previousConversation: ChatMessageItem[] = await Promise.all(
+      messages.map(async (message) => {
+        let content: ChatMessageItem["content"]
+
+        if (message.type === "text") {
+          content = [{ type: "text", value: message.content }]
+        } else if (message.type === "image") {
+          const base64Response = await fetch(message.content)
+          const blob = await base64Response.blob()
+          const imageFile = new File([blob], "image.jpg", {
+            type: "image/jpeg"
+          })
+          content = [{ type: "image", value: imageFile }]
+        } else {
+          const base64Response = await fetch(message.content)
+          const blob = await base64Response.blob()
+          const audioFile = new File([blob], "audio.mp3", {
+            type: "audio/mpeg"
+          })
+          content = [{ type: "audio", value: audioFile }]
+        }
+
+        return {
+          role: message.by === "user" ? "user" : "assistant",
+          content
+        }
+      })
+    )
+
+    const systemPrompt = SYSTEM_PROMPT(systemPromptContext(chat.userActivity))
+    this._session = await getChatModel(systemPrompt, previousConversation)
+    return this._session
   }
 
-  // Fallback to non-streaming
-  const response = await model.prompt(userPrompt)
-  return response.trim()
+  async streamResponse(
+    message: string,
+    images: File[] | null = null,
+    audios: File[] | null = null,
+    onChunk?: (chunk: string, done: boolean) => void
+  ): Promise<string> {
+    const session = await this.session()
+
+    const content: ChatMessageItem["content"] = []
+    if (message) {
+      content.push({ type: "text", value: message })
+    }
+    if (images?.length) {
+      images.forEach((img) => content.push({ type: "image", value: img }))
+    }
+    if (audios?.length) {
+      audios.forEach((audio) => content.push({ type: "audio", value: audio }))
+    }
+    await session.append([{ role: "user", content }])
+
+    const userPrompt =
+      message ||
+      ((images?.length || audios?.length) &&
+        "Please analyze the content provided.")
+
+    // Use streaming if callback provided
+    if (onChunk) {
+      const stream = session.promptStreaming(userPrompt)
+      let fullResponse = ""
+      let previousChunk = ""
+
+      for await (const chunk of stream) {
+        const newChunk = chunk.startsWith(previousChunk)
+          ? chunk.slice(previousChunk.length)
+          : chunk
+
+        if (newChunk) {
+          fullResponse += newChunk
+          onChunk(newChunk, false)
+        }
+
+        previousChunk = chunk
+      }
+
+      onChunk("", true)
+
+      const answer = fullResponse.trim()
+      await db.table<ChatMessage>("chatMessages").add({
+        chatId: this.chatId,
+        by: "bot",
+        type: "text",
+        content: answer
+      })
+      return answer
+    }
+
+    const response = await session.prompt(userPrompt)
+    const answer = response.trim()
+    await db.table<ChatMessage>("chatMessages").add({
+      chatId: this.chatId,
+      by: "bot",
+      type: "text",
+      content: answer
+    })
+    return answer
+  }
 }
 
-const chatContext = async (ms: number) => {
-  const activity = await allUserActivityForLastMs(ms)
-
+const systemPromptContext = (activity: UserActivity[]) => {
   return activity
     .map(
       (a) => `
@@ -107,6 +201,10 @@ FORMAT:
 
 All this context is NOT another previous conversation, it is the user's current activity.
   
-HERE IS WHAT THE USER HAS VISITED PRIMARILY:
-${activityContent}
+${
+  activityContent
+    ? `HERE IS WHAT THE USER HAS VISITED PRIMARILY:
+${activityContent}`
+    : "The user has not visited any websites recently."
+}
 `

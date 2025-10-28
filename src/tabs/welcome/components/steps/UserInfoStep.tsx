@@ -5,7 +5,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { CheckCircle2, Loader2, User } from 'lucide-react';
 import { useOnboarding } from '../../contexts/OnboardingContext';
-import { setUserName, getUserName, getUserAge } from '../../api/user-data';
+import { setUserName, getUserName } from '../../api/user-data';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStorage } from '@plasmohq/storage/hook';
 
@@ -16,16 +16,13 @@ interface UserInfoStepProps {
 export const UserInfoStep: React.FC<UserInfoStepProps> = ({ onComplete }) => {
   const { updateUserData, markStepComplete } = useOnboarding();
   const [name, setName] = useState('');
-  const [age, setAge] = useState('');
   const [nameError, setNameError] = useState('');
-  const [ageError, setAgeError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
   // Prefill data from localStorage on mount
   useEffect(() => {
     getUserName().then(e => setName(e || ''))
-    getUserAge().then(e => setAge(e?.toString() || ''))
   }, []);
 
   const validateName = (value: string): string => {
@@ -55,36 +52,25 @@ export const UserInfoStep: React.FC<UserInfoStepProps> = ({ onComplete }) => {
     }
   };
 
-  const handleAgeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setAge(value);
-    if (ageError) {
-      setAgeError('');
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validate both fields
     const nameValidationError = validateName(name);
-    const ageValidationError = validateAge(age);
     
-    if (nameValidationError || ageValidationError) {
+    if (nameValidationError) {
       setNameError(nameValidationError);
-      setAgeError(ageValidationError);
       return;
     }
 
     setIsSubmitting(true);
     setNameError('');
-    setAgeError('');
 
     try {
       // Call the mutation
       const result = await setUserName({ 
         name: name.trim(), 
-        age: parseInt(age, 10) 
       });
 
       if (result.success) {
@@ -120,11 +106,11 @@ export const UserInfoStep: React.FC<UserInfoStepProps> = ({ onComplete }) => {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md"
       >
-        <Card className="border-border">
+        <Card className="border-border backdrop-blur-sm bg-card/80">
           <CardHeader>
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <User className="w-6 h-6 text-primary" />
+              <div className="w-12 h-12 rounded-full bg-chart-4/20 flex items-center justify-center">
+                <User className="w-6 h-6 text-chart-4" />
               </div>
               <CardTitle className="text-2xl">Welcome to NeuroPilot</CardTitle>
             </div>
@@ -191,38 +177,10 @@ export const UserInfoStep: React.FC<UserInfoStepProps> = ({ onComplete }) => {
                     </AnimatePresence>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="age">Your Age</Label>
-                    <Input
-                      id="age"
-                      type="number"
-                      placeholder="Enter your age"
-                      value={age}
-                      onChange={handleAgeChange}
-                      disabled={isSubmitting}
-                      aria-invalid={!!ageError}
-                      className="text-base"
-                      min="1"
-                      max="150"
-                    />
-                    <AnimatePresence>
-                      {ageError && (
-                        <motion.p
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          className="text-sm text-destructive flex items-center gap-1"
-                        >
-                          {ageError}
-                        </motion.p>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
                   <Button
                     type="submit"
                     className="w-full"
-                    disabled={isSubmitting || !name.trim() || !age}
+                    disabled={isSubmitting || !name.trim()}
                   >
                     {isSubmitting ? (
                       <>

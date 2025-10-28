@@ -1,16 +1,15 @@
-import { getUserName, getUserAge } from '../api/user-data';
+import { useStorage } from "@plasmohq/storage/hook";
+import { USER_NAME_KEY } from "../api/user-data";
 
 /**
  * Check if all onboarding steps are complete by verifying localStorage
  */
-export function isOnboardingComplete(): boolean {
+export function useIsOnboardingComplete(): boolean {
   try {
-    // Check if user info is saved
-    const userName = getUserName();
-    const userAge = getUserAge();
+    const [userName, _] = useStorage(USER_NAME_KEY);
 
     // If both name and age exist, onboarding is complete
-    return !!(userName && userAge);
+    return !!(userName);
   } catch (error) {
     console.error('Error checking onboarding status:', error);
     return false;
@@ -21,9 +20,9 @@ export function isOnboardingComplete(): boolean {
  * Get the initial step based on onboarding completion status
  * @returns The step number to start from (0-4)
  */
-export function getInitialStep(): number {
+export function useGetInitialStep(): number {
   // If onboarding is complete, go directly to completion step (step 4)
-  if (isOnboardingComplete()) {
+  if (useIsOnboardingComplete()) {
     return 4;
   }
 

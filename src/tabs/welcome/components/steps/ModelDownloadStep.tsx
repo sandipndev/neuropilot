@@ -127,7 +127,7 @@ export const ModelDownloadStep: React.FC<ModelDownloadStepProps> = ({
       </div>
 
       {/* Model Status Card */}
-      <Card>
+      <Card className="backdrop-blur-sm bg-card/80">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -149,7 +149,7 @@ export const ModelDownloadStep: React.FC<ModelDownloadStepProps> = ({
                   </Badge>
                 )}
                 {status === 'downloading' && (
-                  <Badge variant="default">
+                  <Badge variant="default" className="bg-chart-4 text-white">
                     Downloading
                   </Badge>
                 )}

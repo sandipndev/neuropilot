@@ -73,9 +73,7 @@ class WebsiteTracker {
 
     try {
       await sendToBackground({ name: WEBSITE_VISIT_MESSAGE_NAME, body })
-    } catch (e) {
-      console.warn("[NP|WebsiteVisit] emit failed:", e)
-    }
+    } catch {}
   }
 }
 

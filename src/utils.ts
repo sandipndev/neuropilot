@@ -1,5 +1,6 @@
 import { Storage } from "@plasmohq/storage"
 
+import type { AudioAttention } from "~background/messages/cognitive-attention-audio"
 import type { ImageAttention } from "~background/messages/cognitive-attention-image"
 import type { TextAttention } from "~background/messages/cognitive-attention-text"
 import type { WebsiteVisit } from "~background/messages/website-visit"
@@ -21,6 +22,7 @@ export interface UserActivity extends WebsiteVisit {
   textAttentions: TextAttention[]
   imageAttentions: ImageAttention[]
   youtubeAttentions: YoutubeAttention[]
+  audioAttentions: AudioAttention[]
 }
 
 export const allUserActivityForLastMs = async (
@@ -50,6 +52,12 @@ export const allUserActivityForLastMs = async (
     .above(Date.now() - ms)
     .toArray()
 
+  const audioAttentions = await db
+    .table<AudioAttention>("audioAttention")
+    .where("timestamp")
+    .above(Date.now() - ms)
+    .toArray()
+
   return websites
     .map((website) => {
       const websiteTextAttentions = textAttentions.filter(
@@ -62,13 +70,18 @@ export const allUserActivityForLastMs = async (
         website.url.includes(ya.id)
       )
 
+      const websiteAudioAttentions = audioAttentions.filter((aa) =>
+        website.url.includes(aa.src)
+      )
+
       // Find the latest activity timestamp for this website
       const latestActivity = Math.max(
         website.closed_at || website.opened_at,
         website.active_time || 0,
         ...websiteTextAttentions.map((ta) => ta.timestamp),
         ...websiteImageAttentions.map((ia) => ia.timestamp),
-        ...websiteYoutubeAttentions.map((ya) => ya.timestamp)
+        ...websiteYoutubeAttentions.map((ya) => ya.timestamp),
+        ...websiteAudioAttentions.map((aa) => aa.timestamp)
       )
 
       return {
@@ -76,6 +89,7 @@ export const allUserActivityForLastMs = async (
         textAttentions: websiteTextAttentions,
         imageAttentions: websiteImageAttentions,
         youtubeAttentions: websiteYoutubeAttentions,
+        audioAttentions: websiteAudioAttentions,
         latestActivity
       }
     })
@@ -109,6 +123,12 @@ Active Watch Time: ${r.activeWatchTime}
 `
   )
   .join(" ")}`
+    : ""
+}
+${
+  a.audioAttentions.length > 0
+    ? `Audio Summaries ${index + 1} user is paying attention to in this page:
+${a.audioAttentions.map((r) => r.summary).join(" ")}`
     : ""
 }
 `

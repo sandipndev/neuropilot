@@ -49,8 +49,6 @@ const handler: PlasmoMessaging.MessageHandler = async (req) => {
         })
       break
     }
-    default:
-      console.warn("[WebsiteVisit] Unknown event:", req)
   }
 }
 

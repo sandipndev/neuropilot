@@ -1,5 +1,5 @@
 import db, { type ActivitySummary } from "~db"
-import { getLanguageModel } from "~model"
+import { getSummarizer } from "~model"
 import { allUserActivityForLastMs, attentionContent } from "~utils"
 
 const activitySummaryInferenceTask = async () => {
@@ -10,10 +10,11 @@ const activitySummaryInferenceTask = async () => {
     return
   }
 
-  const PROMPT = `Based on the following user activity data from the last minute, generate a 5-6 word third-person summary describing what the user is doing.
+  const data = attentionContent(recentActivity)
 
-  Activity Data:
-  ${attentionContent(recentActivity)}
+  const PROMPT = `
+  This is the user's activity data from the last minute. I need a 5-6 word third-person summary describing what the user is doing.
+  Based on the following user activity data from the last minute, generate a 5-6 word third-person summary describing what the user is doing.
 
   Examples of good summaries:
   - "You are reading about Hermione"
@@ -29,11 +30,22 @@ const activitySummaryInferenceTask = async () => {
   - No generic phrases
   - Casual, natural tone
 
-  Return ONLY the summary text, nothing else.`
+  I need ONLY the summary text, nothing else.`
 
-  const session = await getLanguageModel()
-  const summary = await session.prompt(PROMPT.trim())
-  session.destroy()
+  const summarizer = await getSummarizer("tldr")
+  const summary = await summarizer.summarize(data, {
+    context: PROMPT.trim()
+  })
+  summarizer.destroy()
+
+  const previousSummary = await db
+    .table<ActivitySummary>("activitySummary")
+    .orderBy("timestamp")
+    .last()
+
+  if (previousSummary.summary == summary) {
+    return
+  }
 
   await db.table<ActivitySummary>("activitySummary").add({
     summary,

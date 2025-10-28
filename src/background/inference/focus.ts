@@ -1,6 +1,6 @@
 import db, { type Focus } from "~db"
 import { NotificationMessageType } from "~default-settings"
-import { getLanguageModel } from "~model"
+import { getLanguageModel, getSummarizer } from "~model"
 import {
   allUserActivityForLastMs,
   attentionContent,
@@ -162,18 +162,20 @@ the user is not reading anything), return "null"`
 const summarizeFocus = async (keywords: string[]): Promise<string> => {
   const PROMPT = `
 Reply in one or two words.
-What is the single greatest common factor between these:
-
-${keywords.join(", ")}
+What is the single greatest common factor between the given keywords.
 
 Note: Be specific enough to be meaningful. Consider both direct and indirect relationships.
 If no clear commonality exists, identify the most significant or dominant term.`
 
-  const session = await getLanguageModel()
-  const focus = await session.prompt(PROMPT.trim())
-  session.destroy()
+  const data = keywords.join(", ")
 
-  return focus.trim()
+  const summarizer = await getSummarizer("tldr")
+  const summarizedFocus = await summarizer.summarize(data, {
+    context: PROMPT.trim()
+  })
+  summarizer.destroy()
+
+  return summarizedFocus.trim()
 }
 
 // Helper to hash the recent activity (optimization)

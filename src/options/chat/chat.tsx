@@ -1,5 +1,6 @@
 import { useLiveQuery } from "dexie-react-hooks"
 import { Image, MessageSquare, Mic, Send } from "lucide-react"
+import { marked } from "marked"
 import React, { useEffect, useMemo, useRef, useState } from "react"
 
 import { ChatService } from "~chat"
@@ -9,6 +10,7 @@ interface ChatProps {
   chatId: string
   isNewChat?: boolean
   onChatCreated?: (chatId: string) => void
+  onUsageUpdate?: (usage: { inputUsage: number; inputQuota: number }) => void
 }
 
 const CONTEXT_WINDOWS = [
@@ -22,7 +24,8 @@ const CONTEXT_WINDOWS = [
 export const Chat: React.FC<ChatProps> = ({
   chatId,
   isNewChat = false,
-  onChatCreated
+  onChatCreated,
+  onUsageUpdate
 }) => {
   const [messageText, setMessageText] = useState("")
   const [contextWindowMs, setContextWindowMs] = useState(30 * 60 * 1000) // Default: 30 minutes
@@ -30,6 +33,10 @@ export const Chat: React.FC<ChatProps> = ({
   const [streamingMessage, setStreamingMessage] = useState("")
   const [selectedImages, setSelectedImages] = useState<File[]>([])
   const [selectedAudios, setSelectedAudios] = useState<File[]>([])
+  const [usageInfo, setUsageInfo] = useState<{
+    inputUsage: number
+    inputQuota: number
+  } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const audioInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -56,6 +63,24 @@ export const Chat: React.FC<ChatProps> = ({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, streamingMessage])
+
+  useEffect(() => {
+    const session = chatService.getSession()
+    if (session) {
+      const { inputUsage, inputQuota } = session
+      const usage = { inputUsage, inputQuota }
+      setUsageInfo(usage)
+      onUsageUpdate?.(usage)
+    }
+  }, [messages, onUsageUpdate])
+
+  useEffect(() => {
+    return () => {
+      if (chatService.getSession()) {
+        chatService.destroy()
+      }
+    }
+  }, [chatService])
 
   const handleSendMessage = async () => {
     if (
@@ -196,9 +221,12 @@ export const Chat: React.FC<ChatProps> = ({
               : "bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-bl-sm"
           }`}>
           {message.type === "text" && (
-            <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
-              {message.content}
-            </p>
+            <div
+              className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2"
+              dangerouslySetInnerHTML={{
+                __html: marked.parse(message.content) as string
+              }}
+            />
           )}
           {message.type === "image" && (
             <img
@@ -228,10 +256,16 @@ export const Chat: React.FC<ChatProps> = ({
             {isStreaming && streamingMessage && (
               <div className="flex justify-start mb-4 animate-fadeIn">
                 <div className="max-w-xs lg:max-w-md xl:max-w-lg px-4 py-3 rounded-2xl shadow-sm bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-bl-sm">
-                  <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
-                    {streamingMessage}
-                  </p>
-                  <span className="inline-block w-1 h-4 bg-slate-900 dark:bg-slate-100 animate-pulse ml-1" />
+                  <div
+                    className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2"
+                    dangerouslySetInnerHTML={{
+                      __html: marked.parse(streamingMessage) as string
+                    }}
+                  />
+                  <div className="flex items-center justify-start gap-2 text-xs mt-2 text-slate-500 dark:text-slate-400">
+                    <div className="inline-block w-3 h-3 bg-slate-900 dark:bg-slate-100 rounded-full animate-pulse" />
+                    <div>AI is thinking...</div>
+                  </div>
                 </div>
               </div>
             )}

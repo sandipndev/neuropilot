@@ -2,26 +2,27 @@
  * CompactStatsCard - Streamlined stats for dashboard
  */
 
-import { useMemo } from 'react';
-import { motion } from 'framer-motion';
-import type { FocusWithParsedData, WinWithParsedData } from '../types';
-import { calculateStats, formatDuration } from '../lib';
+import { motion } from "framer-motion"
+import { useMemo } from "react"
+
+import { calculateStats, formatDuration } from "../lib"
+import type { FocusWithParsedData, WinWithParsedData } from "../types"
 
 interface CompactStatsCardProps {
-  focusHistory: FocusWithParsedData[];
-  wins: WinWithParsedData[];
-  isLoading?: boolean;
+  focusHistory: FocusWithParsedData[]
+  wins: WinWithParsedData[]
+  isLoading?: boolean
 }
 
 export function CompactStatsCard({
   focusHistory,
   wins,
-  isLoading = false,
+  isLoading = false
 }: CompactStatsCardProps) {
   const stats = useMemo(
     () => calculateStats(focusHistory, wins),
     [focusHistory, wins]
-  );
+  )
 
   if (isLoading) {
     return (
@@ -31,18 +32,17 @@ export function CompactStatsCard({
           <div className="h-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
         </div>
       </div>
-    );
+    )
   }
 
-  const hasData = stats.weeklyTotal > 0 || stats.dailyTotal > 0;
+  const hasData = stats.weeklyTotal > 0 || stats.dailyTotal > 0
 
   return (
     <motion.div
       initial={{ scale: 0.95 }}
       animate={{ scale: 1 }}
       transition={{ duration: 0.3 }}
-      className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl p-5 border border-gray-200/50 dark:border-gray-800/50 shadow-lg"
-    >
+      className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl p-5 border border-gray-200/50 dark:border-gray-800/50 shadow-lg">
       <div className="flex items-center gap-2 mb-4">
         <span className="text-xl">📊</span>
         <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
@@ -81,7 +81,8 @@ export function CompactStatsCard({
                 {stats.primeActivity.name}
               </div>
               <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                {formatDuration(stats.primeActivity.totalTime)} ({stats.primeActivity.percentage.toFixed(0)}%)
+                {formatDuration(stats.primeActivity.totalTime)} (
+                {stats.primeActivity.percentage.toFixed(0)}%)
               </div>
             </div>
           )}
@@ -90,7 +91,10 @@ export function CompactStatsCard({
           {stats.topActivities.length > 0 && (
             <div className="space-y-2">
               {stats.topActivities.slice(0, 3).map((activity, index) => {
-                const percentage = stats.dailyTotal > 0 ? (activity.time / stats.dailyTotal) * 100 : 0;
+                const percentage =
+                  stats.dailyTotal > 0
+                    ? (activity.time / stats.dailyTotal) * 100
+                    : 0
                 return (
                   <div key={activity.name} className="space-y-1">
                     <div className="flex items-center justify-between text-xs">
@@ -110,12 +114,12 @@ export function CompactStatsCard({
                       />
                     </div>
                   </div>
-                );
+                )
               })}
             </div>
           )}
         </div>
       )}
     </motion.div>
-  );
+  )
 }

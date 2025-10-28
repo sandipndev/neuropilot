@@ -1,4 +1,4 @@
-import { getUserName, getUserAge } from '../../../../../api/mutations/set-user-name';
+import { getUserAge, getUserName } from "~tabs/welcome/api/user-data";
 
 /**
  * Check if all onboarding steps are complete by verifying localStorage

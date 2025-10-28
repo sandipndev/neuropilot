@@ -1,3 +1,5 @@
+import { PlasmoCSConfig } from "plasmo"
+
 import { sendToBackground } from "@plasmohq/messaging"
 import { Storage } from "@plasmohq/storage"
 
@@ -5,6 +7,12 @@ import { COGNITIVE_ATTENTION_SHOW_OVERLAY } from "~default-settings"
 import { getImageModel } from "~model"
 
 import CognitiveAttentionImageTracker from "../cognitive-attention/monitor-image"
+
+export const config: PlasmoCSConfig = {
+  matches: ["<all_urls>"],
+  exclude_matches: ["*://*.youtube.com/*"],
+  all_frames: false
+}
 
 const COGNITIVE_ATTENTION_IMAGE_MESSAGE_NAME = "cognitive-attention-image"
 

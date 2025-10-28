@@ -3,6 +3,7 @@ import { Storage } from "@plasmohq/storage"
 import type { ImageAttention } from "~background/messages/cognitive-attention-image"
 import type { TextAttention } from "~background/messages/cognitive-attention-text"
 import type { WebsiteVisit } from "~background/messages/website-visit"
+import type { YoutubeAttention } from "~background/messages/youtube-attention"
 import type { Focus } from "~db"
 import db from "~db"
 import {
@@ -19,6 +20,7 @@ export const getActiveFocus = async () =>
 export interface UserActivity extends WebsiteVisit {
   textAttentions: TextAttention[]
   imageAttentions: ImageAttention[]
+  youtubeAttentions: YoutubeAttention[]
 }
 
 export const allUserActivityForLastMs = async (
@@ -42,6 +44,12 @@ export const allUserActivityForLastMs = async (
     .above(Date.now() - ms)
     .toArray()
 
+  const youtubeAttentions = await db
+    .table<YoutubeAttention>("youtubeAttention")
+    .where("timestamp")
+    .above(Date.now() - ms)
+    .toArray()
+
   return websites
     .map((website) => {
       const websiteTextAttentions = textAttentions.filter(
@@ -50,19 +58,24 @@ export const allUserActivityForLastMs = async (
       const websiteImageAttentions = imageAttentions.filter(
         (ia) => ia.url === website.url
       )
+      const websiteYoutubeAttentions = youtubeAttentions.filter((ya) =>
+        website.url.includes(ya.id)
+      )
 
       // Find the latest activity timestamp for this website
       const latestActivity = Math.max(
         website.closed_at || website.opened_at,
         website.active_time || 0,
         ...websiteTextAttentions.map((ta) => ta.timestamp),
-        ...websiteImageAttentions.map((ia) => ia.timestamp)
+        ...websiteImageAttentions.map((ia) => ia.timestamp),
+        ...websiteYoutubeAttentions.map((ya) => ya.timestamp)
       )
 
       return {
         ...website,
         textAttentions: websiteTextAttentions,
         imageAttentions: websiteImageAttentions,
+        youtubeAttentions: websiteYoutubeAttentions,
         latestActivity
       }
     })
@@ -81,6 +94,21 @@ ${
   a.imageAttentions.length > 0
     ? `Image Descriptions ${index + 1} user is paying attention to in this page:
 ${a.imageAttentions.map((r) => r.caption).join(" ")}`
+    : ""
+}
+${
+  a.youtubeAttentions.length > 0
+    ? `Youtube Videos ${index + 1} user is paying attention to in this page:
+${a.youtubeAttentions
+  .map(
+    (r) => `
+Title: ${r.title}
+Channel Name: ${r.channelName}
+Captions read by the User: ${r.caption}
+Active Watch Time: ${r.activeWatchTime}
+`
+  )
+  .join(" ")}`
     : ""
 }
 `

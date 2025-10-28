@@ -70,3 +70,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 chrome.action.onClicked.addListener((tab) => {
   chrome.sidePanel.open({ windowId: tab.windowId })
 })
+
+// For faster dev
+continuousTasksQueue.pause()
+cronTasksQueue.pause()

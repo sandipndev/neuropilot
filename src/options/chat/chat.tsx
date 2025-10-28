@@ -1,10 +1,12 @@
 import { useLiveQuery } from "dexie-react-hooks"
-import { Image, MessageSquare, Mic, Send } from "lucide-react"
+import { Image, MessageSquare, Mic, Send, Sparkles } from "lucide-react"
 import { marked } from "marked"
 import React, { useEffect, useMemo, useRef, useState } from "react"
 
 import { ChatService } from "~chat"
 import db, { type ChatMessage } from "~db"
+import { getRewriter, getWriter } from "~model"
+import { allUserActivityForLastMs, attentionContent } from "~utils"
 
 interface ChatProps {
   chatId: string
@@ -33,10 +35,7 @@ export const Chat: React.FC<ChatProps> = ({
   const [streamingMessage, setStreamingMessage] = useState("")
   const [selectedImages, setSelectedImages] = useState<File[]>([])
   const [selectedAudios, setSelectedAudios] = useState<File[]>([])
-  const [usageInfo, setUsageInfo] = useState<{
-    inputUsage: number
-    inputQuota: number
-  } | null>(null)
+  const [writing, setWriting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const audioInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -69,7 +68,6 @@ export const Chat: React.FC<ChatProps> = ({
     if (session) {
       const { inputUsage, inputQuota } = session
       const usage = { inputUsage, inputQuota }
-      setUsageInfo(usage)
       onUsageUpdate?.(usage)
     }
   }, [messages, onUsageUpdate])
@@ -205,6 +203,49 @@ export const Chat: React.FC<ChatProps> = ({
 
   const removeAudio = (index: number) => {
     setSelectedAudios((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const handleRewrite = async () => {
+    if (!messageText.trim() || isStreaming) return
+    setWriting(true)
+
+    try {
+      const rewriter = await getRewriter("as-is", "as-is")
+      const rewritten = await rewriter.rewrite(messageText)
+      setMessageText(rewritten)
+      rewriter.destroy()
+    } finally {
+      setWriting(false)
+    }
+  }
+
+  const handleWrite = async () => {
+    if (isStreaming) return
+    setWriting(true)
+
+    try {
+      const writer = await getWriter("neutral")
+      const attention = attentionContent(
+        await allUserActivityForLastMs(contextWindowMs)
+      )
+      const previousMessages = `\n\nThe previous messages are: ${messages
+        .filter((m) => m.type === "text")
+        .map((m) => m.content)
+        .join("\n\n")}`
+
+      const context = `${attention}${messages.length > 0 ? previousMessages : ""}`
+
+      const written = await writer.write(
+        `Help me write a random interesting prompt based on what I was reading about as given in the context. Just return the prompt, nothing else. Don't start with Prompt.`,
+        {
+          context
+        }
+      )
+      setMessageText(written)
+      writer.destroy()
+    } finally {
+      setWriting(false)
+    }
   }
 
   const renderMessage = (message: ChatMessage) => {
@@ -409,10 +450,26 @@ export const Chat: React.FC<ChatProps> = ({
                   handleSendMessage()
                 }
               }}
-              placeholder="Type a message..."
-              className="flex-1 resize-none border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 focus:border-transparent placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200"
+              disabled={writing}
+              placeholder={
+                writing ? "Writing a prompt..." : "Type a message..."
+              }
+              className={`${writing && "animate-pulse"} flex-1 resize-none border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 focus:border-transparent placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200`}
               rows={1}
             />
+
+            {/* Write / Rewrite Button */}
+            <button
+              onClick={messageText.trim() ? handleRewrite : handleWrite}
+              disabled={isStreaming || writing}
+              className="p-2.5 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              title={
+                messageText.trim()
+                  ? "Rewrite with AI"
+                  : "Generate message with AI"
+              }>
+              <Sparkles size={20} />
+            </button>
 
             {/* Send Button */}
             <button

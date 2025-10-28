@@ -36,6 +36,11 @@ export const AllChats: React.FC = () => {
     }
   }, [chats, selectedChatId])
 
+  // Reset usage info when switching chats
+  useEffect(() => {
+    setUsageInfo(null)
+  }, [selectedChatId])
+
   const createNewChat = () => {
     const newId = generateChatId()
     setSelectedChatId(newId)

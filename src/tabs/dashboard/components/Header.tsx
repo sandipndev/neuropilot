@@ -1,38 +1,45 @@
-import { useState, useEffect } from 'react';
-import { Settings, Moon, Sun } from 'lucide-react';
-import { formatTime } from '../lib/time';
+import { Moon, Settings, Sun } from "lucide-react"
+import { useEffect, useState } from "react"
+
+import { formatTime } from "../lib/time"
 
 interface HeaderProps {
-  userName: string | null;
-  onSettingsClick: () => void;
-  onThemeToggle: () => void;
-  isDarkMode: boolean;
+  userName: string | null
+  onSettingsClick: () => void
+  onThemeToggle: () => void
+  isDarkMode: boolean
 }
 
-export function Header({ userName, onSettingsClick, onThemeToggle, isDarkMode }: HeaderProps) {
-  const [currentTime, setCurrentTime] = useState(new Date());
+export function Header({
+  userName,
+  onSettingsClick,
+  onThemeToggle,
+  isDarkMode
+}: HeaderProps) {
+  const [currentTime, setCurrentTime] = useState(new Date())
 
   // Update time every second
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
+      setCurrentTime(new Date())
+    }, 1000)
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => clearInterval(interval)
+  }, [])
 
-  const displayName = userName || 'there'; // cc: Subham please fix this lol, take the user name as an input in the beginning walkthrough
-  
+  console.log(userName)
+  const displayName = userName || "" // cc: Subham please fix this lol, take the user name as an input in the beginning walkthrough
+
   // Get time-based greeting
   const getGreeting = () => {
-    const hour = currentTime.getHours();
-    if (hour < 12) return { text: 'Good morning', emoji: '☀️' };
-    if (hour < 17) return { text: 'Good afternoon', emoji: '🌤️' };
-    if (hour < 21) return { text: 'Good evening', emoji: '🌆' };
-    return { text: 'Good evening..', emoji: '🌙' };
-  };
+    const hour = currentTime.getHours()
+    if (hour < 12) return { text: "Good morning", emoji: "☀️" }
+    if (hour < 17) return { text: "Good afternoon", emoji: "🌤️" }
+    if (hour < 21) return { text: "Good evening", emoji: "🌆" }
+    return { text: "Good evening..", emoji: "🌙" }
+  }
 
-  const greeting = getGreeting();
+  const greeting = getGreeting()
 
   return (
     <header className="w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 px-6 py-3 shrink-0 z-40">
@@ -45,7 +52,11 @@ export function Header({ userName, onSettingsClick, onThemeToggle, isDarkMode }:
               {greeting.text}, {displayName}
             </h1>
             <p className="text-[10px] text-gray-500 dark:text-gray-400">
-              {currentTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              {currentTime.toLocaleDateString("en-US", {
+                weekday: "short",
+                month: "short",
+                day: "numeric"
+              })}
             </p>
           </div>
         </div>
@@ -64,16 +75,16 @@ export function Header({ userName, onSettingsClick, onThemeToggle, isDarkMode }:
             <button
               onClick={onSettingsClick}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
-              aria-label="Settings"
-            >
+              aria-label="Settings">
               <Settings className="w-4 h-4 text-gray-700 dark:text-gray-300" />
             </button>
 
             <button
               onClick={onThemeToggle}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
-              aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
+              aria-label={
+                isDarkMode ? "Switch to light mode" : "Switch to dark mode"
+              }>
               {isDarkMode ? (
                 <Sun className="w-4 h-4 text-yellow-500" />
               ) : (
@@ -84,5 +95,5 @@ export function Header({ userName, onSettingsClick, onThemeToggle, isDarkMode }:
         </div>
       </div>
     </header>
-  );
+  )
 }

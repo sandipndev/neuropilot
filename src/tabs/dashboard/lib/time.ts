@@ -6,7 +6,7 @@
  * @returns Formatted string like "2h 30m" or "45m"
  */
 export function formatDuration(milliseconds: number): string {
-  if (!milliseconds) return null;
+  if (!milliseconds) return '0m';
 
   const totalMinutes = Math.floor(milliseconds / (1000 * 60));
   const hours = Math.floor(totalMinutes / 60);
@@ -17,6 +17,7 @@ export function formatDuration(milliseconds: number): string {
   }
   return `${minutes}m`;
 }
+
 
 /**
  * Convert milliseconds to decimal hours

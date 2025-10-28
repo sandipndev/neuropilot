@@ -15,7 +15,7 @@ export function calculateDailyFocusTime(focusHistory: FocusWithParsedData[]): nu
   const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
   return focusHistory
     .filter((f) => f.last_updated >= oneDayAgo)
-    .reduce((sum, f) => sum + f.total_time, 0);
+    .reduce((sum, f) => sum + f.total_time_spent, 0);
 }
 
 /**
@@ -39,10 +39,10 @@ export function determineFocusState(
   // Check if it's nighttime (after 8 PM)
   const nightTime = isNightTime();
 
-  // If user has focused for 6+ hours today and it's nighttime, suggest wind-down
-  if (totalDailyFocusTime >= WIND_DOWN_THRESHOLD && nightTime) {
-    return 'wind-down';
-  }
+  // // If user has focused for 6+ hours today and it's nighttime, suggest wind-down
+  // if (totalDailyFocusTime >= WIND_DOWN_THRESHOLD && nightTime) {
+  //   return 'wind-down';
+  // }
 
   // Otherwise, show active focus state
   return 'active-focus';
@@ -62,10 +62,10 @@ export function getCurrentFocusElapsedTime(currentFocus: FocusWithParsedData | n
   const latestEntry = currentFocus.time_spent[currentFocus.time_spent.length - 1];
 
   // If there's an active session (stop is null), calculate elapsed time
-  if (latestEntry.stop === null) {
+  if (latestEntry.end === null) {
     return Date.now() - latestEntry.start;
   }
 
   // Otherwise, return the total time
-  return currentFocus.total_time;
+  return currentFocus.total_time_spent;
 }

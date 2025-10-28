@@ -1,9 +1,10 @@
 /**
- * CompactQuizCard - Streamlined quiz for dashboard
+ * CompactQuizCard - Professional quiz interface
  */
 
 import { AnimatePresence, motion } from "framer-motion"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { Brain, CheckCircle2, XCircle } from "lucide-react"
 
 import type { QuizQuestionWithId } from "../hooks/useQuizQuestions"
 
@@ -121,104 +122,94 @@ export function CompactQuizCard({
 
   if (isLoading) {
     return (
-      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl p-4 border border-gray-200/50 dark:border-gray-800/50">
-        <div className="animate-pulse space-y-3">
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
-          <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded"></div>
+      <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800">
+        <div className="animate-pulse space-y-4">
+          <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-1/3"></div>
+          <div className="h-32 bg-gray-200 dark:bg-gray-800 rounded"></div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="bg-gradient-to-br from-white/90 to-blue-50/90 dark:from-gray-900/90 dark:to-blue-950/50 backdrop-blur-xl rounded-3xl p-8 border-2 border-blue-200/50 dark:border-blue-800/50 shadow-2xl hover:shadow-blue-200/50 dark:hover:shadow-blue-900/50 transition-all">
-      <div className="space-y-4 mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <span className="text-2xl">🧠</span>
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                Quick Quiz
-              </h3>
-              <p className="text-xs text-gray-600 dark:text-gray-400">
-                Test your knowledge
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-col items-end gap-1">
-            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
-              {answeredCount}/{questions.length}
-            </span>
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              completed
-            </span>
-          </div>
+    <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <Brain className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Knowledge Check
+          </h3>
         </div>
-        
-        {/* Progress Bar */}
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            {answeredCount}/{questions.length}
+          </span>
+        </div>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="mb-6">
+        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${questions.length > 0 ? (answeredCount / questions.length) * 100 : 0}%` }}
-            transition={{ duration: 0.5 }}
-            className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
+            transition={{ duration: 0.3 }}
+            className="h-full bg-blue-600 dark:bg-blue-500 rounded-full"
           />
         </div>
+        {unansweredQuestions.length > 0 && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+            {unansweredQuestions.length} question{unansweredQuestions.length !== 1 ? 's' : ''} remaining
+          </p>
+        )}
       </div>
 
       <AnimatePresence mode="wait">
         {unansweredQuestions.length === 0 ? (
           <motion.div
             key="empty"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="text-center py-10">
+            className="text-center py-12">
             {justCompletedSession ? (
-              // Show score if user just completed a quiz session
               <>
-                <div className="text-7xl mb-4">🎉</div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                  Quiz Complete!
-                </p>
-                <div className="mb-4">
-                  <div className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-xl">
-                    <span className="text-4xl font-bold text-white">
-                      {sessionScore}
-                    </span>
-                    <span className="text-xl text-white/90">/</span>
-                    <span className="text-2xl font-semibold text-white/90">
-                      {sessionQuestionsAnswered}
-                    </span>
-                  </div>
+                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                  <CheckCircle2 className="w-10 h-10 text-green-600 dark:text-green-400" />
                 </div>
-                <p className="text-base text-gray-700 dark:text-gray-300 mb-3 font-semibold">
+                <h4 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+                  Quiz Complete!
+                </h4>
+                <div className="inline-flex items-center gap-2 px-6 py-3 bg-gray-100 dark:bg-gray-800 rounded-lg mb-4">
+                  <span className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                    {sessionScore}
+                  </span>
+                  <span className="text-gray-500 dark:text-gray-400">/</span>
+                  <span className="text-xl text-gray-600 dark:text-gray-400">
+                    {sessionQuestionsAnswered}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   {sessionScore === sessionQuestionsAnswered
-                    ? "🌟 Perfect score! Amazing!"
+                    ? "Perfect score! Excellent work!"
                     : sessionScore >= sessionQuestionsAnswered * 0.8
-                      ? "🎯 Excellent work!"
+                      ? "Great job! Well done!"
                       : sessionScore >= sessionQuestionsAnswered * 0.6
-                        ? "👍 Good job!"
-                        : "💪 Keep practicing!"}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Total progress: {answeredCount}/{questions.length}
+                        ? "Good effort! Keep it up!"
+                        : "Keep practicing!"}
                 </p>
               </>
             ) : (
-              // Show "all caught up" message if no questions in current session
               <>
-                <div className="text-6xl mb-4">✨</div>
-                <p className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                  All caught up!
-                </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                  You've answered all available questions.
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-500 mt-3">
-                  Check back later for more! 🔄
+                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                  <CheckCircle2 className="w-10 h-10 text-gray-400" />
+                </div>
+                <h4 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  All Caught Up!
+                </h4>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  You've completed all available questions
                 </p>
               </>
             )}
@@ -226,12 +217,14 @@ export function CompactQuizCard({
         ) : (
           <motion.div
             key={currentQuestion.id}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-5">
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-5"
+          >
             {/* Question */}
-            <div className="bg-white/50 dark:bg-gray-800/50 rounded-2xl p-5 border border-blue-200/30 dark:border-blue-800/30">
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-5">
               <p className="text-base font-medium text-gray-900 dark:text-gray-100 leading-relaxed">
                 {currentQuestion.question}
               </p>
@@ -244,25 +237,20 @@ export function CompactQuizCard({
                 const isCorrect = optionData.isCorrect
                 const showFeedback = feedback?.show || false
 
-                let buttonClass =
-                  "w-full text-left p-4 rounded-xl border-2 text-sm transition-all transform hover:scale-[1.02] "
+                let buttonClass = "w-full text-left p-4 rounded-lg border-2 transition-all "
+                
                 if (showFeedback) {
                   if (isSelected && isCorrect) {
-                    buttonClass +=
-                      "border-green-500 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 text-green-900 dark:text-green-100 shadow-lg"
+                    buttonClass += "border-green-500 bg-green-50 dark:bg-green-900/20"
                   } else if (isSelected && !isCorrect) {
-                    buttonClass +=
-                      "border-red-500 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/30 text-red-900 dark:text-red-100 shadow-lg"
+                    buttonClass += "border-red-500 bg-red-50 dark:bg-red-900/20"
                   } else if (isCorrect) {
-                    buttonClass +=
-                      "border-green-500 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 text-green-900 dark:text-green-100 shadow-lg"
+                    buttonClass += "border-green-500 bg-green-50 dark:bg-green-900/20"
                   } else {
-                    buttonClass +=
-                      "border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 text-gray-400 opacity-60"
+                    buttonClass += "border-gray-200 dark:border-gray-700 opacity-50"
                   }
                 } else {
-                  buttonClass +=
-                    "border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 bg-white dark:bg-gray-800 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 cursor-pointer shadow-md hover:shadow-lg"
+                  buttonClass += "border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
                 }
 
                 return (
@@ -270,17 +258,17 @@ export function CompactQuizCard({
                     key={index}
                     onClick={() => handleAnswer(index)}
                     disabled={feedback !== null}
-                    className={buttonClass}>
+                    className={buttonClass}
+                  >
                     <div className="flex items-center gap-3">
-                      <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
-                          showFeedback && isCorrect
-                            ? "bg-green-500 text-white shadow-lg"
-                            : "bg-gradient-to-br from-blue-500 to-purple-600 text-white"
-                        }`}>
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${
+                        showFeedback && isCorrect
+                          ? "bg-green-600 text-white"
+                          : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                      }`}>
                         {showFeedback && isCorrect ? "✓" : index + 1}
                       </div>
-                      <span className="flex-1 font-medium">
+                      <span className="flex-1 text-sm font-medium text-gray-900 dark:text-gray-100">
                         {optionData.option}
                       </span>
                     </div>
@@ -289,17 +277,25 @@ export function CompactQuizCard({
               })}
             </div>
 
-            {/* Feedback Message */}
+            {/* Feedback */}
             {feedback?.show && (
               <motion.div
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`text-center py-3 px-4 rounded-xl font-semibold text-sm ${
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className={`flex items-center gap-2 p-3 rounded-lg ${
                   feedback.isCorrect
-                    ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
-                    : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
-                }`}>
-                {feedback.isCorrect ? "✓ Correct! Great job!" : "✗ Not quite, try again next time!"}
+                    ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                    : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
+                }`}
+              >
+                {feedback.isCorrect ? (
+                  <CheckCircle2 className="w-5 h-5 shrink-0" />
+                ) : (
+                  <XCircle className="w-5 h-5 shrink-0" />
+                )}
+                <span className="text-sm font-medium">
+                  {feedback.isCorrect ? "Correct!" : "Incorrect"}
+                </span>
               </motion.div>
             )}
           </motion.div>

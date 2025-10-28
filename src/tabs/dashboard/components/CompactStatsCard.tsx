@@ -1,9 +1,10 @@
 /**
- * CompactStatsCard - Streamlined stats for dashboard
+ * CompactStatsCard - Professional statistics with donut chart
  */
 
 import { motion } from "framer-motion"
 import { useMemo } from "react"
+import { BarChart3, Clock } from "lucide-react"
 
 import { calculateStats, formatDuration } from "../lib"
 import type { FocusWithParsedData, WinWithParsedData } from "../types"
@@ -12,6 +13,73 @@ interface CompactStatsCardProps {
   focusHistory: FocusWithParsedData[]
   wins: WinWithParsedData[]
   isLoading?: boolean
+}
+
+// Donut chart component
+function DonutChart({ data }: { data: Array<{ name: string; value: number; color: string }> }) {
+  const total = data.reduce((sum, item) => sum + item.value, 0)
+  const size = 160
+  const strokeWidth = 24
+  const radius = (size - strokeWidth) / 2
+  const circumference = 2 * Math.PI * radius
+  const center = size / 2
+
+  let currentAngle = -90 // Start from top
+
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="transform -rotate-90">
+        {/* Background circle */}
+        <circle
+          cx={center}
+          cy={center}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={strokeWidth}
+          className="text-gray-200 dark:text-gray-800"
+        />
+        
+        {/* Data segments */}
+        {data.map((item, index) => {
+          const percentage = (item.value / total) * 100
+          const segmentLength = (percentage / 100) * circumference
+          const offset = circumference - segmentLength
+          
+          const startAngle = currentAngle
+          currentAngle += (percentage / 100) * 360
+          
+          return (
+            <motion.circle
+              key={index}
+              cx={center}
+              cy={center}
+              r={radius}
+              fill="none"
+              stroke={item.color}
+              strokeWidth={strokeWidth}
+              strokeDasharray={`${segmentLength} ${circumference}`}
+              strokeDashoffset={-((startAngle + 90) / 360) * circumference}
+              strokeLinecap="round"
+              initial={{ strokeDasharray: `0 ${circumference}` }}
+              animate={{ strokeDasharray: `${segmentLength} ${circumference}` }}
+              transition={{ duration: 1, delay: index * 0.1, ease: "easeOut" }}
+            />
+          )
+        })}
+      </svg>
+      
+      {/* Center text */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          {data.length}
+        </div>
+        <div className="text-xs text-gray-500 dark:text-gray-400">
+          Activities
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export function CompactStatsCard({
@@ -24,12 +92,29 @@ export function CompactStatsCard({
     [focusHistory, wins]
   )
 
+  const chartData = useMemo(() => {
+    const colors = [
+      '#3b82f6', // blue
+      '#8b5cf6', // purple
+      '#10b981', // green
+      '#f59e0b', // amber
+      '#ef4444', // red
+    ]
+    
+    return stats.topActivities.slice(0, 5).map((activity, index) => ({
+      name: activity.name,
+      value: activity.time,
+      color: colors[index],
+      percentage: stats.dailyTotal > 0 ? (activity.time / stats.dailyTotal) * 100 : 0
+    }))
+  }, [stats])
+
   if (isLoading) {
     return (
-      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl p-4 border border-gray-200/50 dark:border-gray-800/50">
-        <div className="animate-pulse space-y-3">
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-          <div className="h-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+      <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800">
+        <div className="animate-pulse space-y-4">
+          <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-1/3"></div>
+          <div className="h-24 bg-gray-200 dark:bg-gray-800 rounded"></div>
         </div>
       </div>
     )
@@ -38,88 +123,106 @@ export function CompactStatsCard({
   const hasData = stats.weeklyTotal > 0 || stats.dailyTotal > 0
 
   return (
-    <motion.div
-      initial={{ scale: 0.95 }}
-      animate={{ scale: 1 }}
-      transition={{ duration: 0.3 }}
-      className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl p-5 border border-gray-200/50 dark:border-gray-800/50 shadow-lg">
-      <div className="flex items-center gap-2 mb-4">
-        <span className="text-xl">📊</span>
-        <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
-          Today's Focus
-        </h3>
+    <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm">
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Today's Stats
+          </h3>
+        </div>
       </div>
 
       {!hasData ? (
-        <div className="text-center py-4">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            No data yet
+        <div className="text-center py-8">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+            <Clock className="w-8 h-8 text-gray-400" />
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            No data yet - start focusing to see stats
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {/* Today's total */}
-          <div className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-xl">
-            <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent tabular-nums">
-              {formatDuration(stats.dailyTotal)}
-            </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-              Total focus time
+        <div className="space-y-6">
+          {/* Total Time */}
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <Clock className="w-5 h-5 text-gray-400" />
+              <div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium mb-0.5">
+                  Total Focus Time
+                </div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">
+                  {formatDuration(stats.dailyTotal)}
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Prime activity */}
-          {stats.primeActivity && (
-            <div className="p-3 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-xl border border-yellow-200/50 dark:border-yellow-700/50">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg">👑</span>
-                <span className="text-xs font-semibold text-yellow-700 dark:text-yellow-300 uppercase">
-                  Top Activity
-                </span>
+          {/* Donut Chart & Legend */}
+          {chartData.length > 0 && (
+            <div className="flex items-center gap-6">
+              {/* Donut Chart */}
+              <div className="shrink-0">
+                <DonutChart data={chartData} />
               </div>
-              <div className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">
-                {stats.primeActivity.name}
-              </div>
-              <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                {formatDuration(stats.primeActivity.totalTime)} (
-                {stats.primeActivity.percentage.toFixed(0)}%)
+
+              {/* Legend */}
+              <div className="flex-1 space-y-2.5">
+                {chartData.map((item, index) => (
+                  <motion.div
+                    key={item.name}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="flex items-center gap-2"
+                  >
+                    <div
+                      className="w-3 h-3 rounded-sm shrink-0"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
+                          {item.name}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 font-medium tabular-nums">
+                          {item.percentage.toFixed(0)}%
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 tabular-nums">
+                        {formatDuration(item.value)}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
             </div>
           )}
 
-          {/* Top 3 activities */}
-          {stats.topActivities.length > 0 && (
-            <div className="space-y-2">
-              {stats.topActivities.slice(0, 3).map((activity, index) => {
-                const percentage =
-                  stats.dailyTotal > 0
-                    ? (activity.time / stats.dailyTotal) * 100
-                    : 0
-                return (
-                  <div key={activity.name} className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-700 dark:text-gray-300 truncate flex-1 mr-2">
-                        {index + 1}. {activity.name}
-                      </span>
-                      <span className="text-gray-600 dark:text-gray-400 tabular-nums">
-                        {formatDuration(activity.time)}
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${percentage}%` }}
-                        transition={{ duration: 0.5, delay: index * 0.1 }}
-                        className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"
-                      />
-                    </div>
+          {/* Top Activity Highlight */}
+          {stats.primeActivity && (
+            <div className="border-t border-gray-200 dark:border-gray-800 pt-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                  <span className="text-lg">🏆</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium mb-1">
+                    Top Activity
                   </div>
-                )
-              })}
+                  <div className="text-base font-semibold text-gray-900 dark:text-gray-100 truncate mb-1">
+                    {stats.primeActivity.name}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    {formatDuration(stats.primeActivity.totalTime)} • {stats.primeActivity.percentage.toFixed(0)}% of total
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
       )}
-    </motion.div>
+    </div>
   )
 }

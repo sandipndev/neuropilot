@@ -3,7 +3,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-
 @custom-variant dark (&:is(.dark *));
 
 body {
@@ -147,4 +146,13 @@ body {
   .animate-fade-in {
     animation: fade-in 0.4s ease-out;
   }
+}
+
+#main-bg-x {
+  /* background-image: url("/assets/image 66.png");
+  background-position: 0% 0%;
+  background-size: contain;
+  background-repeat: no-repeat; */
+
+  
 }

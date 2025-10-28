@@ -294,19 +294,32 @@ export const Chat: React.FC<ChatProps> = ({
         {messages && messages.length > 0 ? (
           <>
             {messages.map(renderMessage)}
-            {isStreaming && streamingMessage && (
+            {isStreaming && (
               <div className="flex justify-start mb-4 animate-fadeIn">
                 <div className="max-w-xs lg:max-w-md xl:max-w-lg px-4 py-3 rounded-2xl shadow-sm backdrop-blur-sm bg-transparent text-slate-900 dark:text-slate-100 rounded-bl-sm">
-                  <div
-                    className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2"
-                    dangerouslySetInnerHTML={{
-                      __html: marked.parse(streamingMessage) as string
-                    }}
-                  />
-                  <div className="flex items-center justify-start gap-2 text-xs mt-2 text-slate-500 dark:text-slate-400">
-                    <div className="inline-block w-3 h-3 bg-slate-900 dark:bg-slate-100 rounded-full animate-pulse" />
-                    <div>AI is thinking...</div>
-                  </div>
+                  {streamingMessage ? (
+                    <div
+                      className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2"
+                      dangerouslySetInnerHTML={{
+                        __html: marked.parse(streamingMessage) as string
+                      }}
+                    />
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <div
+                        className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce"
+                        style={{ animationDelay: "0ms" }}
+                      />
+                      <div
+                        className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce"
+                        style={{ animationDelay: "150ms" }}
+                      />
+                      <div
+                        className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce"
+                        style={{ animationDelay: "300ms" }}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -452,7 +465,6 @@ export const Chat: React.FC<ChatProps> = ({
               }
               className={`${writing && "animate-pulse"} flex-1 resize-y border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 focus:border-transparent placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200`}
               // rows={1}
-              
             />
 
             {/* Write / Rewrite Button */}

@@ -11,9 +11,10 @@ import { useQuizQuestions } from "./hooks/useQuizQuestions"
 import { useWinsData } from "./hooks/useWinsData"
 
 import "./index.css"
+import { useStorage } from "@plasmohq/storage/hook"
+import { USER_NAME_KEY } from "~tabs/welcome/api/user-data"
 
 function App() {
-  const [userName, setUserName] = useState<string | null>(null)
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
 
@@ -45,11 +46,10 @@ function App() {
     }
   }, [focusHistory.length])
 
-  // Load user name on mount
-  useEffect(() => {
-    const name = localStorage.getItem("userName") || "User"
-    setUserName(name)
-  }, [])
+
+  const [userName, _] = useStorage(USER_NAME_KEY)
+
+  console.log("userName", userName)
 
   // Load theme preference from localStorage
   useEffect(() => {
@@ -89,7 +89,7 @@ function App() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/20 dark:from-gray-950 dark:via-blue-950/10 dark:to-indigo-950/10 overflow-hidden">
+    <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-950 overflow-hidden">
       {/* Celebration Confetti */}
       {showCelebration && (
         <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
@@ -104,32 +104,32 @@ function App() {
         isDarkMode={isDarkMode}
       />
 
-      {/* Main Dashboard - Quiz-Focused Layout */}
+      {/* Main Dashboard */}
       <main className="flex-1 overflow-hidden p-6">
-        <div className="h-full max-w-[1600px] mx-auto grid grid-cols-12 gap-6">
-          {/* Left Column - Quick Quiz (Hero Section) */}
-          <div className="col-span-5 flex flex-col gap-6 overflow-y-auto scrollbar-thin">
+        <div className="h-full max-w-[1600px] mx-auto grid grid-cols-12 gap-5">
+          {/* Left Column - Focus & Activity */}
+          <div className="col-span-5 flex flex-col gap-5 overflow-y-auto scrollbar-thin">
+            <CompactFocusCard
+              currentFocus={currentFocus}
+              focusHistory={focusHistory}
+              isLoading={focusLoading}
+            />
+            <CompactPulseCard pulses={pulses} isLoading={pulseLoading} />
+          </div>
+
+          {/* Right Column - Quiz & Stats */}
+          <div className="col-span-7 flex flex-col gap-5 overflow-y-auto scrollbar-thin">
             <CompactQuizCard
               questions={questions}
               unansweredQuestions={unansweredQuestions}
               isLoading={quizLoading}
               onAnswerSubmit={markAsAnswered}
             />
-            <CompactFocusCard
-              currentFocus={currentFocus}
-              focusHistory={focusHistory}
-              isLoading={focusLoading}
-            />
-          </div>
-
-          {/* Right Column - Stats & Activity */}
-          <div className="col-span-7 flex flex-col gap-6 overflow-y-auto scrollbar-thin">
             <CompactStatsCard
               focusHistory={focusHistory}
               wins={wins}
               isLoading={focusLoading || winsLoading}
             />
-            <CompactPulseCard pulses={pulses} isLoading={pulseLoading} />
           </div>
         </div>
       </main>

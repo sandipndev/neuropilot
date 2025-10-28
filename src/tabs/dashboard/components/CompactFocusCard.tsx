@@ -1,115 +1,122 @@
 /**
- * CompactFocusCard - Streamlined focus display for dashboard
+ * CompactFocusCard - Professional focus display
  */
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import type { FocusWithParsedData } from '../types';
+import { motion } from "framer-motion"
+import { Clock, Target } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+
 import {
   determineFocusState,
-  getCurrentFocusElapsedTime,
   formatDuration,
-} from '../lib';
+  getCurrentFocusElapsedTime
+} from "../lib"
+import type { FocusWithParsedData } from "../types"
 
 interface CompactFocusCardProps {
-  currentFocus: FocusWithParsedData | null;
-  focusHistory: FocusWithParsedData[];
-  isLoading?: boolean;
+  currentFocus: FocusWithParsedData | null
+  focusHistory: FocusWithParsedData[]
+  isLoading?: boolean
 }
 
 export function CompactFocusCard({
   currentFocus,
   focusHistory,
-  isLoading = false,
+  isLoading = false
 }: CompactFocusCardProps) {
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const focusState = determineFocusState(currentFocus, focusHistory);
+  const [elapsedTime, setElapsedTime] = useState(0)
+  const focusState = determineFocusState(currentFocus, focusHistory)
+  const formattedTime = useMemo(() => {
+    return formatDuration(elapsedTime)
+  }, [elapsedTime])
 
   useEffect(() => {
-    if (focusState === 'active-focus' && currentFocus) {
-      setElapsedTime(getCurrentFocusElapsedTime(currentFocus));
+    setElapsedTime(getCurrentFocusElapsedTime(currentFocus))
+
+    if (
+      currentFocus &&
+      currentFocus.time_spent[currentFocus.time_spent.length - 1].end === null
+    ) {
       const interval = setInterval(() => {
-        setElapsedTime(getCurrentFocusElapsedTime(currentFocus));
-      }, 1000);
-      return () => clearInterval(interval);
+        setElapsedTime(getCurrentFocusElapsedTime(currentFocus))
+      }, 1000 * 60)
+      return () => clearInterval(interval)
     }
-  }, [focusState, currentFocus]);
+  }, [currentFocus])
 
   if (isLoading) {
     return (
-      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl p-4 border border-gray-200/50 dark:border-gray-800/50">
-        <div className="animate-pulse space-y-3">
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded"></div>
+      <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800">
+        <div className="animate-pulse space-y-4">
+          <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-1/3"></div>
+          <div className="h-12 bg-gray-200 dark:bg-gray-800 rounded"></div>
         </div>
       </div>
-    );
+    )
   }
 
-  const isActive = currentFocus?.time_spent.some((entry) => entry.end === null);
+  const isActive = currentFocus?.time_spent.some((entry) => entry.end === null)
 
   return (
-    <motion.div
-      initial={{ scale: 0.95 }}
-      animate={{ scale: 1 }}
-      transition={{ duration: 0.3 }}
-      className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl p-5 border border-gray-200/50 dark:border-gray-800/50 shadow-lg hover:shadow-xl transition-all"
-    >
-      {focusState === 'no-focus' ? (
-        <div className="text-center py-6">
-          <div className="text-5xl mb-3">🎯</div>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">
-            Ready to Focus?
+    <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm">
+      {focusState === "no-focus" ? (
+        <div className="text-center py-8">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+            <Target className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
+            No Active Focus
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Start a session to begin
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Start a focus session to track your progress
           </p>
         </div>
       ) : (
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <motion.div
-              className="text-3xl"
-              animate={isActive ? { scale: [1, 1.1, 1] } : {}}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              {isActive ? '🔥' : '✅'}
-            </motion.div>
+        <div className="space-y-4">
+          {/* Header */}
+          <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                {isActive ? 'Focusing On' : 'Last Session'}
-              </p>
-              <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 truncate">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                  {isActive ? "Current Focus" : "Last Session"}
+                </span>
+                {isActive && (
+                  <span className="flex items-center gap-1.5 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-medium">
+                    <span className="w-1.5 h-1.5 bg-green-600 dark:bg-green-400 rounded-full animate-pulse"></span>
+                    Live
+                  </span>
+                )}
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 truncate">
                 {currentFocus?.focus_item || focusHistory[0]?.focus_item}
               </h3>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-xl">
-            {isActive && (
-              <motion.div
-                animate={{ scale: [1, 1.2, 1], opacity: [1, 0.7, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="w-2 h-2 bg-green-500 rounded-full"
-              />
-            )}
-            <div className="flex-1">
-              <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent tabular-nums">
-                {formatDuration(elapsedTime)}
-              </div>
-              <div className="text-xs text-gray-600 dark:text-gray-400">
-                {isActive ? 'in progress' : 'completed'}
+          {/* Timer */}
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Clock className="w-5 h-5 text-gray-400" />
+                <div>
+                  <div className="text-3xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">
+                    {formattedTime}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    {isActive ? "Elapsed time" : "Total time"}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
+          {/* Keywords */}
           {currentFocus?.keywords && currentFocus.keywords.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-1">
-              {currentFocus.keywords.slice(0, 3).map((keyword, index) => (
+            <div className="flex flex-wrap gap-2">
+              {currentFocus.keywords.slice(0, 5).map((keyword, index) => (
                 <span
                   key={index}
-                  className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-xs"
-                >
+                  className="px-2.5 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md text-xs font-medium">
                   {keyword}
                 </span>
               ))}
@@ -117,6 +124,6 @@ export function CompactFocusCard({
           )}
         </div>
       )}
-    </motion.div>
-  );
+    </div>
+  )
 }

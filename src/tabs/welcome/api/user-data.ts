@@ -5,8 +5,8 @@
 
 import { Storage } from "@plasmohq/storage"
 
-const USER_NAME_KEY = "neuropilot_user_name"
-const USER_AGE_KEY = "neuropilot_user_age"
+export const USER_NAME_KEY = "neuropilot_user_name"
+export const USER_AGE_KEY = "neuropilot_user_age"
 
 interface SetUserNameParams {
   name: string

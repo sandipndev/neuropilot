@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
-import type { FocusWithParsedData } from 'neuropilot-api';
 import { formatDuration } from '../utils/time';
 import { getOpacityForIndex } from '../utils/opacity';
+import type { FocusWithParsedData } from '~sidepanel/api/focus';
 
 interface FocusHistoryItemProps {
   item: FocusWithParsedData;

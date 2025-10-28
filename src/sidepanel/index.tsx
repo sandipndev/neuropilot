@@ -1,11 +1,12 @@
 import { Award, Flame, Trophy } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 
-import type { PomodoroState } from "~db"
+import type { Focus, PomodoroState } from "~db"
 
 import {
   getCurrentFocusData,
   getFocusHistory,
+  parseFocus,
   type FocusWithParsedData
 } from "./api/focus"
 import { getPomodoroState, togglePomodoro } from "./api/pomodoro"
@@ -16,9 +17,57 @@ import type { WinItem } from "./types/wins"
 
 import "./index.css"
 
+import { useLiveQuery } from "dexie-react-hooks"
+
+import db from "~db"
+
 const Popup = () => {
   const [focusData, setFocusData] = useState<FocusWithParsedData | null>(null)
-  const [focusHistory, setFocusHistory] = useState<FocusWithParsedData[]>([])
+
+  const focusDataDex = useLiveQuery(() => {
+    return db.table<Focus>("focus").toArray()
+  }, [])
+
+  useEffect(() => {
+    if(!focusDataDex || focusDataDex.length===0) return;
+
+    let interval: number | null = null
+
+    const currentFocus = [...focusDataDex].sort(
+      (a, b) => b.last_updated - a.last_updated
+    )[0]
+
+
+    console.log(currentFocus)
+    setFocusData(parseFocus(currentFocus))
+
+    // const lastSession =
+    //   currentFocus.time_spent[currentFocus.time_spent.length - 1]
+    // if (lastSession && lastSession.end === null) {
+    //   parseFocus(currentFocus)
+    // }
+
+    updateTimeSpent(parseFocus(currentFocus))
+
+    const lastSession =
+      currentFocus.time_spent[currentFocus.time_spent.length - 1]
+    const isActive = lastSession && lastSession.end === null
+
+    if (isActive) {
+      // update the time spent every second
+      interval = setInterval(() => {
+        updateTimeSpent(parseFocus(currentFocus))
+      }, 1000) as unknown as number
+    }
+
+    return () => {
+      if (interval) {
+        clearInterval(interval)
+      }
+    }
+  }, [focusDataDex])
+
+
   const [wins, setWins] = useState<WinItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -46,20 +95,16 @@ const Popup = () => {
   console.log(`Yoo`)
   // Fetch data on mount
   useEffect(() => {
-    let interval: number | null = null
     const fetchData = async () => {
       setIsLoading(true)
       try {
-        const [currentFocus, history, winsData] = await Promise.all([
-          getCurrentFocusData(),
-          getFocusHistory(),
+        const [winsData] = await Promise.all([
           getWinsData()
         ])
-        setFocusData(currentFocus)
-        setFocusHistory(history)
+
         setWins(winsData)
 
-        console.log("currentFocus", currentFocus, history, winsData)
+        console.log("currentFocus", winsData)
 
         // Fetch pomodoro state separately with error handling
         try {
@@ -70,24 +115,6 @@ const Popup = () => {
         } catch (pomodoroError) {
           console.error("Error fetching pomodoro state:", pomodoroError)
         }
-
-        console.log(`Heyyyy`)
-
-        // Check if currentFocus is active
-        if (currentFocus) {
-          updateTimeSpent(currentFocus)
-
-          const lastSession =
-            currentFocus.time_spent[currentFocus.time_spent.length - 1]
-          const isActive = lastSession && lastSession.end === null
-
-          if (isActive) {
-            // update the time spent every second
-            interval = setInterval(() => {
-              updateTimeSpent(currentFocus)
-            }, 1000) as unknown as number
-          }
-        }
       } catch (error) {
         console.error("Error fetching data:", error)
       } finally {
@@ -97,12 +124,6 @@ const Popup = () => {
     }
 
     fetchData()
-
-    return () => {
-      if (interval) {
-        clearInterval(interval)
-      }
-    }
   }, [])
 
   // Poll pomodoro state every second
@@ -253,14 +274,14 @@ const Popup = () => {
             <div className="space-y-2">
               <div className="text-sm text-gray-700 leading-relaxed">
                 <div className="mb-2">
-                  {focusHistory.length >= 1 ? (
+                  {(focusDataDex && focusDataDex.length >= 1) ? (
                     <>
                       <p className="font-semibold mb-2">
                         We know you learnt a lot about:{" "}
                       </p>
                       <div className="space-y-1 text-xs text-gray-500 italic pl-3 border-blue-200">
-                        {focusHistory.slice(0, 5).map((item) => (
-                          <p key={item.id}>{item.focus_item}</p>
+                        {focusDataDex.slice(0, 5).map((item) => (
+                          <p key={item.id}>{item.item}</p>
                         ))}
                       </div>
                     </>
@@ -275,7 +296,7 @@ const Popup = () => {
                   )}
                 </div>
               </div>
-              <RefresherButton isDisabled={focusHistory.length < 1} />
+              <RefresherButton isDisabled={focusDataDex && focusDataDex.length < 1} />
             </div>
           </div>
 

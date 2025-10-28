@@ -12,13 +12,9 @@ import quizQuestionsInferenceTask from "~background/inference/quiz-questions"
 import websiteSummarizerTask from "~background/inference/website-summarizer"
 
 const TASK_CONCURRENCY = 1
-const continuousTasksQueue = new PQueue({ concurrency: TASK_CONCURRENCY })
-const cronTasksQueue = new PQueue({ concurrency: TASK_CONCURRENCY })
+const queue = new PQueue({ concurrency: TASK_CONCURRENCY })
+queue.pause()
 
-continuousTasksQueue.pause()
-cronTasksQueue.pause()
-
-// to run frequently
 const backgroundInferenceTasks = [
   activitySummaryInferenceTask,
   doomscrollingDetectionTask,
@@ -27,53 +23,76 @@ const backgroundInferenceTasks = [
   websiteSummarizerTask
 ]
 
-const enqueueTask = (taskFn: () => Promise<any>, queue: PQueue) => {
-  console.log("Enqueuing task:", taskFn.name)
+type QueuedTask = {
+  name: string
+  enqueuedAt: number
+  id: string
+}
+const taskMetadata: QueuedTask[] = []
+
+let taskIdCounter = 0
+
+const enqueueTask = (taskFn: () => Promise<any>) => {
+  const meta: QueuedTask = {
+    name: taskFn.name,
+    enqueuedAt: Date.now(),
+    id: `${taskFn.name}-${Date.now()}-${++taskIdCounter}`
+  }
+  taskMetadata.push(meta)
+
   queue.add(async () => {
     try {
       await taskFn()
     } catch (err) {
       console.error("Task failed:", err)
+    } finally {
+      const idx = taskMetadata.indexOf(meta)
+      if (idx !== -1) taskMetadata.splice(idx, 1)
+
+      queue.emit("next")
     }
   })
 }
 
-// run inference loop continuously
-const scheduleBackgroundInferenceTasks = async () => {
-  for (const task of backgroundInferenceTasks)
-    enqueueTask(task, continuousTasksQueue)
+const runContinuousTasksLoop = async () => {
+  while (true) {
+    for (const task of backgroundInferenceTasks) enqueueTask(task)
+
+    await queue.onIdle()
+
+    await new Promise((r) => setTimeout(r, 1000))
+  }
 }
 
-continuousTasksQueue.add(() => scheduleBackgroundInferenceTasks())
-continuousTasksQueue.on("idle", async () => {
-  // wait a second to avoid issues and again continue
-  await new Promise((r) => setTimeout(r, 1000))
-  scheduleBackgroundInferenceTasks()
-})
-
-// alarms for background tasks
+// cron
 chrome.runtime.onInstalled.addListener(() => {
   chrome.alarms.create("pulse-task", { periodInMinutes: 5 })
   chrome.alarms.create("quiz-task", { periodInMinutes: 2 })
   chrome.alarms.create("garbage-collection-task", { periodInMinutes: 60 * 24 })
 })
+
 chrome.alarms.onAlarm.addListener((alarm) => {
   switch (alarm.name) {
     case "pulse-task":
-      enqueueTask(pulseInferenceTask, cronTasksQueue)
+      if (!taskMetadata.find((t) => t.name === "pulseInferenceTask"))
+        enqueueTask(pulseInferenceTask)
       break
     case "quiz-task":
-      enqueueTask(quizQuestionsInferenceTask, cronTasksQueue)
+      if (!taskMetadata.find((t) => t.name === "quizQuestionsInferenceTask"))
+        enqueueTask(quizQuestionsInferenceTask)
       break
     case "garbage-collection-task":
-      enqueueTask(garbageCollectionTask, cronTasksQueue)
+      if (!taskMetadata.find((t) => t.name === "garbageCollectionTask"))
+        enqueueTask(garbageCollectionTask)
       break
   }
 })
 
-const startScheduler = () => {
-  continuousTasksQueue.start()
-  cronTasksQueue.start()
+const startScheduler = async () => {
+  if (await storage.get("onboarded")) {
+    queue.start()
+  }
+  runContinuousTasksLoop()
 }
 
 const storage = new Storage()
@@ -82,8 +101,7 @@ storage.watch({
 })
 
 const init = async () => {
-  // startScheduler() // comment this line to onboarding scheduler on
-  if (await storage.get("onboarded")) startScheduler()
+  await startScheduler()
 }
 init().catch(console.error)
 
@@ -91,3 +109,5 @@ init().catch(console.error)
 chrome.action.onClicked.addListener((tab) => {
   chrome.sidePanel.open({ windowId: tab.windowId })
 })
+
+export { queue, taskMetadata }

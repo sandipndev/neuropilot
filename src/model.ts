@@ -1,6 +1,6 @@
 import { createHash } from "crypto"
 
-import type { ChatMessageItem } from "~options/chat"
+import type { ChatMessageItem } from "~chat"
 
 const MULTIMODAL_CONFIG = {
   expectedInputs: [{ type: "text", languages: ["en"] }, { type: "image" }],

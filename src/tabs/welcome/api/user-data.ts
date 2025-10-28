@@ -38,9 +38,8 @@ export async function setUserName(
       return { success: false, error: "Invalid age" }
     }
 
-    // Save to localStorage
-    localStorage.setItem(USER_NAME_KEY, name.trim())
-    localStorage.setItem(USER_AGE_KEY, age.toString())
+    await storage.set(USER_NAME_KEY, name.trim())
+    await storage.set(USER_AGE_KEY, age.toString())
 
     await storage.set("onboarded", true)
 
@@ -54,9 +53,9 @@ export async function setUserName(
 /**
  * Get user name from localStorage
  */
-export function getUserName(): string | null {
+export async function getUserName(): Promise<string | null> {
   try {
-    return localStorage.getItem(USER_NAME_KEY)
+    return await storage.get(USER_NAME_KEY)
   } catch (error) {
     console.error("Error getting user name:", error)
     return null
@@ -66,7 +65,7 @@ export function getUserName(): string | null {
 /**
  * Get user age from localStorage
  */
-export function getUserAge(): number | null {
+export async function getUserAge(): Promise<number | null> {
   try {
     const age = localStorage.getItem(USER_AGE_KEY)
     return age ? parseInt(age, 10) : null

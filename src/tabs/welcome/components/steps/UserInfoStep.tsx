@@ -7,6 +7,7 @@ import { CheckCircle2, Loader2, User } from 'lucide-react';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { setUserName, getUserName, getUserAge } from '../../api/user-data';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useStorage } from '@plasmohq/storage/hook';
 
 interface UserInfoStepProps {
   onComplete: () => void;
@@ -23,15 +24,8 @@ export const UserInfoStep: React.FC<UserInfoStepProps> = ({ onComplete }) => {
 
   // Prefill data from localStorage on mount
   useEffect(() => {
-    const savedName = getUserName();
-    const savedAge = getUserAge();
-    
-    if (savedName) {
-      setName(savedName);
-    }
-    if (savedAge) {
-      setAge(savedAge.toString());
-    }
+    getUserName().then(e => setName(e || ''))
+    getUserAge().then(e => setAge(e?.toString() || ''))
   }, []);
 
   const validateName = (value: string): string => {

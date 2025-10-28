@@ -15,18 +15,18 @@ export function calculateStats(
   // Calculate daily total (last 24 hours)
   const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
   const dailyFocus = focusHistory.filter((f) => f.last_updated >= oneDayAgo);
-  const dailyTotal = dailyFocus.reduce((sum, f) => sum + f.total_time, 0);
+  const dailyTotal = dailyFocus.reduce((sum, f) => sum + f.total_time_spent, 0);
 
   // Calculate weekly total (last 7 days)
   const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
   const weeklyFocus = focusHistory.filter((f) => f.last_updated >= oneWeekAgo);
-  const weeklyTotal = weeklyFocus.reduce((sum, f) => sum + f.total_time, 0);
+  const weeklyTotal = weeklyFocus.reduce((sum, f) => sum + f.total_time_spent, 0);
 
   // Aggregate by focus item
   const activityMap = new Map<string, number>();
   weeklyFocus.forEach((focus) => {
     const current = activityMap.get(focus.focus_item) || 0;
-    activityMap.set(focus.focus_item, current + focus.total_time);
+    activityMap.set(focus.focus_item, current + focus.total_time_spent);
   });
 
   // Find top activities
@@ -64,7 +64,7 @@ export function calculateTotalFocusTime(
 ): number {
   return focusHistory
     .filter((f) => f.last_updated >= startTime)
-    .reduce((sum, f) => sum + f.total_time, 0);
+    .reduce((sum, f) => sum + f.total_time_spent, 0);
 }
 
 /**
@@ -103,7 +103,7 @@ export function aggregateActivitiesByTime(
     .filter((f) => f.last_updated >= startTime)
     .forEach((focus) => {
       const current = activityMap.get(focus.focus_item) || 0;
-      activityMap.set(focus.focus_item, current + focus.total_time);
+      activityMap.set(focus.focus_item, current + focus.total_time_spent);
     });
 
   return activityMap;

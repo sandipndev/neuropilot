@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react"
 
-import { ChatSection } from "./components/ChatSection"
 import { CompactFocusCard } from "./components/CompactFocusCard"
 import { CompactPulseCard } from "./components/CompactPulseCard"
 import { CompactQuizCard } from "./components/CompactQuizCard"
@@ -10,8 +9,8 @@ import { useFocusData } from "./hooks/useFocusData"
 import { usePulseData } from "./hooks/usePulseData"
 import { useQuizQuestions } from "./hooks/useQuizQuestions"
 import { useWinsData } from "./hooks/useWinsData"
-import './index.css'
 
+import "./index.css"
 
 function App() {
   const [userName, setUserName] = useState<string | null>(null)
@@ -105,39 +104,32 @@ function App() {
         isDarkMode={isDarkMode}
       />
 
-      {/* Main Dashboard - Single Screen Layout */}
-      <main className="flex-1 overflow-hidden p-4">
-        <div className="h-full max-w-[1800px] mx-auto grid grid-cols-12 gap-4">
-          <div className="col-span-3 flex flex-col gap-4 overflow-y-auto scrollbar-thin">
-            <CompactFocusCard
-              currentFocus={currentFocus}
-              focusHistory={focusHistory}
-              isLoading={focusLoading}
-            />
+      {/* Main Dashboard - Quiz-Focused Layout */}
+      <main className="flex-1 overflow-hidden p-6">
+        <div className="h-full max-w-[1600px] mx-auto grid grid-cols-12 gap-6">
+          {/* Left Column - Quick Quiz (Hero Section) */}
+          <div className="col-span-5 flex flex-col gap-6 overflow-y-auto scrollbar-thin">
             <CompactQuizCard
               questions={questions}
               unansweredQuestions={unansweredQuestions}
               isLoading={quizLoading}
               onAnswerSubmit={markAsAnswered}
             />
+            <CompactFocusCard
+              currentFocus={currentFocus}
+              focusHistory={focusHistory}
+              isLoading={focusLoading}
+            />
           </div>
 
-          <div className="col-span-6 flex flex-col gap-4 overflow-y-auto scrollbar-thin">
+          {/* Right Column - Stats & Activity */}
+          <div className="col-span-7 flex flex-col gap-6 overflow-y-auto scrollbar-thin">
             <CompactStatsCard
               focusHistory={focusHistory}
               wins={wins}
               isLoading={focusLoading || winsLoading}
             />
             <CompactPulseCard pulses={pulses} isLoading={pulseLoading} />
-          </div>
-
-          <div className="col-span-3 flex flex-col overflow-hidden">
-            <div className="flex-1 min-h-0">
-              <ChatSection
-                currentFocus={currentFocus}
-                focusHistory={focusHistory}
-              />
-            </div>
           </div>
         </div>
       </main>

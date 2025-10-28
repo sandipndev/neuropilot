@@ -131,17 +131,41 @@ export function CompactQuizCard({
   }
 
   return (
-    <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl p-5 border border-gray-200/50 dark:border-gray-800/50 shadow-lg">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">🧠</span>
-          <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
-            Quick Quiz
-          </h3>
+    <div className="bg-gradient-to-br from-white/90 to-blue-50/90 dark:from-gray-900/90 dark:to-blue-950/50 backdrop-blur-xl rounded-3xl p-8 border-2 border-blue-200/50 dark:border-blue-800/50 shadow-2xl hover:shadow-blue-200/50 dark:hover:shadow-blue-900/50 transition-all">
+      <div className="space-y-4 mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <span className="text-2xl">🧠</span>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                Quick Quiz
+              </h3>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                Test your knowledge
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-1">
+            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
+              {answeredCount}/{questions.length}
+            </span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              completed
+            </span>
+          </div>
         </div>
-        <span className="text-xs text-gray-600 dark:text-gray-400 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-full">
-          {answeredCount}/{questions.length}
-        </span>
+        
+        {/* Progress Bar */}
+        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${questions.length > 0 ? (answeredCount / questions.length) * 100 : 0}%` }}
+            transition={{ duration: 0.5 }}
+            className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
+          />
+        </div>
       </div>
 
       <AnimatePresence mode="wait">
@@ -151,49 +175,49 @@ export function CompactQuizCard({
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            className="text-center py-6">
+            className="text-center py-10">
             {justCompletedSession ? (
               // Show score if user just completed a quiz session
               <>
-                <div className="text-5xl mb-3">🎉</div>
-                <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
+                <div className="text-7xl mb-4">🎉</div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
                   Quiz Complete!
                 </p>
-                <div className="mb-3">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full">
-                    <span className="text-2xl font-bold text-white">
+                <div className="mb-4">
+                  <div className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-xl">
+                    <span className="text-4xl font-bold text-white">
                       {sessionScore}
                     </span>
-                    <span className="text-sm text-white/90">/</span>
-                    <span className="text-lg font-semibold text-white/90">
+                    <span className="text-xl text-white/90">/</span>
+                    <span className="text-2xl font-semibold text-white/90">
                       {sessionQuestionsAnswered}
                     </span>
                   </div>
                 </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                <p className="text-base text-gray-700 dark:text-gray-300 mb-3 font-semibold">
                   {sessionScore === sessionQuestionsAnswered
-                    ? "🌟 Perfect score!"
+                    ? "🌟 Perfect score! Amazing!"
                     : sessionScore >= sessionQuestionsAnswered * 0.8
                       ? "🎯 Excellent work!"
                       : sessionScore >= sessionQuestionsAnswered * 0.6
                         ? "👍 Good job!"
                         : "💪 Keep practicing!"}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Total progress: {answeredCount}/{questions.length}
                 </p>
               </>
             ) : (
               // Show "all caught up" message if no questions in current session
               <>
-                <div className="text-4xl mb-3">✨</div>
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                <div className="text-6xl mb-4">✨</div>
+                <p className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                   All caught up!
                 </p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                   You've answered all available questions.
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                <p className="text-sm text-gray-500 dark:text-gray-500 mt-3">
                   Check back later for more! 🔄
                 </p>
               </>
@@ -205,36 +229,40 @@ export function CompactQuizCard({
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="space-y-3">
-            <p className="text-sm text-gray-900 dark:text-gray-100 leading-snug">
-              {currentQuestion.question}
-            </p>
+            className="space-y-5">
+            {/* Question */}
+            <div className="bg-white/50 dark:bg-gray-800/50 rounded-2xl p-5 border border-blue-200/30 dark:border-blue-800/30">
+              <p className="text-base font-medium text-gray-900 dark:text-gray-100 leading-relaxed">
+                {currentQuestion.question}
+              </p>
+            </div>
 
-            <div className="space-y-2">
+            {/* Answer Options */}
+            <div className="space-y-3">
               {shuffledOptions.map((optionData, index) => {
                 const isSelected = selectedAnswer === index
                 const isCorrect = optionData.isCorrect
                 const showFeedback = feedback?.show || false
 
                 let buttonClass =
-                  "w-full text-left p-2.5 rounded-lg border text-sm transition-all "
+                  "w-full text-left p-4 rounded-xl border-2 text-sm transition-all transform hover:scale-[1.02] "
                 if (showFeedback) {
                   if (isSelected && isCorrect) {
                     buttonClass +=
-                      "border-green-500 bg-green-50 dark:bg-green-900/20 text-green-900 dark:text-green-100"
+                      "border-green-500 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 text-green-900 dark:text-green-100 shadow-lg"
                   } else if (isSelected && !isCorrect) {
                     buttonClass +=
-                      "border-red-500 bg-red-50 dark:bg-red-900/20 text-red-900 dark:text-red-100"
+                      "border-red-500 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/30 text-red-900 dark:text-red-100 shadow-lg"
                   } else if (isCorrect) {
                     buttonClass +=
-                      "border-green-500 bg-green-50 dark:bg-green-900/20 text-green-900 dark:text-green-100"
+                      "border-green-500 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 text-green-900 dark:text-green-100 shadow-lg"
                   } else {
                     buttonClass +=
-                      "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-400"
+                      "border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 text-gray-400 opacity-60"
                   }
                 } else {
                   buttonClass +=
-                    "border-gray-200 dark:border-gray-700 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer"
+                    "border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 bg-white dark:bg-gray-800 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 cursor-pointer shadow-md hover:shadow-lg"
                 }
 
                 return (
@@ -243,35 +271,35 @@ export function CompactQuizCard({
                     onClick={() => handleAnswer(index)}
                     disabled={feedback !== null}
                     className={buttonClass}>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
                           showFeedback && isCorrect
-                            ? "bg-green-500 text-white"
-                            : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                            ? "bg-green-500 text-white shadow-lg"
+                            : "bg-gradient-to-br from-blue-500 to-purple-600 text-white"
                         }`}>
-                        {index + 1}
+                        {showFeedback && isCorrect ? "✓" : index + 1}
                       </div>
-                      <span className="flex-1 truncate">
+                      <span className="flex-1 font-medium">
                         {optionData.option}
                       </span>
-                      {showFeedback && isCorrect && <span>✓</span>}
                     </div>
                   </button>
                 )
               })}
             </div>
 
+            {/* Feedback Message */}
             {feedback?.show && (
               <motion.div
                 initial={{ opacity: 0, y: -5 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`text-xs font-medium ${
+                className={`text-center py-3 px-4 rounded-xl font-semibold text-sm ${
                   feedback.isCorrect
-                    ? "text-green-600 dark:text-green-400"
-                    : "text-red-600 dark:text-red-400"
+                    ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
+                    : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
                 }`}>
-                {feedback.isCorrect ? "✓ Correct!" : "✗ Not quite"}
+                {feedback.isCorrect ? "✓ Correct! Great job!" : "✗ Not quite, try again next time!"}
               </motion.div>
             )}
           </motion.div>

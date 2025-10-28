@@ -1,30 +1,6 @@
-import { Dexie } from "dexie"
+import { Dexie, type Table } from "dexie"
 
 import type { UserActivity } from "~utils"
-
-const db = new Dexie("Neuropilot")
-
-db.version(1).stores({
-  // User Activity
-  websiteVisits: "&url, opened_at",
-  textAttention: "++id, url, timestamp",
-  imageAttention: "++id, url, timestamp",
-  youtubeAttention: "&id, timestamp",
-  audioAttention: "++id, url, timestamp",
-
-  // Inference Results
-  focus: "++id, last_updated",
-  pulse: "++id, timestamp",
-  activitySummary: "++id, timestamp",
-  quizQuestions: "++id, timestamp",
-
-  chat: "&id, timestamp",
-  chatMessages: "++id, chatId",
-  pastWins: "++id, time_spent",
-  pomodoro: "&id, lastUpdated"
-})
-
-export default db
 
 export type Focus = {
   id?: number
@@ -89,3 +65,41 @@ export type ChatMessage = {
   type: "text" | "image" | "audio"
   content: string
 }
+
+class NeuropilotDB extends Dexie {
+  focus!: Table<Focus>
+  pulse!: Table<Pulse>
+  activitySummary!: Table<ActivitySummary>
+  quizQuestions!: Table<QuizQuestion>
+  chat!: Table<Chat>
+  chatMessages!: Table<ChatMessage>
+  pastWins!: Table<PastWin>
+  pomodoro!: Table<PomodoroState>
+
+  constructor() {
+    super("Neuropilot")
+    this.version(1).stores({
+      // User Activity
+      websiteVisits: "&url, opened_at",
+      textAttention: "++id, url, timestamp",
+      imageAttention: "++id, url, timestamp",
+      youtubeAttention: "&id, timestamp",
+      audioAttention: "++id, url, timestamp",
+
+      // Inference Results
+      focus: "++id, last_updated",
+      pulse: "++id, timestamp",
+      activitySummary: "++id, timestamp",
+      quizQuestions: "++id, timestamp",
+
+      chat: "&id, timestamp",
+      chatMessages: "++id, chatId",
+      pastWins: "++id, time_spent",
+      pomodoro: "&id, lastUpdated"
+    })
+  }
+}
+
+const db = new NeuropilotDB()
+
+export default db

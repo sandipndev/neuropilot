@@ -11,7 +11,10 @@ const generateChatId = () =>
 
 export const AllChats: React.FC = () => {
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null)
-  const [newChatId, setNewChatId] = useState<string | null>(null)
+  const [usageInfo, setUsageInfo] = useState<{
+    inputUsage: number
+    inputQuota: number
+  } | null>(null)
 
   // Fetch all chats sorted by timestamp
   const chats = useLiveQuery(
@@ -29,20 +32,17 @@ export const AllChats: React.FC = () => {
   useEffect(() => {
     if (chats !== undefined && chats.length === 0 && selectedChatId === null) {
       const newId = generateChatId()
-      setNewChatId(newId)
       setSelectedChatId(newId)
     }
   }, [chats, selectedChatId])
 
   const createNewChat = () => {
     const newId = generateChatId()
-    setNewChatId(newId)
     setSelectedChatId(newId)
   }
 
   const handleChatCreated = (chatId: string) => {
-    // Chat is now in the database, clear newChatId
-    setNewChatId(null)
+    // Chat is now in the database
   }
 
   const deleteChat = async (chatId: string) => {
@@ -177,16 +177,28 @@ export const AllChats: React.FC = () => {
             <>
               {/* Chat Header */}
               <div className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 px-6 py-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                    <MessageSquare className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                      <MessageSquare className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                      {isNewChat
+                        ? "New Chat"
+                        : chats?.find((c) => c.id === selectedChatId)?.title ||
+                          "Chat"}
+                    </h2>
                   </div>
-                  <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-                    {isNewChat
-                      ? "New Chat"
-                      : chats?.find((c) => c.id === selectedChatId)?.title ||
-                        "Chat"}
-                  </h2>
+                  {usageInfo && (
+                    <div
+                      className={`px-2 py-1 rounded text-xs font-medium ${
+                        usageInfo.inputUsage / usageInfo.inputQuota < 0.6
+                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                          : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+                      }`}>
+                      {usageInfo.inputUsage} / {usageInfo.inputQuota}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -196,6 +208,7 @@ export const AllChats: React.FC = () => {
                   chatId={selectedChatId}
                   isNewChat={isNewChat}
                   onChatCreated={handleChatCreated}
+                  onUsageUpdate={setUsageInfo}
                 />
               </div>
             </>

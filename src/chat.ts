@@ -24,6 +24,10 @@ export class ChatService {
     this.chatId = chatId
   }
 
+  public getSession() {
+    return this._session
+  }
+
   setContextWindowMs(contextWindowMs: number) {
     this.contextWindowMs = contextWindowMs
   }
@@ -115,6 +119,9 @@ export class ChatService {
       ((images?.length || audios?.length) &&
         "Please analyze the content provided.")
 
+    // Check if this is the first message (for title generation)
+    const isFirstMessage = await this.isFirstMessage()
+
     // Use streaming if callback provided
     if (onChunk) {
       const stream = session.promptStreaming(userPrompt)
@@ -143,6 +150,12 @@ export class ChatService {
         type: "text",
         content: answer
       })
+
+      // Generate title if this is the first message
+      if (isFirstMessage) {
+        await this.generateAndUpdateTitle(userPrompt, answer)
+      }
+
       return answer
     }
 
@@ -154,7 +167,56 @@ export class ChatService {
       type: "text",
       content: answer
     })
+
+    // Generate title if this is the first message
+    if (isFirstMessage) {
+      await this.generateAndUpdateTitle(userPrompt, answer)
+    }
+
     return answer
+  }
+
+  private async isFirstMessage(): Promise<boolean> {
+    const chat = await db.table<Chat>("chat").get(this.chatId)
+    return chat?.title === DEFAULT_CHAT_TITLE
+  }
+
+  private async generateAndUpdateTitle(
+    userMessage: string,
+    assistantResponse: string
+  ): Promise<void> {
+    try {
+      const { getLanguageModel } = await import("~model")
+      const titleModel = await getLanguageModel()
+
+      const titlePrompt = `Based on this conversation, generate a 3-4 word title that captures what the user is trying to learn or find out.
+
+User: ${userMessage}
+Assistant: ${assistantResponse}
+
+Respond with ONLY the title, nothing else. Keep it concise (3-4 words maximum).`
+
+      const generatedTitle = await titleModel.prompt(titlePrompt)
+      const title = generatedTitle.trim().replace(/^["']|["']$/g, "") // Remove quotes if present
+
+      await db.table<Chat>("chat").update(this.chatId, {
+        title: title || DEFAULT_CHAT_TITLE
+      })
+
+      // Destroy the title model session after use
+      if (titleModel.destroy) {
+        await titleModel.destroy()
+      }
+    } catch (error) {
+      console.error("Failed to generate chat title:", error)
+      // Keep the default title if generation fails
+    }
+  }
+
+  destroy() {
+    if (this._session && this._session.destroy) {
+      this._session.destroy()
+    }
   }
 }
 

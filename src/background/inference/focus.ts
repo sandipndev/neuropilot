@@ -1,11 +1,16 @@
 import db, { type Focus } from "~db"
+import { NotificationMessageType } from "~default-settings"
 import { getLanguageModel } from "~model"
 import {
   allUserActivityForLastMs,
   attentionContent,
   getActiveFocus,
+  sendNotification,
   type UserActivity
 } from "~utils"
+
+const LAST_FOCUS_DRIFT_NOTIFICATION_KEY =
+  "last-focus-drift-notification-timestamp"
 
 const focusInferenceTask = async () => {
   const previousFocus = await getActiveFocus()
@@ -60,6 +65,13 @@ const focusInferenceTask = async () => {
         focus.time_spent[focus.time_spent.length - 1].end = now
         focus.last_updated = now
       })
+  }
+
+  if (focusDrifted) {
+    await sendNotification(
+      NotificationMessageType.FOCUS_DRIFT_DETECTED,
+      LAST_FOCUS_DRIFT_NOTIFICATION_KEY
+    )
   }
 }
 

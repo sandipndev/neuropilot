@@ -298,7 +298,6 @@ class CognitiveAttentionTextUI {
   }
 }
 
-// Separate UI class for image visualization
 type ImageUIConfig = {
   showOverlay: boolean
 }
@@ -438,4 +437,129 @@ class CognitiveAttentionImageUI {
   }
 }
 
-export { CognitiveAttentionTextUI, CognitiveAttentionImageUI }
+type AudioUIConfig = {
+  showOverlay: boolean
+}
+
+class CognitiveAttentionAudioUI {
+  private config: AudioUIConfig
+  private indicators: Map<HTMLAudioElement, HTMLDivElement>
+
+  constructor(config: AudioUIConfig) {
+    this.config = config
+    this.indicators = new Map()
+  }
+
+  showIndicator(audioElement: HTMLAudioElement, progress: number): void {
+    if (!this.config.showOverlay) return
+
+    let indicator = this.indicators.get(audioElement)
+
+    if (!indicator) {
+      indicator = this.createIndicator(audioElement)
+      this.indicators.set(audioElement, indicator)
+    }
+
+    this.updateIndicatorProgress(indicator, progress)
+  }
+
+  hideIndicator(audioElement: HTMLAudioElement): void {
+    const indicator = this.indicators.get(audioElement)
+    if (indicator && indicator.parentNode) {
+      indicator.parentNode.removeChild(indicator)
+    }
+    this.indicators.delete(audioElement)
+  }
+
+  updateConfig(newConfig: Partial<AudioUIConfig>): void {
+    if (newConfig.showOverlay !== undefined) {
+      this.config.showOverlay = newConfig.showOverlay
+
+      if (!this.config.showOverlay) {
+        // Hide all indicators if overlay is disabled
+        this.indicators.forEach((indicator, audioElement) => {
+          this.hideIndicator(audioElement)
+        })
+      }
+    }
+  }
+
+  destroy(): void {
+    this.indicators.forEach((indicator, audioElement) => {
+      this.hideIndicator(audioElement)
+    })
+    this.indicators.clear()
+  }
+
+  private createIndicator(audioElement: HTMLAudioElement): HTMLDivElement {
+    const indicator = document.createElement("div")
+    indicator.style.cssText = `
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%);
+      border-radius: 2px;
+      pointer-events: none;
+      z-index: 9999;
+      transition: width 0.1s ease-out;
+      box-shadow: 0 1px 3px rgba(251, 191, 36, 0.5);
+    `
+
+    // Position indicator relative to audio element
+    const parent = audioElement.parentElement
+    if (parent) {
+      const originalPosition = window.getComputedStyle(parent).position
+      if (originalPosition === "static") {
+        parent.style.position = "relative"
+      }
+      parent.appendChild(indicator)
+    } else {
+      // Fallback: append to body with absolute positioning
+      document.body.appendChild(indicator)
+      this.positionIndicatorAbsolute(indicator, audioElement)
+    }
+
+    return indicator
+  }
+
+  private positionIndicatorAbsolute(
+    indicator: HTMLDivElement,
+    audioElement: HTMLAudioElement
+  ): void {
+    const rect = audioElement.getBoundingClientRect()
+    indicator.style.position = "fixed"
+    indicator.style.left = `${rect.left}px`
+    indicator.style.top = `${rect.bottom - 4}px`
+    indicator.style.width = `${rect.width}px`
+  }
+
+  private updateIndicatorProgress(
+    indicator: HTMLDivElement,
+    progress: number
+  ): void {
+    indicator.style.width = `${progress}%`
+
+    // Change color as progress increases
+    if (progress >= 100) {
+      indicator.style.background =
+        "linear-gradient(90deg, #10b981 0%, #059669 100%)"
+      indicator.style.boxShadow = "0 1px 3px rgba(16, 185, 129, 0.5)"
+    } else if (progress >= 75) {
+      indicator.style.background =
+        "linear-gradient(90deg, #f59e0b 0%, #d97706 100%)"
+      indicator.style.boxShadow = "0 1px 3px rgba(245, 158, 11, 0.5)"
+    } else {
+      indicator.style.background =
+        "linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%)"
+      indicator.style.boxShadow = "0 1px 3px rgba(251, 191, 36, 0.5)"
+    }
+  }
+}
+
+export {
+  CognitiveAttentionTextUI,
+  CognitiveAttentionImageUI,
+  CognitiveAttentionAudioUI
+}

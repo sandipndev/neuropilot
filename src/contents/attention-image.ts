@@ -1,4 +1,4 @@
-import { PlasmoCSConfig } from "plasmo"
+import { type PlasmoCSConfig } from "plasmo"
 
 import { sendToBackground } from "@plasmohq/messaging"
 import { Storage } from "@plasmohq/storage"

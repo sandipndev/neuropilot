@@ -8,6 +8,7 @@ db.version(1).stores({
   textAttention: "++id, url, timestamp",
   imageAttention: "++id, url, timestamp",
   youtubeAttention: "&id, timestamp",
+  audioAttention: "++id, url, timestamp",
 
   // Inference Results
   focus: "++id, last_updated",

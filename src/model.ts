@@ -36,6 +36,19 @@ export const getImageModel = async () => {
   })
 }
 
+export const getAudioModel = async () => {
+  const config = {
+    expectedInputs: [{ type: "audio" }, { type: "text" }],
+    expectedOutputs: [{ type: "text" }]
+  }
+  const LanguageModel = await checkAvailability(config)
+  return await LanguageModel.create({
+    ...config,
+    systemPrompt:
+      "You are an audio transcription assistant. Transcribe audio accurately and concisely."
+  })
+}
+
 const chatModelCache = new Map<string, any>()
 const generateChatCacheKey = (
   systemPrompt: string,

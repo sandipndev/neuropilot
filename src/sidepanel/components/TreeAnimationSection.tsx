@@ -11,7 +11,7 @@ interface TreeAnimationSectionProps {
 export function TreeAnimationSection({
   totalFocusTime
 }: TreeAnimationSectionProps) {
-  const growthStage = getTreeGrowthStage(totalFocusTime)
+  const growthStage = getTreeGrowthStage(1000000)
   const [runtimeLoaded, setRuntimeLoaded] = useState(false)
 
   // Configure Rive to use local WASM files from extension
@@ -65,17 +65,16 @@ export function TreeAnimationSection({
   }
 
   return (
-    <div className="absolute inset-0 overflow-hidden">
+    <>
       <div
-        className="absolute inset-0 flex items-center justify-center"
+        className="absolute bottom-0 right-0 w-full h-full opacity-80"
         style={{
-          animation: "sway 8s ease-in-out infinite"
+          animation: "sway 8s ease-in-out infinite",
+          filter: "hue-rotate(120deg)",
+          transform: "rotate(8deg)",
+          transformOrigin: "bottom left"
         }}>
-        <div
-          className="w-full h-full scale-300 bottom-0 opacity-20"
-          style={{ filter: "hue-rotate(120deg)", animation: "sway 8s ease-in-out infinite" }}>
-          <RiveComponent className="w-full h-full" />
-        </div>
+        <RiveComponent className="w-full h-full left-0" />
       </div>
       <style>{`
         @keyframes sway {
@@ -90,6 +89,6 @@ export function TreeAnimationSection({
           }
         }
       `}</style>
-    </div>
+    </>
   )
 }

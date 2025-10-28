@@ -1,42 +1,41 @@
-import { Award, Flame, Trophy } from "lucide-react"
+import { useLiveQuery } from "dexie-react-hooks"
+import { Award, BarChart3, Compass, Flame, Target, Trophy } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 
-import type { Focus, PomodoroState } from "~db"
+import db, { type Focus, type PomodoroState } from "~db"
 
-import {
-  getCurrentFocusData,
-  getFocusHistory,
-  parseFocus,
-  type FocusWithParsedData
-} from "./api/focus"
+import { parseFocus, type FocusWithParsedData } from "./api/focus"
 import { getPomodoroState, togglePomodoro } from "./api/pomodoro"
 import { getWinsData } from "./api/wins"
-import { RefresherButton } from "./components/RefresherButton"
 import { TreeAnimationSection } from "./components/TreeAnimationSection"
 import type { WinItem } from "./types/wins"
 
 import "./index.css"
 
-import { useLiveQuery } from "dexie-react-hooks"
+import { Chat } from "~options/chat/chat"
 
-import db from "~db"
+type TabType = "focus" | "insights" | "explore"
+
+const generateChatId = () =>
+  `chat-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
 
 const Popup = () => {
+  const [activeTab, setActiveTab] = useState<TabType>("focus")
   const [focusData, setFocusData] = useState<FocusWithParsedData | null>(null)
+  const [currentChatId, setCurrentChatId] = useState<string>(generateChatId())
 
   const focusDataDex = useLiveQuery(() => {
     return db.table<Focus>("focus").toArray()
   }, [])
 
   useEffect(() => {
-    if(!focusDataDex || focusDataDex.length===0) return;
+    if (!focusDataDex || focusDataDex.length === 0) return
 
     let interval: number | null = null
 
     const currentFocus = [...focusDataDex].sort(
       (a, b) => b.last_updated - a.last_updated
     )[0]
-
 
     console.log(currentFocus)
     setFocusData(parseFocus(currentFocus))
@@ -66,7 +65,6 @@ const Popup = () => {
       }
     }
   }, [focusDataDex])
-
 
   const [wins, setWins] = useState<WinItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -98,9 +96,7 @@ const Popup = () => {
     const fetchData = async () => {
       setIsLoading(true)
       try {
-        const [winsData] = await Promise.all([
-          getWinsData()
-        ])
+        const [winsData] = await Promise.all([getWinsData()])
 
         setWins(winsData)
 
@@ -175,12 +171,175 @@ const Popup = () => {
     return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
   }, [pomodoroState])
 
+  const renderFocusTab = () => (
+    <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <Chat
+        chatId={currentChatId}
+        isNewChat={true}
+        onChatCreated={(id) => setCurrentChatId(id)}
+      />
+    </div>
+  )
+
+  const activitySummaries = useLiveQuery(() => {
+    return db
+      .table("activitySummary")
+      .orderBy("timestamp")
+      .reverse()
+      .limit(5)
+      .toArray()
+  }, [])
+
+  const renderInsightsTab = () => (
+    <div className="flex-1 overflow-y-auto p-2 space-y-4">
+      {/* Activity Summaries Section */}
+      <div className="bg-white/40 dark:bg-slate-700/40 rounded-xl border border-gray-300/50 dark:border-slate-600/50 p-5">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-blue-100/80 dark:bg-blue-900/40 backdrop-blur-sm rounded-lg border border-blue-200/50 dark:border-blue-800/50">
+            <BarChart3 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            Activity Summaries
+          </h3>
+        </div>
+        {activitySummaries && activitySummaries.length > 0 ? (
+          <div className="space-y-3">
+            {activitySummaries.map((summary, index) => (
+              <div
+                key={index}
+                className="bg-white/50 dark:bg-slate-600/40 backdrop-blur-sm p-4 rounded-lg border border-gray-300/50 dark:border-slate-500/50 shadow-md">
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                  {summary.summary}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {new Date(summary.timestamp).toLocaleString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="mb-2">No activity summaries yet</p>
+            <p className="text-xs italic">
+              Start browsing to see AI-powered insights
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Focus History Section */}
+      <div className="bg-white/40 dark:bg-slate-700/40 backdrop-blur-md rounded-xl border border-gray-300/50 dark:border-slate-600/50 p-5">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-green-100/80 dark:bg-green-900/40 backdrop-blur-sm rounded-lg border border-green-200/50 dark:border-green-800/50">
+            <Target className="w-5 h-5 text-green-600 dark:text-green-400" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            Recent Focus Sessions
+          </h3>
+        </div>
+        {focusDataDex && focusDataDex.length > 0 ? (
+          <div className="space-y-2">
+            {focusDataDex.slice(0, 5).map((focus) => {
+              const parsed = parseFocus(focus)
+              return (
+                <div
+                  key={focus.id}
+                  className="bg-white/50 dark:bg-slate-600/40 backdrop-blur-sm p-3 rounded-lg border border-gray-300/50 dark:border-slate-500/50 shadow-md">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      {focus.item}
+                    </p>
+                    <span className="text-xs font-mono text-gray-500 dark:text-gray-400">
+                      {Math.floor(parsed.total_time / 3600000)}h{" "}
+                      {Math.floor((parsed.total_time % 3600000) / 60000)}m
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="mb-2">No focus sessions yet</p>
+            <p className="text-xs italic">
+              Start focusing to track your learning journey
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+
+  const renderExploreTab = () => (
+    <div className="flex-1 overflow-y-auto p-2 space-y-4">
+      {/* Wins Section */}
+      <div className="bg-white/40 dark:bg-slate-700/40 rounded-xl border border-gray-300/50 dark:border-slate-600/50 p-5">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-yellow-100/80 dark:bg-yellow-900/40 backdrop-blur-sm rounded-lg border border-yellow-200/50 dark:border-yellow-800/50">
+            <Trophy className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            Wins
+          </h3>
+        </div>
+        {wins.length === 0 ? (
+          <div className="text-sm text-gray-500 dark:text-gray-400 italic py-2">
+            No wins yet. Keep focusing to unlock achievements!
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {wins.map((win, index) => (
+              <div
+                key={win.id}
+                className="flex items-center gap-3 bg-white/50 dark:bg-slate-600/40 backdrop-blur-sm px-4 py-3 rounded-lg border border-gray-300/50 dark:border-slate-500/50 hover:shadow-lg hover:border-gray-400/60 dark:hover:border-slate-400/60 transition-all"
+                style={{ animationDelay: `${index * 100}ms` }}>
+                {getWinIcon(win.type)}
+                <div className="flex-1">
+                  <p className="font-bold text-gray-900 dark:text-white text-sm">
+                    {win.focusItem}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {win.text}
+                  </p>
+                </div>
+                <span className="text-gray-500 dark:text-gray-400 font-mono text-xs">
+                  {Math.floor(win.totalTimeSpent / 60000)}:
+                  {((win.totalTimeSpent % 60000) / 1000)
+                    .toString()
+                    .padStart(2, "0")}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Milestones Section */}
+      <div className="bg-white/40 dark:bg-slate-700/40 backdrop-blur-md rounded-xl border border-gray-300/50 dark:border-slate-600/50 p-5">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-purple-100/80 dark:bg-purple-900/40 backdrop-blur-sm rounded-lg border border-purple-200/50 dark:border-purple-800/50">
+            <Award className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            Milestones
+          </h3>
+        </div>
+        <div className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="mb-2">Coming soon: Track your learning milestones</p>
+          <p className="text-xs italic">
+            Celebrate your progress and achievements
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+
   if (isLoading) {
     return (
-      <div className="w-[400px] h-[600px] flex items-center justify-center bg-linear-to-br from-gray-50 to-gray-100">
+      <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-white mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
         </div>
       </div>
     )
@@ -188,154 +347,144 @@ const Popup = () => {
 
   return (
     <div
-      className="relative h-screen overflow-hidden bg-linear-to-br from-gray-50 to-gray-100"
+      className="relative h-screen overflow-hidden flex flex-col"
       role="main">
-      {/* Tree Animation Background */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-        <TreeAnimationSection totalFocusTime={focusData?.total_time || 0} />
-      </div>
+      {/* Tree Animation Background - Full visibility */}
+      <TreeAnimationSection totalFocusTime={focusData?.total_time || 0} />
 
-      <div className="h-full overflow-y-auto relative z-10 flex flex-col">
-        {/* Main Card Container */}
-        <div className="m-4 border-gray-900 overflow-hidden transition-all duration-300 animate-fade-in shrink-0">
-          {/* Current Focus Header */}
-          <div
-            className="p-6 border-b border-gray-900"
-            role="region"
-            aria-label="Current focus session">
-            <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
-              Current Focus
-            </h2>
-            {focusData ? (
-              <div className="bg-white border-2 border-gray-900 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200">
-                <p
-                  className="text-lg font-bold text-gray-900 mb-3 leading-tight"
-                  aria-live="polite">
-                  {focusData.focus_item}
-                </p>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span
-                      className="font-mono font-bold text-lg text-gray-800"
-                      aria-label={`Focus time: ${formattedFocusTime}`}>
-                      {formattedFocusTime}
-                    </span>
-                    <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200 hover:bg-gray-100 transition-colors">
-                      <span
-                        className="text-xs text-gray-600 font-medium"
-                        aria-label={`Pomodoro timer: ${formattedPomodoroTime} remaining`}>
-                        {pomodoroState.state === "focus" ? "🍅" : "☕"}{" "}
-                        {formattedPomodoroTime}
-                      </span>
-                      <button
-                        onClick={handlePomodoroToggle}
-                        className="text-gray-600 hover:text-gray-900 transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 rounded p-1"
-                        aria-label={
-                          pomodoroState.isActive
-                            ? `Pause ${pomodoroState.state}`
-                            : pomodoroState.remainingTime ===
-                                (pomodoroState.state === "focus" ? 1500 : 300)
-                              ? `Start ${pomodoroState.state}`
-                              : `Resume ${pomodoroState.state}`
-                        }
-                        aria-pressed={pomodoroState.isActive}>
-                        {pomodoroState.isActive ? "⏸" : "▶️"}
-                      </button>
-                    </div>
-                  </div>
-                  {!pomodoroState.isActive &&
-                    pomodoroState.remainingTime ===
-                      (pomodoroState.state === "focus" ? 1500 : 300) &&
-                    pomodoroState.state !== "idle" && (
-                      <div className="text-xs text-center py-1 px-2 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 animate-pulse">
-                        {pomodoroState.state === "focus"
-                          ? "🎯 Ready to focus? Click ▶️ to start!"
-                          : "☕ Time for a break! Click ▶️ when ready."}
-                      </div>
-                    )}
-                </div>
-              </div>
-            ) : (
-              <div className="bg-linear-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-6 shadow-sm">
-                <p className="text-base text-gray-700 mb-2 leading-relaxed">
-                  Nothing as of yet...
-                </p>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  How about we spend just{" "}
-                  <span className="font-bold text-blue-600">7 minutes</span> to
-                  learn about something new? 🚀
-                </p>
-              </div>
-            )}
-          </div>
+      {/* Content Container with padding for card layout */}
 
-          {/* Take a Refresher Section */}
-          <div className="p-6" role="region" aria-label="Quiz suggestions">
-            <div className="space-y-2">
-              <div className="text-sm text-gray-700 leading-relaxed">
-                <div className="mb-2">
-                  {(focusDataDex && focusDataDex.length >= 1) ? (
-                    <>
-                      <p className="font-semibold mb-2">
-                        We know you learnt a lot about:{" "}
-                      </p>
-                      <div className="space-y-1 text-xs text-gray-500 italic pl-3 border-blue-200">
-                        {focusDataDex.slice(0, 5).map((item) => (
-                          <p key={item.id}>{item.item}</p>
-                        ))}
-                      </div>
-                    </>
-                  ) : (
-                    <div>
-                      <div>You don't have enough focus items 😭.</div>
-                      <div className="text-xs text-gray-500">
-                        Once you have enough focus items, you can take a
-                        refresher.
-                      </div>
-                    </div>
-                  )}
-                </div>
+      <div className="relative z-10 flex flex-col h-full gap-4 bg-transparent">
+        {/* Header - No Card */}
+        <div className="shrink-0 px-2">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <img src="/assets/logo_NPxx.png" className="w-20" />
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Pomodoro Timer */}
+              <div className="flex items-center gap-2 bg-white/30 dark:bg-slate-800/30 backdrop-blur-md px-3 py-1.5 rounded-full border border-gray-300/50 dark:border-slate-600/50 shadow-lg">
+                <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">
+                  {pomodoroState.state === "focus" ? "🍅" : "☕"}{" "}
+                  {formattedPomodoroTime}
+                </span>
+                <button
+                  onClick={handlePomodoroToggle}
+                  className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-all hover:scale-110 focus:ring-blue-400 rounded p-1"
+                  aria-label={
+                    pomodoroState.isActive
+                      ? `Pause ${pomodoroState.state}`
+                      : `Start ${pomodoroState.state}`
+                  }>
+                  {pomodoroState.isActive ? "⏸" : "▶️"}
+                </button>
               </div>
-              <RefresherButton isDisabled={focusDataDex && focusDataDex.length < 1} />
             </div>
           </div>
 
-          {/* Wins Section */}
-          <div className="p-6 border-t border-gray-900">
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
-              Wins
-            </p>
-            {wins.length === 0 ? (
-              <div className="text-sm text-gray-500 italic py-2">
-                No wins yet.
+          {/* Current Focus Display */}
+          {focusData ? (
+            <div className="bg-white/30 dark:bg-slate-800/30 backdrop-blur-md rounded-xl p-3 border border-gray-300/50 dark:border-slate-600/50 shadow-xs">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1 font-medium">
+                    Current Focus
+                  </p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-white truncate">
+                    {focusData.focus_item}
+                  </p>
+                </div>
+                <div className="text-right ml-3">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1 font-medium">
+                    Elapsed
+                  </p>
+                  <p className="font-mono font-bold text-sm text-gray-900 dark:text-gray-200">
+                    {formattedFocusTime}
+                  </p>
+                </div>
               </div>
-            ) : (
-              <div className="flex flex-wrap gap-3 text-sm">
-                {wins.slice(0, 3).map((win, index) => (
-                  <div
-                    key={win.id}
-                    className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border-2 border-gray-900 shadow-sm hover:shadow-md transition-all hover:scale-105 hover:-translate-y-0.5"
-                    style={{ animationDelay: `${index * 100}ms` }}>
-                    {getWinIcon(win.type)}
-                    <span className="font-bold text-gray-900 text-sm">
-                      {win.focusItem.split(" ").join("").toUpperCase()}
-                    </span>
-                    <span className="text-gray-500 font-mono text-xs">
-                      {Math.floor(win.totalTimeSpent / 60000)}:
-                      {((win.totalTimeSpent % 60000) / 1000)
-                        .toString()
-                        .padStart(2, "0")}
-                    </span>
+            </div>
+          ) : (
+            <div className="bg-white/30 dark:bg-slate-800/30 backdrop-blur-md rounded-xl p-3 border border-gray-300/50 dark:border-slate-600/50 shadow-xs">
+              <div className="py-2">
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-1 text-center font-medium">
+                  No active focus session
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 italic text-center mb-3">
+                  Spend 7 minutes of focus time to learn something new 🌱
+                </p>
+                {activitySummaries && activitySummaries.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-gray-300/30 dark:border-slate-600/30">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 font-medium">
+                      Recent Activity:
+                    </p>
+                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                      {activitySummaries.slice(0, 5).map((summary, index) => (
+                        <div
+                          key={index}
+                          className="text-xs text-gray-700 dark:text-gray-300 bg-white/40 dark:bg-slate-700/40 rounded px-2 py-1.5">
+                          {summary.summary}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ))}
+                )}
               </div>
-            )}
+            </div>
+          )}
+        </div>
+
+        {/* Main Content Card with Integrated Tabs */}
+        <div className="bg-white/25 dark:bg-slate-800/25 rounded-2xl border border-white/20 dark:border-slate-700/30 flex-1 overflow-hidden mb-4 flex flex-col">
+          {/* Subtle Tab Bar */}
+          <div className="shrink-0 p-2 border-b border-slate-200 dark:border-slate-700/20">
+            <div className="bg-white/20 dark:bg-slate-900/20 backdrop-blur-sm rounded-xl p-1 inline-flex gap-1 mx-auto">
+              <button
+                onClick={() => setActiveTab("focus")}
+                className={`relative px-5 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                  activeTab === "focus"
+                    ? "bg-white/60 dark:bg-slate-700/60 text-gray-900 dark:text-white shadow-sm"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/30 dark:hover:bg-slate-700/30"
+                }`}>
+                <div className="flex items-center gap-1.5">
+                  <Target className="w-3.5 h-3.5" />
+                  <span>Focus</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab("insights")}
+                className={`relative px-5 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                  activeTab === "insights"
+                    ? "bg-white/60 dark:bg-slate-700/60 text-gray-900 dark:text-white shadow-sm"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/30 dark:hover:bg-slate-700/30"
+                }`}>
+                <div className="flex items-center gap-1.5">
+                  <BarChart3 className="w-3.5 h-3.5" />
+                  <span>Insights</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab("explore")}
+                className={`relative px-5 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                  activeTab === "explore"
+                    ? "bg-white/60 dark:bg-slate-700/60 text-gray-900 dark:text-white shadow-sm"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/30 dark:hover:bg-slate-700/30"
+                }`}>
+                <div className="flex items-center gap-1.5">
+                  <Compass className="w-3.5 h-3.5" />
+                  <span>Explore</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Tab Content */}
+          <div className="flex-1 overflow-hidden">
+            {activeTab === "focus" && renderFocusTab()}
+            {activeTab === "insights" && renderInsightsTab()}
+            {activeTab === "explore" && renderExploreTab()}
           </div>
         </div>
-        <p className="text-xs mt-auto text-center text-gray-500 italic px-4 pb-4">
-          🌱 Your focus nurtures growth — watch your tree flourish with every
-          session.
-        </p>
       </div>
     </div>
   )

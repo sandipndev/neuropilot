@@ -288,7 +288,7 @@ export const Chat: React.FC<ChatProps> = ({
   }
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-slate-800">
+    <div className="flex flex-col h-full">
       {/* Messages Container */}
       <div className="flex-1 overflow-y-auto p-6 space-y-2">
         {messages && messages.length > 0 ? (
@@ -320,7 +320,6 @@ export const Chat: React.FC<ChatProps> = ({
                   <MessageSquare size={32} className="opacity-50" />
                 </div>
               </div>
-              <p className="font-medium">No messages yet</p>
               <p className="text-sm mt-1">Start a conversation!</p>
             </div>
           </div>
@@ -329,11 +328,8 @@ export const Chat: React.FC<ChatProps> = ({
 
       {/* Context Window Selector - Only shown when no messages */}
       {(!messages || messages.length === 0) && (
-        <div className="border-t border-slate-200 dark:border-slate-700 px-4 py-2 bg-slate-50 dark:bg-slate-800/50">
-          <div className="flex items-center gap-2 text-xs">
-            <span className="text-slate-600 dark:text-slate-400 whitespace-nowrap">
-              Context:
-            </span>
+        <div className="border-t border-slate-200 dark:border-slate-700 px-4 py-2 bg-slate-50/30 dark:bg-slate-800/30">
+          <div className="flex items-center gap-2 text-xs px-2 flex-wrap">
             {CONTEXT_WINDOWS.map((window) => (
               <button
                 key={window.value}
@@ -351,7 +347,7 @@ export const Chat: React.FC<ChatProps> = ({
       )}
 
       {/* Input Container */}
-      <div className="border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+      <div className="border-t border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/50">
         {/* Selected Files Preview */}
         {(selectedImages.length > 0 || selectedAudios.length > 0) && (
           <div className="px-4 pt-3 pb-2 border-b border-slate-200 dark:border-slate-700">
@@ -398,8 +394,8 @@ export const Chat: React.FC<ChatProps> = ({
           </div>
         )}
 
-        <div className="p-4">
-          <div className="flex items-end gap-2">
+        <div className="p-4 backdrop-blur-sm">
+          <div className="flex items-center gap-2">
             {/* Image Upload */}
             <input
               ref={fileInputRef}
@@ -454,8 +450,9 @@ export const Chat: React.FC<ChatProps> = ({
               placeholder={
                 writing ? "Writing a prompt..." : "Type a message..."
               }
-              className={`${writing && "animate-pulse"} flex-1 resize-none border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 focus:border-transparent placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200`}
-              rows={1}
+              className={`${writing && "animate-pulse"} flex-1 resize-y border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 focus:border-transparent placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200`}
+              // rows={1}
+              
             />
 
             {/* Write / Rewrite Button */}
@@ -485,7 +482,7 @@ export const Chat: React.FC<ChatProps> = ({
               {isStreaming ? (
                 <div className="w-5 h-5 flex items-center justify-center">
                   <div
-                    className="w-2 h-2 rounded-full bg-white"
+                    className="w-2 h-2 rounded-full"
                     style={{
                       animation: "pulse 1.5s ease-in-out infinite",
                       boxShadow: "0 0 0 1px rgba(0, 0, 0, 0.2)"

@@ -1,13 +1,17 @@
 import { useLiveQuery } from "dexie-react-hooks"
 import { MessageSquare, Plus } from "lucide-react"
-import React, { useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 
 import db, { type ChatMessage, type Chat as ChatType } from "~db"
 
 import { Chat } from "./chat"
 
+const generateChatId = () =>
+  `chat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
 export const AllChats: React.FC = () => {
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null)
+  const [newChatId, setNewChatId] = useState<string | null>(null)
 
   // Fetch all chats sorted by timestamp
   const chats = useLiveQuery(
@@ -15,15 +19,30 @@ export const AllChats: React.FC = () => {
     []
   )
 
-  const createNewChat = async () => {
-    const newChatId = `chat-${Date.now()}`
-    await db.table<ChatType>("chat").add({
-      id: newChatId,
-      title: `Chat ${(chats?.length || 0) + 1}`,
-      userActivity: {},
-      timestamp: Date.now()
-    })
-    setSelectedChatId(newChatId)
+  // Check if selected chat is a new chat (not in database)
+  const isNewChat = useMemo(() => {
+    if (!selectedChatId || !chats) return false
+    return !chats.some((chat) => chat.id === selectedChatId)
+  }, [selectedChatId, chats])
+
+  // Automatically show new chat if there are no chats
+  useEffect(() => {
+    if (chats !== undefined && chats.length === 0 && selectedChatId === null) {
+      const newId = generateChatId()
+      setNewChatId(newId)
+      setSelectedChatId(newId)
+    }
+  }, [chats, selectedChatId])
+
+  const createNewChat = () => {
+    const newId = generateChatId()
+    setNewChatId(newId)
+    setSelectedChatId(newId)
+  }
+
+  const handleChatCreated = (chatId: string) => {
+    // Chat is now in the database, clear newChatId
+    setNewChatId(null)
   }
 
   const deleteChat = async (chatId: string) => {
@@ -163,15 +182,21 @@ export const AllChats: React.FC = () => {
                     <MessageSquare className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   </div>
                   <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-                    {chats?.find((c) => c.id === selectedChatId)?.title ||
-                      "Chat"}
+                    {isNewChat
+                      ? "New Chat"
+                      : chats?.find((c) => c.id === selectedChatId)?.title ||
+                        "Chat"}
                   </h2>
                 </div>
               </div>
 
               {/* Chat Component */}
               <div className="flex-1 overflow-hidden">
-                <Chat chatId={selectedChatId} />
+                <Chat
+                  chatId={selectedChatId}
+                  isNewChat={isNewChat}
+                  onChatCreated={handleChatCreated}
+                />
               </div>
             </>
           ) : (

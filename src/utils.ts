@@ -1,8 +1,14 @@
-import type { Focus } from "~db"
+import { Storage } from "@plasmohq/storage"
+
 import type { ImageAttention } from "~background/messages/cognitive-attention-image"
 import type { TextAttention } from "~background/messages/cognitive-attention-text"
 import type { WebsiteVisit } from "~background/messages/website-visit"
+import type { Focus } from "~db"
 import db from "~db"
+import {
+  NOTIFICATION_STORAGE_KEY,
+  type NotificationMessageType
+} from "~default-settings"
 
 export const getActiveFocus = async () =>
   (await db.table<Focus>("focus").reverse().toArray()).find((focus) => {
@@ -80,3 +86,25 @@ ${a.imageAttentions.map((r) => r.caption).join(" ")}`
 `
     )
     .join("\n\n---\n\n")
+
+const storage = new Storage()
+
+export const sendNotification = async (
+  notificationType: NotificationMessageType,
+  lastNotificationKey: string,
+  cooldownMs: number = 60000
+): Promise<void> => {
+  const lastNotificationTime = await storage.get(lastNotificationKey)
+  const now = Date.now()
+
+  if (
+    !lastNotificationTime ||
+    now - Number(lastNotificationTime) >= cooldownMs
+  ) {
+    await storage.set(NOTIFICATION_STORAGE_KEY, {
+      type: notificationType,
+      timestamp: now
+    })
+    await storage.set(lastNotificationKey, now)
+  }
+}

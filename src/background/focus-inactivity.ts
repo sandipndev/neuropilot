@@ -1,8 +1,18 @@
 import { Storage } from "@plasmohq/storage"
 
 import db, { type Focus } from "~db"
-import { FOCUS_INACTIVITY_THRESHOLD } from "~default-settings"
-import { allUserActivityForLastMs, getActiveFocus } from "~utils"
+import {
+  FOCUS_INACTIVITY_THRESHOLD,
+  NotificationMessageType
+} from "~default-settings"
+import {
+  allUserActivityForLastMs,
+  getActiveFocus,
+  sendNotification
+} from "~utils"
+
+const LAST_FOCUS_INACTIVITY_NOTIFICATION_KEY =
+  "last-focus-inactivity-notification-timestamp"
 
 const focusInactivityTask = async () => {
   const activeFocus = await getActiveFocus()
@@ -29,6 +39,11 @@ const focusInactivityTask = async () => {
         focus.time_spent[focus.time_spent.length - 1].end = now
         focus.last_updated = now
       })
+
+    await sendNotification(
+      NotificationMessageType.FOCUS_INACTIVITY_DETECTED,
+      LAST_FOCUS_INACTIVITY_NOTIFICATION_KEY
+    )
   }
 }
 

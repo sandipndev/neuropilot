@@ -1,16 +1,13 @@
 import db from "~db"
+import type { Focus, QuizQuestion } from "~db"
 import { getLanguageModel } from "~model"
 import { allUserActivityForLastMs } from "~utils"
-
-import type { Focus, QuizQuestion } from "~db"
 
 const quizQuestionsInferenceTask = async () => {
   const ONE_DAY_MS = 24 * 60 * 60 * 1000
   const recentActivity = await allUserActivityForLastMs(ONE_DAY_MS)
 
-  if (recentActivity.length === 0) {
-    return
-  }
+  if (recentActivity.length === 0) return
 
   const focusData = await db
     .table<Focus>("focus")

@@ -21,6 +21,8 @@ const focusInferenceTask = async () => {
   const TEN_MINUTES_MS = 10 * 60 * 1000
   const recentActivity = await allUserActivityForLastMs(TEN_MINUTES_MS)
 
+  if (recentActivity.length === 0) return
+
   if (previousFocus) {
     focusDrifted = await detectFocusDrift(previousFocus, recentActivity)
   }

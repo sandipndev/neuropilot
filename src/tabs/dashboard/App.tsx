@@ -11,7 +11,9 @@ import { useQuizQuestions } from "./hooks/useQuizQuestions"
 import { useWinsData } from "./hooks/useWinsData"
 
 import "./index.css"
+
 import { useStorage } from "@plasmohq/storage/hook"
+
 import { USER_NAME_KEY } from "~tabs/welcome/api/user-data"
 
 function App() {
@@ -46,7 +48,6 @@ function App() {
     }
   }, [focusHistory.length])
 
-
   const [userName, _] = useStorage(USER_NAME_KEY)
 
   console.log("userName", userName)
@@ -68,9 +69,9 @@ function App() {
   }, [])
 
   const handleSettingsClick = () => {
-    // Placeholder for settings modal
-    console.log("Settings clicked")
-    // TODO: Implement settings modal
+    chrome.tabs.create({
+      url: chrome.runtime.getURL("options.html")
+    })
   }
 
   const handleThemeToggle = () => {

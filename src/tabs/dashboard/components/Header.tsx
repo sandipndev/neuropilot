@@ -36,7 +36,7 @@ export function Header({
     if (hour < 12) return { text: "Good morning", emoji: "☀️" }
     if (hour < 17) return { text: "Good afternoon", emoji: "🌤️" }
     if (hour < 21) return { text: "Good evening", emoji: "🌆" }
-    return { text: "Good evening..", emoji: "🌙" }
+    return { text: "Good evening", emoji: "🌙" }
   }
 
   const greeting = getGreeting()

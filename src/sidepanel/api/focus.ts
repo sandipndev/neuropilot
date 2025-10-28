@@ -18,7 +18,7 @@ function calculateTotalTime(timeSpent: { start: number; end: number | null }[]):
 /**
  * Parse Focus to FocusWithParsedData
  */
-function parseFocus(focus: Focus): FocusWithParsedData {
+export function parseFocus(focus: Focus): FocusWithParsedData {
   return {
     ...focus,
     focus_item: focus.item,

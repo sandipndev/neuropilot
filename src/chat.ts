@@ -7,12 +7,14 @@ export type ChatMessageItem = {
     | string
     | { type: "text"; value: string }
     | { type: "image"; value: File }
+    | { type: "audio"; value: File }
   )[]
 }
 
 export const streamResponse = async (
   message: string,
   images: File[] | null = null,
+  audio: File | null = null,
   onChunk?: (chunk: string, done: boolean) => void
 ) => {
   const LAST_DAY = 24 * 60 * 60 * 1000

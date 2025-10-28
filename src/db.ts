@@ -16,7 +16,8 @@ db.version(1).stores({
   activitySummary: "++id, timestamp",
   quizQuestions: "++id, timestamp",
 
-  chatMessages: "++id, timestamp",
+  chat: "&id, timestamp",
+  chatMessages: "++id, chatId",
   pastWins: "++id, time_spent",
   pomodoro: "&id, lastUpdated"
 })
@@ -72,9 +73,17 @@ export type PomodoroState = {
   lastUpdated: number
 }
 
+export type Chat = {
+  id: string
+  title?: string
+  userActivity: any
+  timestamp: number
+}
+
 export type ChatMessage = {
   id?: number
-  role: "user" | "assistant"
+  chatId: string
+  by: "user" | "bot"
+  type: "text" | "image" | "audio"
   content: string
-  timestamp: number
 }

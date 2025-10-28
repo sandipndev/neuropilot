@@ -1,5 +1,3 @@
-import crypto from "crypto"
-
 import db, { type Focus } from "~db"
 import { NotificationMessageType } from "~default-settings"
 import { getLanguageModel } from "~model"
@@ -7,6 +5,7 @@ import {
   allUserActivityForLastMs,
   attentionContent,
   getActiveFocus,
+  hashArray,
   sendNotification,
   type UserActivity
 } from "~utils"
@@ -178,17 +177,3 @@ If no clear commonality exists, identify the most significant or dominant term.`
 }
 
 // Helper to hash the recent activity (optimization)
-const stableStringify = (obj: any) => {
-  if (Array.isArray(obj)) {
-    return `[${obj.map(stableStringify).join(",")}]`
-  } else if (obj && typeof obj === "object") {
-    return `{${Object.keys(obj)
-      .sort()
-      .map((k) => `"${k}":${stableStringify(obj[k])}`)
-      .join(",")}}`
-  }
-  return JSON.stringify(obj)
-}
-
-const hashArray = (arr: any) =>
-  crypto.createHash("sha256").update(stableStringify(arr)).digest("hex")

@@ -1,3 +1,5 @@
+import crypto from "crypto"
+
 import { Storage } from "@plasmohq/storage"
 
 import type { AudioAttention } from "~background/messages/cognitive-attention-audio"
@@ -156,3 +158,21 @@ export const sendNotification = async (
     await storage.set(lastNotificationKey, now)
   }
 }
+
+export const stableStringify = (obj: any) => {
+  if (Array.isArray(obj)) {
+    return `[${obj.map(stableStringify).join(",")}]`
+  } else if (obj && typeof obj === "object") {
+    return `{${Object.keys(obj)
+      .sort()
+      .map((k) => `"${k}":${stableStringify(obj[k])}`)
+      .join(",")}}`
+  }
+  return JSON.stringify(obj)
+}
+
+export const hashArray = (arr: any) =>
+  crypto.createHash("sha256").update(stableStringify(arr)).digest("hex")
+
+export const hashString = (str: string) =>
+  crypto.createHash("sha256").update(str).digest("hex")

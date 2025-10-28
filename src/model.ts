@@ -1,9 +1,14 @@
 import { createHash } from "crypto"
 
 import type { ChatMessageItem } from "~chat"
+import { hashArray, hashString } from "~utils"
 
 const MULTIMODAL_CONFIG = {
-  expectedInputs: [{ type: "text", languages: ["en"] }, { type: "image" }],
+  expectedInputs: [
+    { type: "text", languages: ["en"] },
+    { type: "image" },
+    { type: "audio" }
+  ],
   expectedOutputs: [{ type: "text", languages: ["en"] }]
 } as const
 
@@ -54,8 +59,9 @@ const generateChatCacheKey = (
   systemPrompt: string,
   previousConversation: ChatMessageItem[]
 ): string => {
-  const content = systemPrompt + JSON.stringify(previousConversation)
-  return createHash("sha256").update(content).digest("hex")
+  const arrayHash = hashArray(previousConversation)
+  const content = systemPrompt + arrayHash
+  return hashString(content)
 }
 
 export const getChatModel = async (

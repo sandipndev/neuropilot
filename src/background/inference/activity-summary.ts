@@ -52,9 +52,13 @@ const activitySummaryInferenceTask = async () => {
   I need ONLY the summary text, nothing else.`
 
   const summarizer = await getSummarizer("tldr")
-  const summary = await summarizer.summarize(data, {
-    context: PROMPT.trim()
-  })
+  const summary = (
+    await summarizer.summarize(data, {
+      context: PROMPT.trim()
+    })
+  )
+    .trim()
+    .replace(".", "")
   summarizer.destroy()
 
   const previousSummary = await db

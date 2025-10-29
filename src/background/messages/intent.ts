@@ -105,6 +105,7 @@ const handler: PlasmoMessaging.MessageHandler = async (req) => {
         payloadType: "TEXT",
         timestamp: Date.now()
       })
+      break
     }
     case "proofread": {
       await db.table<Intent>("intentQueue").add({
@@ -113,6 +114,7 @@ const handler: PlasmoMessaging.MessageHandler = async (req) => {
         text: req.body.text,
         timestamp: Date.now()
       })
+      break
     }
     case "rephrase": {
       await db.table<Intent>("intentQueue").add({
@@ -121,6 +123,7 @@ const handler: PlasmoMessaging.MessageHandler = async (req) => {
         text: req.body.text,
         timestamp: Date.now()
       })
+      break
     }
     case "summarize": {
       await db.table<Intent>("intentQueue").add({
@@ -129,6 +132,7 @@ const handler: PlasmoMessaging.MessageHandler = async (req) => {
         text: req.body.text,
         timestamp: Date.now()
       })
+      break
     }
     case "translate": {
       await db.table<Intent>("intentQueue").add({
@@ -138,9 +142,11 @@ const handler: PlasmoMessaging.MessageHandler = async (req) => {
         language: req.body.language,
         timestamp: Date.now()
       })
+      break
     }
   }
 
+  await new Promise((resolve) => setTimeout(resolve, 2000))
   await storage.set(INTENT_QUEUE_NOTIFY, Date.now())
 }
 

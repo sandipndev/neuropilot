@@ -66,10 +66,28 @@ const focusInferenceTask = async () => {
             last_updated: Date.now()
           })
       } else {
+        // the start time here is the first recent activity timestamp.
+        // as the activities are per website in recent activity, we need to find the first activity timestamp
+        let start = Date.now()
+        for (const activity of recentActivity) {
+          for (const textAttention of activity.textAttentions) {
+            start = Math.min(start, textAttention.timestamp)
+          }
+          for (const imageAttention of activity.imageAttentions) {
+            start = Math.min(start, imageAttention.timestamp)
+          }
+          for (const youtubeAttention of activity.youtubeAttentions) {
+            start = Math.min(start, youtubeAttention.timestamp)
+          }
+          for (const audioAttention of activity.audioAttentions) {
+            start = Math.min(start, audioAttention.timestamp)
+          }
+        }
+
         await db.table<Focus>("focus").put({
           item: summarizedFocus,
           keywords,
-          time_spent: [{ start: Date.now(), end: null }],
+          time_spent: [{ start, end: null }],
           last_updated: Date.now()
         })
       }
@@ -167,7 +185,7 @@ the user is not reading anything), return "null"`
   const focus = await session.prompt(PROMPT)
   session.destroy()
 
-  return focus.trim() === "null" ? null : focus.trim()
+  return focus.trim() === "null" ? null : focus.trim().replace(".", "")
 }
 
 // Summarize Focus Keywords
@@ -187,7 +205,7 @@ If no clear commonality exists, identify the most significant or dominant term.`
   })
   summarizer.destroy()
 
-  return summarizedFocus.trim()
+  return summarizedFocus.trim().replace(".", "")
 }
 
 // Helper to hash the recent activity (optimization)

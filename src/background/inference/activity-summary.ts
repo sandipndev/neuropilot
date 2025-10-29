@@ -23,8 +23,6 @@ const activitySummaryInferenceTask = async () => {
     : ONE_MINUTE_MS
   const recentActivity = await allUserActivityForLastMs(lastMs)
 
-  console.log({ recentActivity })
-
   if (recentActivity.length === 0) {
     return
   }

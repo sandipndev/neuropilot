@@ -108,12 +108,13 @@ const Popup = () => {
     storage.watch({
       [INTENT_QUEUE_NOTIFY]: async () => {
         // check if latest intent is a chat
-        const iq = await db
+        const _iq = await db
           .table<Intent>("intentQueue")
           .orderBy("timestamp")
           .reverse()
           .limit(1)
           .toArray()
+        const iq = _iq?.filter((i) => i.processed === false)
 
         if (
           iq &&

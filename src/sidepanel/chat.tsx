@@ -82,7 +82,10 @@ export const Chat: React.FC<ChatProps> = ({
     }
 
     if (latestIntent && latestIntent.type === "CHAT") {
-      if (latestIntent.payloadType === "TEXT") {
+      if (
+        latestIntent.payloadType === "TEXT" &&
+        latestIntent.name !== "chat-with-this-page"
+      ) {
         setMessageText(latestIntent.payload)
       } else if (latestIntent.payloadType === "IMAGE") {
         setSelectedImages([base64ToFile(latestIntent.payload, "image.png")])

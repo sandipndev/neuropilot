@@ -1,10 +1,29 @@
+import { Storage } from "@plasmohq/storage"
+
 import db, { type ActivitySummary } from "~db"
 import { getSummarizer } from "~model"
 import { allUserActivityForLastMs, attentionContent } from "~utils"
 
+const storage = new Storage()
+const LAST_ACTIVITY_SUMMARY_CALCULATION_TIMESTAMP_KEY =
+  "activity-summary-last-calculation-timestamp"
+
 const activitySummaryInferenceTask = async () => {
-  const ONE_MINUTE_MS = 1 * 60 * 1000
-  const recentActivity = await allUserActivityForLastMs(ONE_MINUTE_MS)
+  const now = Date.now()
+
+  const lastActivitySummarCalculationTimestamp = await storage.get(
+    LAST_ACTIVITY_SUMMARY_CALCULATION_TIMESTAMP_KEY
+  )
+  const ONE_MINUTE_MS = 10 * 60 * 1000
+  const lastMs = lastActivitySummarCalculationTimestamp
+    ? Math.min(
+        now - Number(lastActivitySummarCalculationTimestamp),
+        ONE_MINUTE_MS
+      )
+    : ONE_MINUTE_MS
+  const recentActivity = await allUserActivityForLastMs(lastMs)
+
+  console.log({ recentActivity })
 
   if (recentActivity.length === 0) {
     return
@@ -43,7 +62,7 @@ const activitySummaryInferenceTask = async () => {
     .orderBy("timestamp")
     .last()
 
-  if (previousSummary.summary == summary) {
+  if (previousSummary && previousSummary.summary == summary) {
     return
   }
 
@@ -51,6 +70,10 @@ const activitySummaryInferenceTask = async () => {
     summary,
     timestamp: Date.now()
   })
+  await storage.set(
+    LAST_ACTIVITY_SUMMARY_CALCULATION_TIMESTAMP_KEY,
+    now.toString()
+  )
 }
 
 export default activitySummaryInferenceTask

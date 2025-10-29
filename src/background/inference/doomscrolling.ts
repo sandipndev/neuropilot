@@ -28,7 +28,11 @@ const doomscrollingDetectionTask = async () => {
 
   const totalAttentionItems = recentActivity.reduce((total, activity) => {
     return (
-      total + activity.textAttentions.length + activity.imageAttentions.length
+      total +
+      activity.textAttentions.length +
+      activity.imageAttentions.length +
+      activity.audioAttentions.length +
+      activity.youtubeAttentions.length
     )
   }, 0)
 

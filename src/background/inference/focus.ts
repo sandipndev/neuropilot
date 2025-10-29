@@ -1,3 +1,5 @@
+import { Storage } from "@plasmohq/storage"
+
 import db, { type Focus } from "~db"
 import { NotificationMessageType } from "~default-settings"
 import { getLanguageModel, getSummarizer } from "~model"
@@ -10,19 +12,28 @@ import {
   type UserActivity
 } from "~utils"
 
+const storage = new Storage()
 const alreadyProcessedFocuses = new Set<string>()
 
+const LAST_FOCUS_CALCULATION_TIMESTAMP_KEY = "last-focus-calculation-timestamp"
 const LAST_FOCUS_DRIFT_NOTIFICATION_KEY =
   "last-focus-drift-notification-timestamp"
 
 const focusInferenceTask = async () => {
+  const now = Date.now()
   const previousFocus = await getActiveFocus()
+  const lastFocusCalculationTimestamp = await storage.get(
+    LAST_FOCUS_CALCULATION_TIMESTAMP_KEY
+  )
 
   // Default: assume no drift if no previous focus (so new focus is saved)
   let focusDrifted = false
 
   const TEN_MINUTES_MS = 10 * 60 * 1000
-  const recentActivity = await allUserActivityForLastMs(TEN_MINUTES_MS)
+  const lastMs = lastFocusCalculationTimestamp
+    ? Math.min(now - Number(lastFocusCalculationTimestamp), TEN_MINUTES_MS)
+    : TEN_MINUTES_MS
+  const recentActivity = await allUserActivityForLastMs(lastMs)
 
   if (recentActivity.length === 0) return
 
@@ -83,6 +94,7 @@ const focusInferenceTask = async () => {
   }
 
   alreadyProcessedFocuses.add(hashOfRecentActivity)
+  await storage.set(LAST_FOCUS_CALCULATION_TIMESTAMP_KEY, now.toString())
 }
 
 export default focusInferenceTask

@@ -35,6 +35,8 @@ const taskMetadata: QueuedTask[] = []
 let taskIdCounter = 0
 
 const enqueueTask = (taskFn: () => Promise<any>) => {
+  if (taskMetadata.find((t) => t.name === taskFn.name)) return
+
   const meta: QueuedTask = {
     name: taskFn.name,
     enqueuedAt: Date.now(),
@@ -56,21 +58,21 @@ const enqueueTask = (taskFn: () => Promise<any>) => {
   })
 }
 
-const runContinuousTasksLoop = async () => {
-  while (true) {
-    for (const task of backgroundInferenceTasks) enqueueTask(task)
+// const runContinuousTasksLoop = async () => {
+//   while (true) {
+//     for (const task of backgroundInferenceTasks) enqueueTask(task)
 
-    await queue.onIdle()
+//     await queue.onIdle()
 
-    await new Promise((r) => setTimeout(r, 1000))
-  }
-}
+//     await new Promise((r) => setTimeout(r, 1000))
+//   }
+// }
 
 const startScheduler = async () => {
   if (await storage.get("onboarded")) {
     queue.start()
   }
-  runContinuousTasksLoop()
+  // runContinuousTasksLoop()
 }
 
 const storage = new Storage()
@@ -86,16 +88,16 @@ init().catch(console.error)
 chrome.alarms.onAlarm.addListener((alarm) => {
   switch (alarm.name) {
     case "pulse-task":
-      if (!taskMetadata.find((t) => t.name === "pulseInferenceTask"))
-        enqueueTask(pulseInferenceTask)
+      enqueueTask(pulseInferenceTask)
       break
     case "quiz-task":
-      if (!taskMetadata.find((t) => t.name === "quizQuestionsInferenceTask"))
-        enqueueTask(quizQuestionsInferenceTask)
+      enqueueTask(quizQuestionsInferenceTask)
       break
     case "garbage-collection-task":
-      if (!taskMetadata.find((t) => t.name === "garbageCollectionTask"))
-        enqueueTask(garbageCollectionTask)
+      enqueueTask(garbageCollectionTask)
+      break
+    case "continuous-tasks-loop":
+      for (const task of backgroundInferenceTasks) enqueueTask(task)
       break
   }
 })
@@ -105,6 +107,8 @@ chrome.runtime.onInstalled.addListener((details) => {
   chrome.alarms.create("pulse-task", { periodInMinutes: 5 })
   chrome.alarms.create("quiz-task", { periodInMinutes: 2 })
   chrome.alarms.create("garbage-collection-task", { periodInMinutes: 60 * 24 })
+
+  chrome.alarms.create("continuous-tasks-loop", { periodInMinutes: 0.5 })
 
   // open welcome page on first install
   if (details.reason === "install") {

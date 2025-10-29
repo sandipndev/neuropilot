@@ -406,7 +406,7 @@ const Popup = () => {
         radial-gradient(125% 125% at 50% 90%, #ffffff 50%, #10b981 100%)
       `,
           backgroundSize: "100% 100%",
-          filter: "hue-rotate(60deg)",
+          filter: "hue-rotate(60deg)"
         }}
       />
 
@@ -428,7 +428,7 @@ const Popup = () => {
                   src="/assets/logo_NPxx.png"
                   className="w-20 bg-transparent"
                   style={{
-                    filter: "grayscale(100%) contrast(300%) brightness(1%)",
+                    filter: "grayscale(100%) contrast(300%) brightness(1%)"
                   }}
                 />
               </div>
@@ -461,8 +461,8 @@ const Popup = () => {
                     <p className="text-xs text-gray-600 dark:text-gray-400 mb-1 font-medium">
                       Current Focus
                     </p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white truncate">
-                      {focusData.focus_item}
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                      {focusData.focus_item.replace(".", "")}
                     </p>
                   </div>
                   <div className="text-right ml-3">

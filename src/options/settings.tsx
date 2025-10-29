@@ -386,8 +386,8 @@ const Settings = () => {
                   setTimeWindow(Number(e.target.value))
                   showSaveMessage()
                 }}
-                min="1000"
-                max="60000"
+                min="30000"
+                max="900000"
                 step="1000"
                 className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-600"
               />

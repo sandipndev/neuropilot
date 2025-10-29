@@ -38,7 +38,11 @@ const quizQuestionsInferenceTask = async () => {
 
   const keyLearnings = `Website Summaries:\n${websiteSummaries}\n\nKey Text Content:\n${keyTextLearnings}`
 
-  const PROMPT = `Generate 5 quiz questions to test understanding of the user's recent learning activity.
+  // calculate n_questions based on amount of activity
+  // generate more questions if there is more activity
+  const n_questions = Math.max(8, Math.ceil(recentActivity.length / 2))
+
+  const PROMPT = `Generate ${n_questions} quiz questions to test understanding of the user's recent learning activity.
 
 Learning Data:
 Focus Topics: ${focusTopics}

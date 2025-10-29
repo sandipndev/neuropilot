@@ -25,7 +25,7 @@ export const DOOMSCROLLING_ATTENTION_ITEMS_THRESHOLD = {
 }
 export const DOOMSCROLLING_TIME_WINDOW = {
   key: "setting-doomscrolling-time-window",
-  defaultValue: 30000
+  defaultValue: 300000
 }
 
 export const GARBAGE_COLLECTION_INTERVAL = {

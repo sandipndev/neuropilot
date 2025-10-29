@@ -142,7 +142,7 @@ const storage = new Storage()
 export const sendNotification = async (
   notificationType: NotificationMessageType,
   lastNotificationKey: string,
-  cooldownMs: number = 60000
+  cooldownMs: number = 15000
 ): Promise<void> => {
   const lastNotificationTime = await storage.get(lastNotificationKey)
   const now = Date.now()

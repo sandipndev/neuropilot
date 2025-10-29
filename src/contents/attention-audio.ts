@@ -136,14 +136,14 @@ const showLoadingIndicator = (audioElement: HTMLAudioElement): HTMLElement => {
 
   const loadingDiv = document.createElement("div")
   loadingDiv.id = loadingId
-  loadingDiv.textContent = "Transcribing..."
+  loadingDiv.textContent = "Analyzing audio..."
 
   loadingDiv.style.position = "fixed"
   loadingDiv.style.backgroundColor = "rgba(0, 0, 0, 0.8)"
   loadingDiv.style.color = "white"
-  loadingDiv.style.padding = "8px 12px"
-  loadingDiv.style.borderRadius = "8px"
-  loadingDiv.style.fontSize = "13px"
+  loadingDiv.style.padding = "4px 8px"
+  loadingDiv.style.borderRadius = "4px"
+  loadingDiv.style.fontSize = "11px"
   loadingDiv.style.fontWeight = "500"
   loadingDiv.style.zIndex = "10000"
   loadingDiv.style.animation = "pulse 1.5s ease-in-out infinite"

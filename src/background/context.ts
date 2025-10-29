@@ -138,7 +138,8 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
           type: "CHAT",
           payload: base64,
           payloadType: "IMAGE",
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          processed: false
         })
       }
       break
@@ -159,7 +160,8 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
           type: "CHAT",
           payload: JSON.stringify({ url: tab.url, text: pageText }),
           payloadType: "TEXT",
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          processed: false
         })
       }
       break
@@ -171,7 +173,8 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
           type: "CHAT",
           payload: info.selectionText,
           payloadType: "TEXT",
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          processed: false
         })
       }
       break
@@ -182,7 +185,8 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
           name: "proofread-selection",
           type: "PROOFREAD",
           text: info.selectionText,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          processed: false
         })
       }
       break
@@ -193,7 +197,8 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
           name: "rephrase-selection",
           type: "REPHRASE",
           text: info.selectionText,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          processed: false
         })
       }
       break
@@ -204,7 +209,8 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
           name: "summarize-selection",
           type: "SUMMARIZE",
           text: info.selectionText,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          processed: false
         })
       }
       break
@@ -216,7 +222,8 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
           type: "CHAT",
           payload: info.selectionText,
           payloadType: "TEXT",
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          processed: false
         })
       }
       break
@@ -236,7 +243,8 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
           name: "key-points-page",
           type: "SUMMARIZE",
           text: pageText,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          processed: false
         })
       }
       break
@@ -250,7 +258,8 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
           name: "summarize-link",
           type: "SUMMARIZE",
           text: text,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          processed: false
         })
       }
       break
@@ -270,13 +279,14 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
           name: "summarize-page",
           type: "SUMMARIZE",
           text: pageText,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          processed: false
         })
       }
       break
     }
   }
 
-  await new Promise((resolve) => setTimeout(resolve, 2000))
+  await new Promise((resolve) => setTimeout(resolve, 1200))
   await storage.set(INTENT_QUEUE_NOTIFY, Date.now())
 })

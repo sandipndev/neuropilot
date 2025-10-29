@@ -29,6 +29,8 @@ import type { WinItem } from "./types/wins"
 
 import "./index.css"
 
+import type { Intent } from "~background/messages/intent"
+
 import { Chat } from "./chat"
 
 type TabType = "focus" | "insights" | "explore" | "intents"
@@ -104,9 +106,16 @@ const Popup = () => {
   // Watch for intent queue changes and switch to Learning tab
   useEffect(() => {
     storage.watch({
-      [INTENT_QUEUE_NOTIFY]: ({ newValue }) => {
-        console.log("Intent queue notify received", newValue)
-        setActiveTab("intents")
+      [INTENT_QUEUE_NOTIFY]: async () => {
+        // check if latest intent is a chat
+        const iq = await db
+          .table<Intent>("intentQueue")
+          .orderBy("timestamp")
+          .reverse()
+          .limit(1)
+          .toArray()
+
+        if (iq && iq[0].type !== "CHAT") setActiveTab("intents")
       }
     })
   }, [])

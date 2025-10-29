@@ -53,7 +53,7 @@ Key Content from Learning:
 ${keyLearnings}
 ${imageInsights}
 
-Create 5 quiz questions that:
+Create ${n_questions} quiz questions that:
 1. Test concepts from the key content above
 2. Are specific to what the user learned (not generic)
 3. Have 2 answer options each
@@ -97,7 +97,7 @@ Do not wrap in markdown code blocks or add any other text.`
   // Parse JSON response
   const quizQuestions = JSON.parse(jsonResponse)
 
-  if (Array.isArray(quizQuestions) && quizQuestions.length === 5) {
+  if (Array.isArray(quizQuestions)) {
     // Validate the structure
     const validQuestions = quizQuestions.filter(
       (q) =>
@@ -107,24 +107,22 @@ Do not wrap in markdown code blocks or add any other text.`
         (q.correct_answer === 1 || q.correct_answer === 2)
     )
 
-    if (validQuestions.length === 5) {
-      await db.table<QuizQuestion>("quizQuestions").clear()
+    await db.table<QuizQuestion>("quizQuestions").clear()
 
-      const timestamp = Date.now()
-      for (const {
+    const timestamp = Date.now()
+    for (const {
+      question,
+      option_1,
+      option_2,
+      correct_answer
+    } of validQuestions) {
+      await db.table<QuizQuestion>("quizQuestions").add({
         question,
         option_1,
         option_2,
-        correct_answer
-      } of validQuestions) {
-        await db.table<QuizQuestion>("quizQuestions").add({
-          question,
-          option_1,
-          option_2,
-          correct_answer,
-          timestamp
-        })
-      }
+        correct_answer,
+        timestamp
+      })
     }
   }
 }

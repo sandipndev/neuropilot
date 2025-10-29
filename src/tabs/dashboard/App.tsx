@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react"
 
+import Chat from "./components/Chat"
 import { CompactFocusCard } from "./components/CompactFocusCard"
 import { CompactPulseCard } from "./components/CompactPulseCard"
 import { CompactQuizCard } from "./components/CompactQuizCard"
 import { CompactStatsCard } from "./components/CompactStatsCard"
 import { Header } from "./components/Header"
+import Settings from "./components/Settings"
 import { useFocusData } from "./hooks/useFocusData"
 import { usePulseData } from "./hooks/usePulseData"
 import { useQuizQuestions } from "./hooks/useQuizQuestions"
@@ -16,9 +18,12 @@ import { useStorage } from "@plasmohq/storage/hook"
 
 import { USER_NAME_KEY } from "~tabs/welcome/api/user-data"
 
+type TabType = "dashboard" | "settings" | "chat"
+
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
+  const [activeTab, setActiveTab] = useState<TabType>("dashboard")
 
   // Fetch focus data
   const { currentFocus, focusHistory, isLoading: focusLoading } = useFocusData()
@@ -69,9 +74,7 @@ function App() {
   }, [])
 
   const handleSettingsClick = () => {
-    chrome.tabs.create({
-      url: chrome.runtime.getURL("options.html")
-    })
+    setActiveTab("settings")
   }
 
   const handleThemeToggle = () => {
@@ -105,34 +108,94 @@ function App() {
         isDarkMode={isDarkMode}
       />
 
-      {/* Main Dashboard */}
-      <main className="flex-1 overflow-hidden p-6">
-        <div className="h-full max-w-[1600px] mx-auto grid grid-cols-12 gap-5">
-          {/* Left Column - Focus & Activity */}
-          <div className="col-span-5 flex flex-col gap-5 overflow-y-auto scrollbar-thin">
-            <CompactFocusCard
-              currentFocus={currentFocus}
-              focusHistory={focusHistory}
-              isLoading={focusLoading}
-            />
-            <CompactPulseCard pulses={pulses} isLoading={pulseLoading} />
-          </div>
-
-          {/* Right Column - Quiz & Stats */}
-          <div className="col-span-7 flex flex-col gap-5 overflow-y-auto scrollbar-thin">
-            <CompactQuizCard
-              questions={questions}
-              unansweredQuestions={unansweredQuestions}
-              isLoading={quizLoading}
-              onAnswerSubmit={markAsAnswered}
-            />
-            <CompactStatsCard
-              focusHistory={focusHistory}
-              wins={wins}
-              isLoading={focusLoading || winsLoading}
-            />
-          </div>
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+        <div className="max-w-[1600px] mx-auto px-6">
+          <nav className="flex gap-1">
+            <button
+              onClick={() => setActiveTab("dashboard")}
+              className={`px-6 py-3 font-medium text-sm transition-all relative ${
+                activeTab === "dashboard"
+                  ? "text-blue-600 dark:text-blue-400"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+              }`}>
+              Dashboard
+              {activeTab === "dashboard" && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab("settings")}
+              className={`px-6 py-3 font-medium text-sm transition-all relative ${
+                activeTab === "settings"
+                  ? "text-blue-600 dark:text-blue-400"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+              }`}>
+              Settings
+              {activeTab === "settings" && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab("chat")}
+              className={`px-6 py-3 font-medium text-sm transition-all relative ${
+                activeTab === "chat"
+                  ? "text-blue-600 dark:text-blue-400"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+              }`}>
+              Chat
+              {activeTab === "chat" && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400" />
+              )}
+            </button>
+          </nav>
         </div>
+      </div>
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-hidden">
+        {activeTab === "dashboard" && (
+          <div className="h-full p-6">
+            <div className="h-full max-w-[1600px] mx-auto grid grid-cols-12 gap-5">
+              {/* Left Column - Focus & Activity */}
+              <div className="col-span-5 flex flex-col gap-5 overflow-y-auto scrollbar-thin">
+                <CompactFocusCard
+                  currentFocus={currentFocus}
+                  focusHistory={focusHistory}
+                  isLoading={focusLoading}
+                />
+                <CompactPulseCard pulses={pulses} isLoading={pulseLoading} />
+              </div>
+
+              {/* Right Column - Quiz & Stats */}
+              <div className="col-span-7 flex flex-col gap-5 overflow-y-auto scrollbar-thin">
+                <CompactQuizCard
+                  questions={questions}
+                  unansweredQuestions={unansweredQuestions}
+                  isLoading={quizLoading}
+                  onAnswerSubmit={markAsAnswered}
+                />
+                <CompactStatsCard
+                  focusHistory={focusHistory}
+                  wins={wins}
+                  isLoading={focusLoading || winsLoading}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "settings" && (
+          <div className="h-full overflow-y-auto">
+            <Settings />
+          </div>
+        )}
+
+        {activeTab === "chat" && (
+          <div className="h-full bg-gradient-to-br from-gray-50 to-slate-100 dark:from-gray-950 dark:to-slate-950">
+            <Chat />
+          </div>
+        )}
       </main>
     </div>
   )

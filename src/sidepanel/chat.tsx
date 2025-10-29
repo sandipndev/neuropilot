@@ -15,13 +15,8 @@ interface ChatProps {
   onUsageUpdate?: (usage: { inputUsage: number; inputQuota: number }) => void
 }
 
-const CONTEXT_WINDOWS = [
-  { label: "10 minutes", value: 10 * 60 * 1000 },
-  { label: "30 minutes", value: 30 * 60 * 1000 },
-  { label: "1 hour", value: 60 * 60 * 1000 },
-  { label: "4 hours", value: 4 * 60 * 60 * 1000 },
-  { label: "1 day", value: 24 * 60 * 60 * 1000 }
-]
+// Fixed context window of 30 minutes
+const CONTEXT_WINDOW_MS = 30 * 60 * 1000
 
 export const Chat: React.FC<ChatProps> = ({
   chatId,
@@ -30,7 +25,6 @@ export const Chat: React.FC<ChatProps> = ({
   onUsageUpdate
 }) => {
   const [messageText, setMessageText] = useState("")
-  const [contextWindowMs, setContextWindowMs] = useState(30 * 60 * 1000) // Default: 30 minutes
   const [isStreaming, setIsStreaming] = useState(false)
   const [streamingMessage, setStreamingMessage] = useState("")
   const [selectedImages, setSelectedImages] = useState<File[]>([])
@@ -45,9 +39,9 @@ export const Chat: React.FC<ChatProps> = ({
   // Memoize ChatService instance
   const chatService = useMemo(() => {
     const service = new ChatService(chatId)
-    service.setContextWindowMs(contextWindowMs)
+    service.setContextWindowMs(CONTEXT_WINDOW_MS)
     return service
-  }, [chatId, contextWindowMs])
+  }, [chatId])
 
   // Fetch messages for this chat
   const messages = useLiveQuery(() => {
@@ -226,7 +220,7 @@ export const Chat: React.FC<ChatProps> = ({
     try {
       const writer = await getWriter("neutral")
       const attention = attentionContent(
-        await allUserActivityForLastMs(contextWindowMs)
+        await allUserActivityForLastMs(CONTEXT_WINDOW_MS)
       )
       const previousMessages = `\n\nThe previous messages are: ${messages
         .filter((m) => m.type === "text")
@@ -326,38 +320,29 @@ export const Chat: React.FC<ChatProps> = ({
             <div ref={messagesEndRef} />
           </>
         ) : (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center text-slate-400 dark:text-slate-500">
-              <div className="mb-3 flex justify-center">
-                <div className="p-3 bg-slate-100 dark:bg-slate-700 rounded-full">
-                  <MessageSquare size={32} className="opacity-50" />
+          <div className="flex items-end justify-center h-full p-6 ">
+            <div className="backdrop-blur-xs bg-white/40 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-700/50 rounded-xl shadow-lg p-4 max-w-sm w-full">
+              <div className="text-center">
+                <div className="mb-2 flex justify-center">
+                  <div className="p-2 bg-gradient-to-br from-blue-500/20 to-purple-500/20 dark:from-blue-600/30 dark:to-purple-600/30 rounded-xl backdrop-blur-sm">
+                    <MessageSquare
+                      size={28}
+                      className="text-blue-600 dark:text-blue-400"
+                    />
+                  </div>
                 </div>
+                <h3 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-1">
+                  Start a Conversation
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Ask me anything about your browsing activity, get insights, or
+                  just chat!
+                </p>
               </div>
-              <p className="text-sm mt-1">Start a conversation!</p>
             </div>
           </div>
         )}
       </div>
-
-      {/* Context Window Selector - Only shown when no messages */}
-      {(!messages || messages.length === 0) && (
-        <div className="border-t border-slate-200 dark:border-slate-700 px-4 py-2 bg-slate-50/30 dark:bg-slate-800/30">
-          <div className="flex items-center gap-2 text-xs px-2 flex-wrap">
-            {CONTEXT_WINDOWS.map((window) => (
-              <button
-                key={window.value}
-                onClick={() => setContextWindowMs(window.value)}
-                className={`px-2 py-1 rounded transition-all duration-200 whitespace-nowrap ${
-                  contextWindowMs === window.value
-                    ? "bg-blue-600 text-white"
-                    : "text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-200 dark:hover:bg-slate-700"
-                }`}>
-                {window.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Input Container */}
       <div className="border-t border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/50">

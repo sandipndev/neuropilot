@@ -454,7 +454,7 @@ const Popup = () => {
                   onClick={() =>
                     chrome.tabs.create({ url: "/tabs/dashboard.html" })
                   }
-                  className="group relative bg-gradient-to-br from-blue-500/90 to-purple-600/90 hover:from-blue-600 hover:to-purple-700 backdrop-blur-md px-3 py-2 rounded-xl border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95"
+                  className="cursor-pointer h-10 relative bg-gradient-to-br from-blue-500/90 to-purple-600/90 hover:from-blue-600 hover:to-purple-700 backdrop-blur-md px-3 py-2 rounded-xl border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95"
                   aria-label="Open Dashboard">
                   <div className="flex items-center gap-1.5">
                     <LayoutDashboard className="w-4 h-4 text-white" />

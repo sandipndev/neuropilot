@@ -71,9 +71,24 @@ export const Chat: React.FC<ChatProps> = ({
 
   // Watch for new chat intents and add them to the message text
   useEffect(() => {
+    const base64ToFile = (base64String: string, filename: string) => {
+      const arr = base64String.split(",")
+      const mime = arr[0].match(/:(.*?);/)[1]
+      const bstr = atob(arr[1])
+      const n = bstr.length
+      const u8arr = new Uint8Array(n)
+      for (let i = 0; i < n; i++) u8arr[i] = bstr.charCodeAt(i)
+      return new File([u8arr], filename, { type: mime })
+    }
+
     if (latestIntent && latestIntent.type === "CHAT") {
-      // Add the payload to the message text
-      setMessageText(latestIntent.payload)
+      if (latestIntent.payloadType === "TEXT") {
+        setMessageText(latestIntent.payload)
+      } else if (latestIntent.payloadType === "IMAGE") {
+        setSelectedImages([base64ToFile(latestIntent.payload, "image.png")])
+      } else if (latestIntent.payloadType === "AUDIO") {
+        setSelectedAudios([base64ToFile(latestIntent.payload, "audio.mp3")])
+      }
 
       // Consume the intent by deleting it from the queue
       db.table<Intent>("intentQueue")

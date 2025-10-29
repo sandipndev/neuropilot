@@ -115,7 +115,19 @@ const Popup = () => {
           .limit(1)
           .toArray()
 
-        if (iq && iq[0].type !== "CHAT") setActiveTab("intents")
+        if (
+          iq &&
+          iq[0].type !== "CHAT" &&
+          iq[0].name !== "chat-with-this-page"
+        ) {
+          setActiveTab("intents")
+        } else if (
+          iq &&
+          iq[0].type === "CHAT" &&
+          iq[0].name === "chat-with-this-page"
+        ) {
+          setActiveTab("focus")
+        }
       }
     })
   }, [])

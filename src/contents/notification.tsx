@@ -13,6 +13,9 @@ const storage = new Storage()
 storage.watch({
   [NOTIFICATION_STORAGE_KEY]: ({ newValue }) => {
     console.log("Notification received", newValue)
+    // Dismiss all existing toasts before showing the new one
+    toast.dismiss()
+
     if (newValue.type === NotificationMessageType.DOOMSCROLLING_DETECTED) {
       toast("You are doomscrolling!")
     }

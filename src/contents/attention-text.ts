@@ -83,6 +83,8 @@ const initTextTracker = async () => {
 
       if (!deltaText) return
 
+      console.log("attention-text", { deltaText, deltaWords })
+
       readingProgressTracker.set(textHash, wordsRead)
       await sendToBackground({
         name: COGNITIVE_ATTENTION_TEXT_MESSAGE_NAME,

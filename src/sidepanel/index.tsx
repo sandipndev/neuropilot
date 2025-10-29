@@ -203,12 +203,17 @@ const Popup = () => {
     return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
   }, [pomodoroState])
 
+  const handleNewChatRequest = useCallback(() => {
+    setCurrentChatId(generateChatId())
+  }, [])
+
   const renderFocusTab = () => (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       <Chat
         chatId={currentChatId}
         isNewChat={true}
         onChatCreated={(id) => setCurrentChatId(id)}
+        onNewChatRequested={handleNewChatRequest}
       />
     </div>
   )
@@ -458,9 +463,9 @@ const Popup = () => {
                   aria-label="Open Dashboard">
                   <div className="flex items-center gap-1.5">
                     <LayoutDashboard className="w-4 h-4 text-white" />
-                    <span className="text-xs font-semibold text-white">
+                    {/* <span className="text-xs font-semibold text-white">
                       Dashboard
-                    </span>
+                    </span> */}
                   </div>
                   {/* Subtle glow effect */}
                   <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-400 to-purple-500 opacity-0 group-hover:opacity-20 blur-md transition-opacity duration-300 -z-10" />
@@ -468,14 +473,14 @@ const Popup = () => {
 
                 {/* Pomodoro Timer - Enhanced */}
                 <div className="relative group/pomodoro">
-                  <div className="flex items-center gap-2 bg-gradient-to-br from-white/40 to-white/20 dark:from-slate-800/40 dark:to-slate-900/30 backdrop-blur-md px-4 py-2 rounded-xl border border-white/30 dark:border-slate-600/40 shadow-lg hover:shadow-xl transition-all duration-300">
-                    {/* Progress indicator background */}
+                  <div className="flex items-center gap-2 bg-gradient-to-r from-emerald-100/70 via-emerald-50/40 to-white/20 dark:from-emerald-900/50 dark:via-emerald-950/30 dark:to-slate-900/30 backdrop-blur-md px-4 py-2 rounded-xl border border-white/30 dark:border-slate-600/40 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+                    {/* Progress indicator background - Subtle fill */}
                     <div
-                      className={`absolute inset-0 rounded-xl transition-all duration-1000 ${
+                      className={`absolute inset-0 rounded-xl transition-all duration-1000 ease-in-out ${
                         pomodoroState.isActive
                           ? pomodoroState.state === "focus"
-                            ? "bg-gradient-to-r from-red-500/10 to-orange-500/10 dark:from-red-600/20 dark:to-orange-600/20"
-                            : "bg-gradient-to-r from-green-500/10 to-teal-500/10 dark:from-green-600/20 dark:to-teal-600/20"
+                            ? "bg-gradient-to-r from-red-500/5 via-orange-500/5 to-transparent dark:from-red-600/10 dark:via-orange-600/10 dark:to-transparent"
+                            : "bg-gradient-to-r from-green-500/5 via-teal-500/5 to-transparent dark:from-green-600/10 dark:via-teal-600/10 dark:to-transparent"
                           : "bg-transparent"
                       }`}
                       style={{
@@ -484,7 +489,9 @@ const Popup = () => {
                             ? ((1500 - pomodoroState.remainingTime) / 1500) *
                               100
                             : ((300 - pomodoroState.remainingTime) / 300) * 100
-                        }%`
+                        }%`,
+                        mixBlendMode: "multiply",
+                        backdropFilter: "blur(4px)"
                       }}
                     />
 

@@ -13,6 +13,8 @@ const handler: PlasmoMessaging.MessageHandler = async (req) => {
   const text = req.body.text
   const timestamp = req.body.timestamp
 
+  console.debug("cognitive-attention-text", { url, text, timestamp })
+
   await db.table<TextAttention>("textAttention").put({
     url,
     text,

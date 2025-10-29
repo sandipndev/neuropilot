@@ -66,6 +66,15 @@ export type ChatMessage = {
   content: string
 }
 
+export type ProcessedIntent = {
+  id?: number
+  intentId: number
+  intentType: string
+  originalText: string
+  result: string
+  timestamp: number
+}
+
 class NeuropilotDB extends Dexie {
   focus!: Table<Focus>
   pulse!: Table<Pulse>
@@ -75,6 +84,7 @@ class NeuropilotDB extends Dexie {
   chatMessages!: Table<ChatMessage>
   pastWins!: Table<PastWin>
   pomodoro!: Table<PomodoroState>
+  processedIntents!: Table<ProcessedIntent>
 
   constructor() {
     super("Neuropilot")
@@ -97,6 +107,11 @@ class NeuropilotDB extends Dexie {
       pastWins: "++id, time_spent",
       pomodoro: "&id, lastUpdated",
       intentQueue: "++id, timestamp"
+    })
+
+    // Version 2: Add processed intents table
+    this.version(2).stores({
+      processedIntents: "++id, intentId, timestamp"
     })
   }
 }

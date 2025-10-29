@@ -36,6 +36,11 @@ const doomscrollingDetectionTask = async () => {
     )
   }, 0)
 
+  console.debug("doomscrollingDetectionTask", {
+    totalAttentionItems,
+    itemsThreshold
+  })
+
   if (totalAttentionItems < itemsThreshold) {
     await sendNotification(
       NotificationMessageType.DOOMSCROLLING_DETECTED,

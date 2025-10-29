@@ -13,6 +13,7 @@ interface ChatProps {
   isNewChat?: boolean
   onChatCreated?: (chatId: string) => void
   onUsageUpdate?: (usage: { inputUsage: number; inputQuota: number }) => void
+  onNewChatRequested?: () => void
 }
 
 // Fixed context window of 30 minutes
@@ -22,7 +23,8 @@ export const Chat: React.FC<ChatProps> = ({
   chatId,
   isNewChat = false,
   onChatCreated,
-  onUsageUpdate
+  onUsageUpdate,
+  onNewChatRequested
 }) => {
   const [messageText, setMessageText] = useState("")
   const [isStreaming, setIsStreaming] = useState(false)
@@ -30,9 +32,12 @@ export const Chat: React.FC<ChatProps> = ({
   const [selectedImages, setSelectedImages] = useState<File[]>([])
   const [selectedAudios, setSelectedAudios] = useState<File[]>([])
   const [writing, setWriting] = useState(false)
+  const [messagesHeight, setMessagesHeight] = useState(90) // percentage
+  const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const audioInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const MAX_FILES = 5
 
@@ -73,6 +78,39 @@ export const Chat: React.FC<ChatProps> = ({
       }
     }
   }, [chatService])
+
+  // Handle dragging for resizable divider
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging || !containerRef.current) return
+
+      const containerRect = containerRef.current.getBoundingClientRect()
+      const newHeight =
+        ((e.clientY - containerRect.top) / containerRect.height) * 100
+
+      // Constrain between 20% and 80%
+      const constrainedHeight = Math.max(20, Math.min(80, newHeight))
+      setMessagesHeight(constrainedHeight)
+    }
+
+    const handleMouseUp = () => {
+      setIsDragging(false)
+    }
+
+    if (isDragging) {
+      document.addEventListener("mousemove", handleMouseMove)
+      document.addEventListener("mouseup", handleMouseUp)
+      document.body.style.cursor = "ns-resize"
+      document.body.style.userSelect = "none"
+    }
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove)
+      document.removeEventListener("mouseup", handleMouseUp)
+      document.body.style.cursor = ""
+      document.body.style.userSelect = ""
+    }
+  }, [isDragging])
 
   const handleSendMessage = async () => {
     if (
@@ -282,9 +320,11 @@ export const Chat: React.FC<ChatProps> = ({
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div ref={containerRef} className="flex flex-col h-full">
       {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-2">
+      <div
+        className="overflow-y-auto p-6 space-y-2 relative"
+        style={{ height: `${messagesHeight}%` }}>
         {messages && messages.length > 0 ? (
           <>
             {messages.map(renderMessage)}
@@ -342,150 +382,174 @@ export const Chat: React.FC<ChatProps> = ({
             </div>
           </div>
         )}
-      </div>
 
-      {/* Input Container */}
-      <div className="border-t border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/50">
-        {/* Selected Files Preview */}
-        {(selectedImages.length > 0 || selectedAudios.length > 0) && (
-          <div className="px-4 pt-3 pb-2 border-b border-slate-200 dark:border-slate-700">
-            <div className="flex flex-wrap gap-2">
-              {selectedImages.map((image, idx) => (
-                <div
-                  key={`img-${idx}`}
-                  className="relative group bg-slate-200 dark:bg-slate-700 rounded-lg p-2 flex items-center gap-2">
-                  <Image
-                    size={16}
-                    className="text-slate-600 dark:text-slate-400"
-                  />
-                  <span className="text-xs text-slate-700 dark:text-slate-300 max-w-[100px] truncate">
-                    {image.name}
-                  </span>
-                  <button
-                    onClick={() => removeImage(idx)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700 dark:hover:text-red-400 text-lg leading-none"
-                    title="Remove">
-                    ×
-                  </button>
-                </div>
-              ))}
-              {selectedAudios.map((audio, idx) => (
-                <div
-                  key={`audio-${idx}`}
-                  className="relative group bg-slate-200 dark:bg-slate-700 rounded-lg p-2 flex items-center gap-2">
-                  <Mic
-                    size={16}
-                    className="text-slate-600 dark:text-slate-400"
-                  />
-                  <span className="text-xs text-slate-700 dark:text-slate-300 max-w-[100px] truncate">
-                    {audio.name}
-                  </span>
-                  <button
-                    onClick={() => removeAudio(idx)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700 dark:hover:text-red-400 text-lg leading-none"
-                    title="Remove">
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
+        {/* Floating New Chat Button - Only show when messages exist */}
+        {messages && messages.length > 0 && onNewChatRequested && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
+            <button
+              onClick={onNewChatRequested}
+              className="group flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white/40 dark:bg-slate-800/40 backdrop-blur-md border border-white/60 dark:border-slate-600/60 rounded-full shadow-lg hover:shadow-xl hover:bg-white/60 dark:hover:bg-slate-800/60 transition-all duration-300 hover:scale-105 active:scale-95">
+              <span className="text-lg leading-none">+</span>
+              <span>new chat</span>
+            </button>
           </div>
         )}
+      </div>
 
-        <div className="p-4 backdrop-blur-sm">
-          <div className="flex items-center gap-2">
-            {/* Image Upload */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImageUpload}
-              className="hidden"
-            />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={
-                selectedImages.length + selectedAudios.length >= MAX_FILES ||
-                isStreaming
-              }
-              className="p-2.5 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Attach Image">
-              <Image size={20} />
-            </button>
+      {/* Draggable Divider */}
+      <div
+        onMouseDown={() => setIsDragging(true)}
+        className={`h-1 bg-slate-200 dark:bg-slate-700 hover:bg-blue-400 dark:hover:bg-blue-600 cursor-ns-resize transition-colors flex-shrink-0 ${
+          isDragging ? "bg-blue-500 dark:bg-blue-500" : ""
+        }`}
+        title="Drag to resize"
+      />
 
-            {/* Audio Upload */}
-            <input
-              ref={audioInputRef}
-              type="file"
-              accept="audio/*"
-              multiple
-              onChange={handleAudioUpload}
-              className="hidden"
-            />
-            <button
-              onClick={() => audioInputRef.current?.click()}
-              disabled={
-                selectedImages.length + selectedAudios.length >= MAX_FILES ||
-                isStreaming
-              }
-              className="p-2.5 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Attach Audio">
-              <Mic size={20} />
-            </button>
-
-            {/* Text Input */}
-            <textarea
-              value={messageText}
-              onChange={(e) => setMessageText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault()
-                  handleSendMessage()
-                }
-              }}
-              disabled={writing}
-              placeholder={
-                writing ? "Writing a prompt..." : "Type a message..."
-              }
-              className={`${writing && "animate-pulse"} flex-1 resize-y border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 focus:border-transparent placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200`}
-              // rows={1}
-            />
-
-            {/* Write / Rewrite Button */}
-            <button
-              onClick={messageText.trim() ? handleRewrite : handleWrite}
-              disabled={isStreaming || writing}
-              className="p-2.5 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              title={
-                messageText.trim()
-                  ? "Rewrite with AI"
-                  : "Generate message with AI"
-              }>
-              <Sparkles size={20} />
-            </button>
-
-            {/* Send Button */}
-            <button
-              onClick={handleSendMessage}
-              disabled={
-                (!messageText.trim() &&
-                  selectedImages.length === 0 &&
-                  selectedAudios.length === 0) ||
-                isStreaming
-              }
-              className="p-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-600 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md disabled:shadow-none"
-              title="Send Message">
-              {isStreaming ? (
-                <div className="w-5 h-5 flex items-center justify-center">
+      {/* Bottom Section Container - Takes remaining height */}
+      <div
+        className="flex flex-col"
+        style={{ height: `${100 - messagesHeight}%` }}>
+        {/* Input Container */}
+        <div className="flex-1 flex flex-col justify-end border-t border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/50">
+          {/* Selected Files Preview */}
+          {(selectedImages.length > 0 || selectedAudios.length > 0) && (
+            <div className="px-4 pt-3 pb-2 border-b border-slate-200 dark:border-slate-700">
+              <div className="flex flex-wrap gap-2">
+                {selectedImages.map((image, idx) => (
                   <div
-                    className="w-2 h-2 rounded-full"
-                    style={{
-                      animation: "pulse 1.5s ease-in-out infinite",
-                      boxShadow: "0 0 0 1px rgba(0, 0, 0, 0.2)"
-                    }}
-                  />
-                  <style>{`
+                    key={`img-${idx}`}
+                    className="relative group bg-slate-200 dark:bg-slate-700 rounded-lg p-2 flex items-center gap-2">
+                    <Image
+                      size={16}
+                      className="text-slate-600 dark:text-slate-400"
+                    />
+                    <span className="text-xs text-slate-700 dark:text-slate-300 max-w-[100px] truncate">
+                      {image.name}
+                    </span>
+                    <button
+                      onClick={() => removeImage(idx)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700 dark:hover:text-red-400 text-lg leading-none"
+                      title="Remove">
+                      ×
+                    </button>
+                  </div>
+                ))}
+                {selectedAudios.map((audio, idx) => (
+                  <div
+                    key={`audio-${idx}`}
+                    className="relative group bg-slate-200 dark:bg-slate-700 rounded-lg p-2 flex items-center gap-2">
+                    <Mic
+                      size={16}
+                      className="text-slate-600 dark:text-slate-400"
+                    />
+                    <span className="text-xs text-slate-700 dark:text-slate-300 max-w-[100px] truncate">
+                      {audio.name}
+                    </span>
+                    <button
+                      onClick={() => removeAudio(idx)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-700 dark:hover:text-red-400 text-lg leading-none"
+                      title="Remove">
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="p-2 backdrop-blur-sm flex-1 flex flex-col">
+            <div className="flex-1 flex items-stretch gap-2 min-h-0">
+              {/* Image Upload */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={
+                  selectedImages.length + selectedAudios.length >= MAX_FILES ||
+                  isStreaming
+                }
+                className="p-2 self-center text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Attach Image">
+                <Image size={18} />
+              </button>
+
+              {/* Audio Upload */}
+              <input
+                ref={audioInputRef}
+                type="file"
+                accept="audio/*"
+                multiple
+                onChange={handleAudioUpload}
+                className="hidden"
+              />
+              <button
+                onClick={() => audioInputRef.current?.click()}
+                disabled={
+                  selectedImages.length + selectedAudios.length >= MAX_FILES ||
+                  isStreaming
+                }
+                className="p-2 self-center text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Attach Audio">
+                <Mic size={18} />
+              </button>
+
+              {/* Text Input */}
+              <textarea
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault()
+                    handleSendMessage()
+                  }
+                }}
+                disabled={writing}
+                placeholder={
+                  writing ? "Writing a prompt..." : "Type a message..."
+                }
+                className={`${writing && "animate-pulse"} flex-1 resize-none border-2 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:focus:ring-blue-600/50 focus:border-blue-500 dark:focus:border-blue-600 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all duration-200 bg-white dark:bg-slate-800 shadow-sm`}
+              />
+
+              {/* Write / Rewrite Button */}
+              <button
+                onClick={messageText.trim() ? handleRewrite : handleWrite}
+                disabled={isStreaming || writing}
+                className="p-2 self-center text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                title={
+                  messageText.trim()
+                    ? "Rewrite with AI"
+                    : "Generate message with AI"
+                }>
+                <Sparkles size={18} />
+              </button>
+
+              {/* Send Button */}
+              <button
+                onClick={handleSendMessage}
+                disabled={
+                  (!messageText.trim() &&
+                    selectedImages.length === 0 &&
+                    selectedAudios.length === 0) ||
+                  isStreaming
+                }
+                className="p-2 self-center bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:from-slate-300 disabled:to-slate-400 dark:disabled:from-slate-600 dark:disabled:to-slate-700 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg disabled:shadow-none"
+                title="Send Message">
+                {isStreaming ? (
+                  <div className="w-[18px] h-[18px] flex items-center justify-center">
+                    <div
+                      className="w-2 h-2 rounded-full"
+                      style={{
+                        animation: "pulse 1.5s ease-in-out infinite",
+                        boxShadow: "0 0 0 1px rgba(0, 0, 0, 0.2)"
+                      }}
+                    />
+                    <style>{`
                     @keyframes pulse {
                       0%, 100% {
                         opacity: 1;
@@ -497,11 +561,12 @@ export const Chat: React.FC<ChatProps> = ({
                       }
                     }
                   `}</style>
-                </div>
-              ) : (
-                <Send size={20} />
-              )}
-            </button>
+                  </div>
+                ) : (
+                  <Send size={18} />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -284,14 +284,14 @@ export const IntroductionStep: React.FC<IntroductionStepProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className="relative">
-              {/* Exploding/Fragmenting visualization */}
+            className="absolute inset-0 flex flex-col items-center justify-center isolate">
+            <div className="relative w-full h-full flex flex-col items-center justify-center">
+              {/* === Exploding/Fragmenting visualization (background layer) === */}
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ duration: 0.3 }}
-                className="relative">
+                className="absolute inset-0 flex items-center justify-center z-0">
                 {/* Center broken pieces */}
                 {[...Array(20)].map((_, i) => {
                   const angle = (i / 20) * Math.PI * 2
@@ -323,9 +323,10 @@ export const IntroductionStep: React.FC<IntroductionStepProps> = ({
                         marginTop: -size / 2
                       }}>
                       <div
-                        className="w-full h-full rounded-lg bg-gradient-to-br shadow-lg"
+                        className="w-full h-full rounded-lg shadow-lg"
                         style={{
-                          background: `linear-gradient(135deg, hsl(${i * 18}, 70%, 60%), hsl(${i * 18 + 30}, 70%, 50%))`
+                          background: `linear-gradient(135deg, hsl(${i * 18}, 70%, 60%), hsl(${i * 18 + 30}, 70%, 50%))`,
+                          opacity: 0.8
                         }}
                       />
                     </motion.div>
@@ -334,8 +335,14 @@ export const IntroductionStep: React.FC<IntroductionStepProps> = ({
 
                 {/* Chaotic lines connecting fragments */}
                 <svg
-                  className="absolute inset-0 w-full h-full"
-                  style={{ width: 600, height: 600, left: -300, top: -300 }}>
+                  className="absolute"
+                  style={{
+                    width: 600,
+                    height: 600,
+                    left: "50%",
+                    top: "50%",
+                    transform: "translate(-50%, -50%)"
+                  }}>
                   {[...Array(8)].map((_, i) => {
                     const angle1 = (i / 8) * Math.PI * 2
                     return (
@@ -361,13 +368,13 @@ export const IntroductionStep: React.FC<IntroductionStepProps> = ({
                 </svg>
               </motion.div>
 
-              {/* Text */}
+              {/* === Text Overlay (foreground layer) === */}
               <motion.div
                 initial={{ y: 50, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.3 }}
-                style={{ zIndex: 9999 }}
-                className="text-center mt-32 space-y-4 z-999">
+                className="relative z-10 text-center mt-32 space-y-4" // z-10 above animation
+              >
                 <h2 className="text-7xl font-bold text-white">
                   Your attention is{" "}
                   <span className="bg-gradient-to-r from-red-400 via-orange-400 to-rose-400 bg-clip-text text-transparent">

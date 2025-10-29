@@ -277,5 +277,6 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     }
   }
 
+  await new Promise((resolve) => setTimeout(resolve, 2000))
   await storage.set(INTENT_QUEUE_NOTIFY, Date.now())
 })

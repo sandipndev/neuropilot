@@ -1,12 +1,24 @@
 import { useLiveQuery } from "dexie-react-hooks"
-import { Award, BarChart3, Compass, Flame, Target, Trophy } from "lucide-react"
+import {
+  Award,
+  BarChart3,
+  Compass,
+  Flame,
+  Lightbulb,
+  Target,
+  Trophy
+} from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 
+import { Storage } from "@plasmohq/storage"
+
 import db, { type Focus, type PomodoroState } from "~db"
+import { INTENT_QUEUE_NOTIFY } from "~default-settings"
 
 import { parseFocus, type FocusWithParsedData } from "./api/focus"
 import { getPomodoroState, togglePomodoro } from "./api/pomodoro"
 import { getWinsData } from "./api/wins"
+import { IntentsTab } from "./components/IntentsTab"
 import { TreeAnimationSection } from "./components/TreeAnimationSection"
 import type { WinItem } from "./types/wins"
 
@@ -14,10 +26,12 @@ import "./index.css"
 
 import { Chat } from "~options/chat/chat"
 
-type TabType = "focus" | "insights" | "explore"
+type TabType = "focus" | "insights" | "explore" | "intents"
 
 const generateChatId = () =>
   `chat-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
+
+const storage = new Storage()
 
 const Popup = () => {
   const [activeTab, setActiveTab] = useState<TabType>("focus")
@@ -29,7 +43,10 @@ const Popup = () => {
   }, [])
 
   useEffect(() => {
-    if (!focusDataDex || focusDataDex.length === 0) return
+    if (!focusDataDex || focusDataDex.length === 0) {
+      setFocusData(null)
+      return
+    }
 
     let interval: number | null = null
 
@@ -38,25 +55,25 @@ const Popup = () => {
     )[0]
 
     console.log(currentFocus)
-    setFocusData(parseFocus(currentFocus))
 
-    // const lastSession =
-    //   currentFocus.time_spent[currentFocus.time_spent.length - 1]
-    // if (lastSession && lastSession.end === null) {
-    //   parseFocus(currentFocus)
-    // }
-
-    updateTimeSpent(parseFocus(currentFocus))
-
+    // Check if the focus session is currently active
     const lastSession =
       currentFocus.time_spent[currentFocus.time_spent.length - 1]
     const isActive = lastSession && lastSession.end === null
 
     if (isActive) {
+      // Only set focusData if there's an active session
+      const parsedFocus = parseFocus(currentFocus)
+      setFocusData(parsedFocus)
+      updateTimeSpent(parsedFocus)
+
       // update the time spent every second
       interval = setInterval(() => {
         updateTimeSpent(parseFocus(currentFocus))
       }, 1000) as unknown as number
+    } else {
+      // No active session, clear focusData
+      setFocusData(null)
     }
 
     return () => {
@@ -78,6 +95,16 @@ const Popup = () => {
     totalPomodoros: 0,
     lastUpdated: Date.now()
   })
+
+  // Watch for intent queue changes and switch to Intents tab
+  useEffect(() => {
+    storage.watch({
+      [INTENT_QUEUE_NOTIFY]: ({ newValue }) => {
+        console.log("Intent queue notify received", newValue)
+        setActiveTab("intents")
+      }
+    })
+  }, [])
   const [formattedFocusTime, setFormattedFocusTime] = useState("00:00:00")
 
   const updateTimeSpent = (focusData: FocusWithParsedData) => {
@@ -484,22 +511,6 @@ const Popup = () => {
                   <p className="text-xs text-gray-600 dark:text-gray-400 italic text-center mb-3">
                     Spend 7 minutes of focus time to learn something new 🌱
                   </p>
-                  {activitySummaries && activitySummaries.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-gray-300/30 dark:border-slate-600/30">
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 font-medium">
-                        Recent Activity:
-                      </p>
-                      <div className="space-y-2 max-h-32 overflow-y-auto">
-                        {activitySummaries.slice(0, 5).map((summary, index) => (
-                          <div
-                            key={index}
-                            className="text-xs text-gray-700 dark:text-gray-300 bg-white/40 dark:bg-slate-700/40 rounded px-2 py-1.5">
-                            {summary.summary}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -507,12 +518,12 @@ const Popup = () => {
 
           {/* Main Content Card with Integrated Tabs */}
           <div className="bg-white/25 dark:bg-slate-800/25 rounded-2xl border border-white/20 dark:border-slate-700/30 flex-1 overflow-hidden flex flex-col">
-            {/* Subtle Tab Bar */}
-            <div className="shrink-0 p-2 border-b border-slate-200 dark:border-slate-700/20">
+            {/* Subtle Tab Bar - Horizontally Scrollable */}
+            <div className="shrink-0 p-2 border-b border-slate-200 dark:border-slate-700/20 overflow-x-auto scrollbar-hide">
               <div className="bg-white/20 dark:bg-slate-900/20 backdrop-blur-sm rounded-xl p-1 inline-flex gap-1 mx-auto">
                 <button
                   onClick={() => setActiveTab("focus")}
-                  className={`relative px-5 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                  className={`relative px-5 py-2 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap ${
                     activeTab === "focus"
                       ? "bg-white/60 dark:bg-slate-700/60 text-gray-900 dark:text-white shadow-sm"
                       : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/30 dark:hover:bg-slate-700/30"
@@ -524,7 +535,7 @@ const Popup = () => {
                 </button>
                 <button
                   onClick={() => setActiveTab("insights")}
-                  className={`relative px-5 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                  className={`relative px-5 py-2 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap ${
                     activeTab === "insights"
                       ? "bg-white/60 dark:bg-slate-700/60 text-gray-900 dark:text-white shadow-sm"
                       : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/30 dark:hover:bg-slate-700/30"
@@ -535,8 +546,20 @@ const Popup = () => {
                   </div>
                 </button>
                 <button
+                  onClick={() => setActiveTab("intents")}
+                  className={`relative px-5 py-2 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap ${
+                    activeTab === "intents"
+                      ? "bg-white/60 dark:bg-slate-700/60 text-gray-900 dark:text-white shadow-sm"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/30 dark:hover:bg-slate-700/30"
+                  }`}>
+                  <div className="flex items-center gap-1.5">
+                    <Lightbulb className="w-3.5 h-3.5" />
+                    <span>Intents</span>
+                  </div>
+                </button>
+                <button
                   onClick={() => setActiveTab("explore")}
-                  className={`relative px-5 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                  className={`relative px-5 py-2 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap ${
                     activeTab === "explore"
                       ? "bg-white/60 dark:bg-slate-700/60 text-gray-900 dark:text-white shadow-sm"
                       : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/30 dark:hover:bg-slate-700/30"
@@ -553,6 +576,7 @@ const Popup = () => {
             <div className="flex-1 overflow-y-scroll py-2">
               {activeTab === "focus" && renderFocusTab()}
               {activeTab === "insights" && renderInsightsTab()}
+              {activeTab === "intents" && <IntentsTab />}
               {activeTab === "explore" && renderExploreTab()}
             </div>
           </div>

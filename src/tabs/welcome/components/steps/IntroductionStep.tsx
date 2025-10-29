@@ -291,7 +291,7 @@ export const IntroductionStep: React.FC<IntroductionStepProps> = ({
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ duration: 0.3 }}
-                className="absolute inset-0 flex items-center justify-center z-0">
+                className="absolute inset-0 flex items-center justify-center z-0 -mt-40">
                 {/* Center broken pieces */}
                 {[...Array(20)].map((_, i) => {
                   const angle = (i / 20) * Math.PI * 2
@@ -373,7 +373,7 @@ export const IntroductionStep: React.FC<IntroductionStepProps> = ({
                 initial={{ y: 50, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.3 }}
-                className="relative z-10 text-center mt-32 space-y-4" // z-10 above animation
+                className="relative z-10 text-center -mb-80 space-y-4" // z-10 above animation
               >
                 <h2 className="text-7xl font-bold text-white">
                   Your attention is{" "}

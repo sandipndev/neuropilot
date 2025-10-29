@@ -252,7 +252,7 @@ const Popup = () => {
   const renderInsightsTab = () => (
     <div className="flex-1 overflow-y-auto p-2 space-y-4">
       {/* Refresher Quiz Section */}
-      <div className="bg-white/40 dark:bg-slate-700/40 rounded-xl border border-gray-300/50 dark:border-slate-600/50 p-5">
+      <div className="bg-white/40 dark:bg-slate-700/40 backdrop-blur-sm rounded-xl border border-gray-300/50 dark:border-slate-600/50 p-5">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-purple-100/80 dark:bg-purple-900/40 backdrop-blur-sm rounded-lg border border-purple-200/50 dark:border-purple-800/50">
             <Award className="w-5 h-5 text-purple-600 dark:text-purple-400" />
@@ -287,7 +287,7 @@ const Popup = () => {
       </div>
 
       {/* Activity Summaries Section */}
-      <div className="bg-white/40 dark:bg-slate-700/40 rounded-xl border border-gray-300/50 dark:border-slate-600/50 p-5">
+      <div className="bg-white/40 dark:bg-slate-700/40 backdrop-blur-sm rounded-xl border border-gray-300/50 dark:border-slate-600/50 p-5">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-blue-100/80 dark:bg-blue-900/40 backdrop-blur-sm rounded-lg border border-blue-200/50 dark:border-blue-800/50">
             <BarChart3 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -322,7 +322,7 @@ const Popup = () => {
       </div>
 
       {/* Focus History Section */}
-      <div className="bg-white/40 dark:bg-slate-700/40 backdrop-blur-md rounded-xl border border-gray-300/50 dark:border-slate-600/50 p-5">
+      <div className="bg-white/40 dark:bg-slate-700/40 backdrop-blur-sm rounded-xl border border-gray-300/50 dark:border-slate-600/50 p-5">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-green-100/80 dark:bg-green-900/40 backdrop-blur-sm rounded-lg border border-green-200/50 dark:border-green-800/50">
             <Target className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -367,7 +367,7 @@ const Popup = () => {
   const renderExploreTab = () => (
     <div className="flex-1 overflow-y-auto p-2 space-y-4">
       {/* Wins Section */}
-      <div className="bg-white/40 dark:bg-slate-700/40 rounded-xl border border-gray-300/50 dark:border-slate-600/50 p-5">
+      <div className="bg-white/40 dark:bg-slate-700/40 backdrop-blur-xs rounded-xl border border-gray-300/50 dark:border-slate-600/50 p-5">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-yellow-100/80 dark:bg-yellow-900/40 backdrop-blur-sm rounded-lg border border-yellow-200/50 dark:border-yellow-800/50">
             <Trophy className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
@@ -409,7 +409,7 @@ const Popup = () => {
       </div>
 
       {/* Milestones Section */}
-      <div className="bg-white/40 dark:bg-slate-700/40 backdrop-blur-md rounded-xl border border-gray-300/50 dark:border-slate-600/50 p-5">
+      <div className="bg-white/40 dark:bg-slate-700/40 backdrop-blur-xs rounded-xl border border-gray-300/50 dark:border-slate-600/50 p-5">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-purple-100/80 dark:bg-purple-900/40 backdrop-blur-sm rounded-lg border border-purple-200/50 dark:border-purple-800/50">
             <Award className="w-5 h-5 text-purple-600 dark:text-purple-400" />
@@ -466,13 +466,13 @@ const Popup = () => {
           {/* Header - No Card */}
           <div className="shrink-0 px-2">
             <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mt-2">
                 <img
                   src="/assets/logo_NPxx.png"
                   className="w-20 bg-transparent"
-                  style={{
-                    filter: "grayscale(100%) contrast(300%) brightness(1%)"
-                  }}
+                  // style={{
+                  //   filter: "hue-rotate(40deg)"
+                  // }}
                 />
               </div>
               <div className="flex items-center gap-2">

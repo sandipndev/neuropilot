@@ -58,12 +58,13 @@ export const Chat: React.FC<ChatProps> = ({
       .toArray()
   }, [chatId])
 
-  // Fetch the latest intent
+  // Fetch the latest unprocessed intent
   const latestIntent = useLiveQuery(async () => {
     const intents = await db
       .table<Intent>("intentQueue")
       .orderBy("timestamp")
       .reverse()
+      .filter((intent) => !intent.processed)
       .limit(1)
       .toArray()
     return intents[0]
@@ -429,12 +430,12 @@ export const Chat: React.FC<ChatProps> = ({
           </div>
         )}
 
-        {/* Floating New Chat Button - Only show when messages exist */}
-        {messages && messages.length > 0 && onNewChatRequested && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
+        {/* Floating New Chat Button - Only show after first complete conversation */}
+        {messages && messages.length >= 2 && onNewChatRequested && (
+          <div className="sticky bottom-[15px] left-1/2 -translate-x-1/2 z-10 w-fit mx-auto pointer-events-none">
             <button
               onClick={onNewChatRequested}
-              className="group flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white/40 dark:bg-slate-800/40 backdrop-blur-md border border-white/60 dark:border-slate-600/60 rounded-full shadow-lg hover:shadow-xl hover:bg-white/60 dark:hover:bg-slate-800/60 transition-all duration-300 hover:scale-105 active:scale-95">
+              className="pointer-events-auto group flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white/40 dark:bg-slate-800/40 backdrop-blur-md border border-white/60 dark:border-slate-600/60 rounded-full shadow-lg hover:shadow-xl hover:bg-white/60 dark:hover:bg-slate-800/60 transition-all duration-300 hover:scale-105 active:scale-95">
               <span className="text-lg leading-none">+</span>
               <span>new chat</span>
             </button>
@@ -453,8 +454,8 @@ export const Chat: React.FC<ChatProps> = ({
 
       {/* Bottom Section Container - Takes remaining height */}
       <div
-        className="flex flex-col"
-        style={{ height: `${100 - messagesHeight}%` }}>
+        className="flex flex-col flex-1"
+        style={{ height: `${80 - messagesHeight}%` }}>
         {/* Input Container */}
         <div className="flex-1 flex flex-col justify-end border-t border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/50">
           {/* Selected Files Preview */}

@@ -218,7 +218,7 @@ export const IntentsTab = () => {
   return (
     <div className="flex-1 overflow-y-auto p-2 space-y-4">
       {/* Learning Queue Section */}
-      <div className="bg-white/40 dark:bg-slate-700/40 rounded-xl border border-gray-300/50 dark:border-slate-600/50 p-5">
+      <div className="bg-white/40 dark:bg-slate-700/40 backdrop-blur-sm rounded-xl border border-gray-300/50 dark:border-slate-600/50 p-5">
         {intentQueue && intentQueue.length > 0 ? (
           <div className="space-y-3">
             {intentQueue.map((intent, index) => {

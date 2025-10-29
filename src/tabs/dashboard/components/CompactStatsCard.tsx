@@ -183,7 +183,7 @@ export function CompactStatsCard({
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
+                        <span className="text-sm text-gray-700 dark:text-gray-300 ">
                           {item.name}
                         </span>
                         <span className="text-xs text-gray-500 dark:text-gray-400 font-medium tabular-nums">

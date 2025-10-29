@@ -512,7 +512,7 @@ export const Chat: React.FC<ChatProps> = ({
             </div>
           )}
 
-          <div className="p-2 backdrop-blur-sm flex-1 flex flex-col">
+          <div className="p-2 backdrop-blur-xs flex-1 flex flex-col">
             <div className="flex-1 flex items-stretch gap-2 min-h-0">
               {/* Image Upload */}
               <input

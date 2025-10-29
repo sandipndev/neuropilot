@@ -6,6 +6,7 @@ import { CompactPulseCard } from "./components/CompactPulseCard"
 import { CompactQuizCard } from "./components/CompactQuizCard"
 import { CompactStatsCard } from "./components/CompactStatsCard"
 import { Header } from "./components/Header"
+import { JourneyGraph } from "./components/JourneyGraph"
 import Settings from "./components/Settings"
 import { useFocusData } from "./hooks/useFocusData"
 import { usePulseData } from "./hooks/usePulseData"
@@ -169,6 +170,7 @@ function App() {
 
               {/* Right Column - Quiz & Stats */}
               <div className="col-span-7 flex flex-col gap-5 overflow-y-auto scrollbar-thin">
+                <JourneyGraph />
                 <CompactQuizCard
                   questions={questions}
                   unansweredQuestions={unansweredQuestions}

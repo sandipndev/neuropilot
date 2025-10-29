@@ -111,7 +111,8 @@ class NeuropilotDB extends Dexie {
 
     // Version 2: Add processed intents table
     this.version(2).stores({
-      processedIntents: "++id, intentId, timestamp"
+      processedIntents: "++id, intentId, timestamp",
+      websiteVisits: "&url, opened_at"
     })
   }
 }

@@ -96,7 +96,7 @@ const Popup = () => {
     lastUpdated: Date.now()
   })
 
-  // Watch for intent queue changes and switch to Intents tab
+  // Watch for intent queue changes and switch to Learning tab
   useEffect(() => {
     storage.watch({
       [INTENT_QUEUE_NOTIFY]: ({ newValue }) => {
@@ -554,7 +554,7 @@ const Popup = () => {
                   }`}>
                   <div className="flex items-center gap-1.5">
                     <Lightbulb className="w-3.5 h-3.5" />
-                    <span>Intents</span>
+                    <span>Learning</span>
                   </div>
                 </button>
                 <button

@@ -3,6 +3,7 @@ import { Image, MessageSquare, Mic, Send, Sparkles } from "lucide-react"
 import { marked } from "marked"
 import React, { useEffect, useMemo, useRef, useState } from "react"
 
+import type { Intent } from "~background/messages/intent"
 import { ChatService } from "~chat"
 import db, { type ChatMessage } from "~db"
 import { getRewriter, getWriter } from "~model"
@@ -56,6 +57,33 @@ export const Chat: React.FC<ChatProps> = ({
       .equals(chatId)
       .toArray()
   }, [chatId])
+
+  // Fetch the latest intent
+  const latestIntent = useLiveQuery(async () => {
+    const intents = await db
+      .table<Intent>("intentQueue")
+      .orderBy("timestamp")
+      .reverse()
+      .limit(1)
+      .toArray()
+    return intents[0]
+  }, [])
+
+  // Watch for new chat intents and add them to the message text
+  useEffect(() => {
+    if (latestIntent && latestIntent.type === "CHAT") {
+      // Add the payload to the message text
+      setMessageText(latestIntent.payload)
+
+      // Consume the intent by deleting it from the queue
+      db.table<Intent>("intentQueue")
+        .where("timestamp")
+        .equals(latestIntent.timestamp)
+        .modify({
+          processed: true
+        })
+    }
+  }, [latestIntent])
 
   // Auto-scroll to bottom when messages change or during streaming
   useEffect(() => {

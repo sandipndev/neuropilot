@@ -54,33 +54,38 @@ const IntentSchema = z.discriminatedUnion("type", [
     name: z.enum(INTENT_ITEMS),
     type: z.literal("PROOFREAD"),
     text: z.string(),
-    timestamp: z.number()
+    timestamp: z.number(),
+    processed: z.boolean().optional().default(false)
   }),
   z.object({
     name: z.enum(INTENT_ITEMS),
     type: z.literal("TRANSLATE"),
     text: z.string(),
     language: z.enum(Object.keys(CODE_TO_LANGUAGE)),
-    timestamp: z.number()
+    timestamp: z.number(),
+    processed: z.boolean().optional().default(false)
   }),
   z.object({
     name: z.enum(INTENT_ITEMS),
     type: z.literal("REPHRASE"),
     text: z.string(),
-    timestamp: z.number()
+    timestamp: z.number(),
+    processed: z.boolean().optional().default(false)
   }),
   z.object({
     name: z.enum(INTENT_ITEMS),
     type: z.literal("SUMMARIZE"),
     text: z.string(),
-    timestamp: z.number()
+    timestamp: z.number(),
+    processed: z.boolean().optional().default(false)
   }),
   z.object({
     name: z.enum(INTENT_ITEMS),
     type: z.literal("CHAT"),
     payload: z.string(),
     payloadType: z.enum(["IMAGE", "TEXT", "AUDIO"]),
-    timestamp: z.number()
+    timestamp: z.number(),
+    processed: z.boolean().optional().default(false)
   })
 ])
 
@@ -103,7 +108,8 @@ const handler: PlasmoMessaging.MessageHandler = async (req) => {
         type: "CHAT",
         payload: req.body.text,
         payloadType: "TEXT",
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        processed: false
       })
       break
     }
@@ -112,7 +118,8 @@ const handler: PlasmoMessaging.MessageHandler = async (req) => {
         name: "proofread",
         type: "PROOFREAD",
         text: req.body.text,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        processed: false
       })
       break
     }
@@ -121,7 +128,8 @@ const handler: PlasmoMessaging.MessageHandler = async (req) => {
         name: "rephrase",
         type: "REPHRASE",
         text: req.body.text,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        processed: false
       })
       break
     }
@@ -130,7 +138,8 @@ const handler: PlasmoMessaging.MessageHandler = async (req) => {
         name: "summarize",
         type: "SUMMARIZE",
         text: req.body.text,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        processed: false
       })
       break
     }
@@ -140,13 +149,14 @@ const handler: PlasmoMessaging.MessageHandler = async (req) => {
         type: "TRANSLATE",
         text: req.body.text,
         language: req.body.language,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        processed: false
       })
       break
     }
   }
 
-  await new Promise((resolve) => setTimeout(resolve, 2000))
+  await new Promise((resolve) => setTimeout(resolve, 1200))
   await storage.set(INTENT_QUEUE_NOTIFY, Date.now())
 }
 

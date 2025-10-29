@@ -21,7 +21,7 @@ const getIntentIcon = (type: string) => {
 }
 
 export const IntentsTab = () => {
-  const intentQueue = useLiveQuery(() => {
+  const iq = useLiveQuery(() => {
     return db
       .table<Intent>("intentQueue")
       .orderBy("timestamp")
@@ -29,6 +29,7 @@ export const IntentsTab = () => {
       .limit(20)
       .toArray()
   }, [])
+  const intentQueue = iq?.filter((intent) => intent.type !== "CHAT")
 
   return (
     <div className="flex-1 overflow-y-auto p-2 space-y-4">
@@ -53,15 +54,9 @@ export const IntentsTab = () => {
                         </span>
                       )}
                     </div>
-                    {intent.type === "CHAT" && "payload" in intent ? (
-                      <p className="text-sm text-gray-700 dark:text-gray-300 break-words">
-                        {intent.payload}
-                      </p>
-                    ) : "text" in intent ? (
-                      <p className="text-sm text-gray-700 dark:text-gray-300 break-words">
-                        {intent.text}
-                      </p>
-                    ) : null}
+                    <p className="text-sm text-gray-700 dark:text-gray-300 break-words">
+                      {intent.text}
+                    </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                       {new Date(intent.timestamp).toLocaleString()}
                     </p>

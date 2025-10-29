@@ -1,58 +1,67 @@
-import { motion } from 'framer-motion';
-import { Button } from '../../components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { CheckCircle2, Flag, Download, User, Sparkles } from 'lucide-react';
-import { USER_NAME_KEY } from '../../api/user-data';
-import { useStorage } from '@plasmohq/storage/hook';
-import { useEffect } from 'react';
+import { motion } from "framer-motion"
+import { CheckCircle2, Download, Flag, Sparkles, User } from "lucide-react"
+import { useEffect } from "react"
+
+import { useStorage } from "@plasmohq/storage/hook"
+
+import { USER_NAME_KEY } from "../../api/user-data"
+import { Button } from "../../components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "../../components/ui/card"
 
 interface CompletionStepProps {
-  onNavigateToStep: (step: number) => void;
+  onNavigateToStep: (step: number) => void
 }
 
 const STEPS_INFO = [
   {
     id: 0,
     icon: Sparkles,
-    label: 'Introduction',
-    description: 'Learn about NeuroPilot',
+    label: "Introduction",
+    description: "Learn about NeuroPilot"
   },
   {
     id: 1,
     icon: Flag,
-    label: 'Configure Flags',
-    description: 'Enable Chrome AI features',
+    label: "Configure Flags",
+    description: "Enable Chrome AI features"
   },
   {
     id: 2,
     icon: Download,
-    label: 'Download Model',
-    description: 'Get the AI model',
+    label: "Download Model",
+    description: "Get the AI model"
   },
   {
     id: 3,
     icon: User,
-    label: 'User Info',
-    description: 'Personalize your experience',
-  },
-];
+    label: "User Info",
+    description: "Personalize your experience"
+  }
+]
 
-export const CompletionStep: React.FC<CompletionStepProps> = ({ onNavigateToStep }) => {
-  const [userName, __] = useStorage(USER_NAME_KEY);
-
+export const CompletionStep: React.FC<CompletionStepProps> = ({
+  onNavigateToStep
+}) => {
+  const [userName, __] = useStorage(USER_NAME_KEY)
 
   // Redirect to User Info step if name is not provided
   useEffect(() => {
-    if(userName === undefined) return;
+    if (userName === undefined) return
 
     if (!userName || userName.trim().length === 0) {
-      onNavigateToStep(3); // Navigate to User Info step
+      onNavigateToStep(3) // Navigate to User Info step
     }
-  }, [userName, onNavigateToStep]);
+  }, [userName, onNavigateToStep])
 
   // Don't render if no user name
   if (!userName || userName.trim().length === 0) {
-    return null;
+    return null
   }
 
   return (
@@ -61,28 +70,44 @@ export const CompletionStep: React.FC<CompletionStepProps> = ({ onNavigateToStep
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-2xl space-y-6"
-      >
+        className="w-full max-w-2xl space-y-6">
         {/* Success Header */}
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.2, type: 'spring', stiffness: 200, damping: 15 }}
-          className="text-center space-y-4"
-        >
+          transition={{
+            delay: 0.2,
+            type: "spring",
+            stiffness: 200,
+            damping: 15
+          }}
+          className="text-center space-y-4">
           <div className="flex justify-center">
             <div className="w-24 h-24 rounded-full bg-chart-4/20 flex items-center justify-center">
               <CheckCircle2 className="w-16 h-16 text-chart-4" />
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <h2 className="text-4xl font-bold text-foreground">
               🎉 Onboarding Complete!
             </h2>
             <p className="text-xl text-muted-foreground">
-              Welcome to NeuroPilot, <span className="font-semibold text-foreground">{userName}</span>!
+              Welcome to NeuroPilot,{" "}
+              <span className="font-semibold text-foreground">{userName}</span>!
             </p>
+
+            {/* Footer Message */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              className="text-center">
+              <p className="text-sm text-muted-foreground">
+                You can close this tab anytime. The extension is ready to use!
+                🚀
+              </p>
+            </motion.div>
           </div>
         </motion.div>
 
@@ -90,21 +115,28 @@ export const CompletionStep: React.FC<CompletionStepProps> = ({ onNavigateToStep
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
+          transition={{ delay: 0.4 }}>
           <Card className="backdrop-blur-sm bg-card/80">
             <CardHeader>
               <CardTitle>You're All Set!</CardTitle>
               <CardDescription>
-                Feel free to close this tab and open the extension whenever you need more information.
+                Feel free to close this tab and open the extension whenever you
+                need more information.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* User Info Summary */}
               <div className="p-4 bg-muted rounded-lg space-y-2">
-                <p className="text-sm font-medium text-foreground">Your Profile</p>
+                <p className="text-sm font-medium text-foreground">
+                  Your Profile
+                </p>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>Name: <span className="font-medium text-foreground">{userName}</span></span>
+                  <span>
+                    Name:{" "}
+                    <span className="font-medium text-foreground">
+                      {userName}
+                    </span>
+                  </span>
                 </div>
               </div>
 
@@ -115,29 +147,29 @@ export const CompletionStep: React.FC<CompletionStepProps> = ({ onNavigateToStep
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   {STEPS_INFO.map((step, index) => {
-                    const Icon = step.icon;
+                    const Icon = step.icon
                     return (
                       <motion.div
                         key={step.id}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5 + index * 0.1 }}
-                      >
+                        transition={{ delay: 0.5 + index * 0.1 }}>
                         <Button
                           variant="outline"
                           className="w-full h-auto py-3 px-4 flex flex-col items-start gap-2 hover:bg-accent"
-                          onClick={() => onNavigateToStep(step.id)}
-                        >
+                          onClick={() => onNavigateToStep(step.id)}>
                           <div className="flex items-center gap-2 w-full">
                             <Icon className="w-4 h-4 text-primary" />
-                            <span className="font-medium text-sm">{step.label}</span>
+                            <span className="font-medium text-sm">
+                              {step.label}
+                            </span>
                           </div>
                           <span className="text-xs text-muted-foreground text-left">
                             {step.description}
                           </span>
                         </Button>
                       </motion.div>
-                    );
+                    )
                   })}
                 </div>
               </div>
@@ -149,7 +181,9 @@ export const CompletionStep: React.FC<CompletionStepProps> = ({ onNavigateToStep
                   What's Next?
                 </p>
                 <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                  <li>Start browsing and let NeuroPilot track your attention</li>
+                  <li>
+                    Start browsing and let NeuroPilot track your attention
+                  </li>
                   <li>Build deep knowledge through focused engagement</li>
                   <li>Take AI-powered quizzes to reinforce your learning</li>
                 </ul>
@@ -157,19 +191,7 @@ export const CompletionStep: React.FC<CompletionStepProps> = ({ onNavigateToStep
             </CardContent>
           </Card>
         </motion.div>
-
-        {/* Footer Message */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="text-center"
-        >
-          <p className="text-sm text-muted-foreground">
-            You can close this tab anytime. The extension is ready to use! 🚀
-          </p>
-        </motion.div>
       </motion.div>
     </div>
-  );
-};
+  )
+}

@@ -1,5 +1,4 @@
 import { useLiveQuery } from "dexie-react-hooks"
-import { Lightbulb } from "lucide-react"
 
 import type { Intent } from "~background/messages/intent"
 import db from "~db"
@@ -33,16 +32,8 @@ export const IntentsTab = () => {
 
   return (
     <div className="flex-1 overflow-y-auto p-2 space-y-4">
-      {/* Intents Queue Section */}
+      {/* Learning Queue Section */}
       <div className="bg-white/40 dark:bg-slate-700/40 rounded-xl border border-gray-300/50 dark:border-slate-600/50 p-5">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-indigo-100/80 dark:bg-indigo-900/40 backdrop-blur-sm rounded-lg border border-indigo-200/50 dark:border-indigo-800/50">
-            <Lightbulb className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-          </div>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-            Intent Queue
-          </h3>
-        </div>
         {intentQueue && intentQueue.length > 0 ? (
           <div className="space-y-3">
             {intentQueue.map((intent, index) => (
@@ -81,9 +72,9 @@ export const IntentsTab = () => {
           </div>
         ) : (
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            <p className="mb-2">No intents in queue</p>
+            <p className="mb-2">No learning items in queue</p>
             <p className="text-xs italic">
-              Use context menu actions to add intents
+              Use context menu actions to add learning items
             </p>
           </div>
         )}

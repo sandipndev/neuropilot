@@ -23,7 +23,7 @@ export function getTreeGrowthStage(totalTimeMs: number): number {
   // Growth rate constant - adjust this to control growth speed
   // Lower k = slower growth, Higher k = faster growth
   // k = 0.02 means ~50% growth at 35 minutes, ~95% at 150 minutes
-  const k = 0.02;
+  const k = 0.08;
 
   // Exponential growth formula: Y = R * (1 - e^(-k*x))
   const growthStage = R * (1 - Math.exp(-k * minutes));

@@ -11,7 +11,7 @@ interface TreeAnimationSectionProps {
 export function TreeAnimationSection({
   totalFocusTime
 }: TreeAnimationSectionProps) {
-  const growthStage = getTreeGrowthStage(1000000)
+  const growthStage = getTreeGrowthStage(totalFocusTime)
   const [runtimeLoaded, setRuntimeLoaded] = useState(false)
 
   // Configure Rive to use local WASM files from extension
@@ -25,11 +25,20 @@ export function TreeAnimationSection({
     })
   }, [])
 
-  const { RiveComponent, rive } = useRive({
-    src: "/assets/8178-15744-focusforest.riv",
-    autoplay: true,
-    stateMachines: ["State Machine 1"]
-  })
+  const { canvas, setContainerRef, rive, setCanvasRef } = useRive(
+    {
+      src: "/assets/8178-15744-focusforest.riv",
+      autoplay: true,
+      stateMachines: ["State Machine 1"]
+    },
+    {
+      fitCanvasToArtboardHeight: false,
+      useOffscreenRenderer: true,
+      shouldResizeCanvasToContainer: true,
+      useDevicePixelRatio: true,
+      shouldUseIntersectionObserver: false
+    }
+  )
 
   // Update animation state based on growth stage
   useEffect(() => {
@@ -56,6 +65,12 @@ export function TreeAnimationSection({
     }
   }, [rive, growthStage])
 
+
+
+  const [layoutHeight, setLayoutHeight] = useState(window.innerHeight)
+  const [layoutWidth, setLayoutWidth] = useState(window.innerWidth)
+
+
   if (!runtimeLoaded) {
     return (
       <div className="absolute inset-0 flex items-center justify-center text-white/50">
@@ -67,14 +82,15 @@ export function TreeAnimationSection({
   return (
     <>
       <div
-        className="absolute bottom-0 right-0 w-full h-full opacity-80"
+        className="absolute bottom-0 w-full h-full left-0 z-10 opacity-80"
         style={{
           animation: "sway 8s ease-in-out infinite",
           filter: "hue-rotate(120deg)",
           transform: "rotate(8deg)",
-          transformOrigin: "bottom left"
-        }}>
-        <RiveComponent className="w-full h-full left-0" />
+          transformOrigin: "bottom left",
+        }}
+      >
+        <canvas width={layoutHeight} height={layoutHeight} className="-translate-x-[40%] translate-y-4 rotate-6" ref={setCanvasRef} />
       </div>
       <style>{`
         @keyframes sway {

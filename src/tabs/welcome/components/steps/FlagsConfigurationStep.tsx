@@ -149,22 +149,28 @@ export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({
       }
     }
 
+    // Extract the hash part from the URL
+    const flagHash = flagUrl.split("#")[1] || ""
+
     return (
-      <div className="flex items-center justify-between gap-2 text-xs">
-        <span className="text-foreground font-medium flex-1">{name}</span>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex-1 space-y-0.5">
+          <div className="text-sm font-medium text-foreground">{name}</div>
+          <div className="text-xs text-muted-foreground/70">#{flagHash}</div>
+        </div>
         <Button
           variant="outline"
           size="sm"
           onClick={handleCopy}
-          className="h-7 text-xs shrink-0">
+          className="h-8 text-xs shrink-0">
           {copied ? (
             <>
-              <CheckCircle2 className="w-3 h-3 mr-1" />
+              <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
               Copied!
             </>
           ) : (
             <>
-              <Copy className="w-3 h-3 mr-1" />
+              <Copy className="w-3.5 h-3.5 mr-1.5" />
               Copy URL
             </>
           )}
@@ -213,9 +219,9 @@ export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({
       </div>
 
       {/* Two Column Layout */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         {/* Left Column: Instructions */}
-        <Card className="border-chart-4/20 bg-chart-4/5 backdrop-blur-sm">
+        <Card className="col-span-1 border-chart-4/20 bg-chart-4/5 backdrop-blur-sm">
           <CardContent className="p-4 space-y-3">
             <h3 className="font-semibold text-foreground text-sm">
               Quick Setup Guide
@@ -245,16 +251,27 @@ export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({
               💡 <span className="font-medium">Tip:</span> Keep this tab open
               while enabling flags
             </div>
+            <div className="p-3 bg-background/50 border border-border/50 rounded-md space-y-1">
+              <div className="text-xs font-semibold text-foreground">
+                What are Chrome Flags?
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Chrome flags are experimental features that enable early access
+                to cutting-edge browser capabilities. These flags activate
+                Chrome's built-in AI features powered by Gemini Nano, allowing
+                NeuroPilot to run entirely on your device.
+              </p>
+            </div>
           </CardContent>
         </Card>
 
         {/* Right Column: Flags List */}
-        <Card className="border-chart-4/20 backdrop-blur-sm">
-          <CardContent className="p-4 space-y-3">
+        <Card className="col-span-2 border-chart-4/20 backdrop-blur-sm">
+          <CardContent className="p-5 space-y-4">
             <h3 className="font-semibold text-foreground text-sm">
               Required Flags ({FLAGS_CONFIG.length})
             </h3>
-            <div className="space-y-2.5">
+            <div className="space-y-5">
               {FLAGS_CONFIG.map((flag) => (
                 <SimpleFlagItem
                   key={flag.key}

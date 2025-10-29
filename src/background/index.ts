@@ -100,11 +100,16 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   }
 })
 
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener((details) => {
   // cron
   chrome.alarms.create("pulse-task", { periodInMinutes: 5 })
   chrome.alarms.create("quiz-task", { periodInMinutes: 2 })
   chrome.alarms.create("garbage-collection-task", { periodInMinutes: 60 * 24 })
+
+  // open welcome page on first install
+  if (details.reason === "install") {
+    chrome.tabs.create({ url: chrome.runtime.getURL("tabs/welcome.html") })
+  }
 })
 
 // side panel open on icon click

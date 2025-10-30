@@ -24,12 +24,40 @@ const getIntentIcon = (type: string) => {
 }
 
 // Helper methods to process different intent types using Chrome AI
-const processProofread = async (text: string): Promise<string> => {
+const processProofread = async (
+  text: string,
+  onChunk?: (chunk: string) => void
+): Promise<string> => {
   try {
     const writer = await getWriter("formal")
-    const result = await writer.write(text)
-    writer.destroy()
-    return result
+
+    if (onChunk) {
+      // Use streaming
+      const stream = writer.writeStreaming(text)
+      let fullResponse = ""
+      let previousChunk = ""
+
+      for await (const chunk of stream) {
+        const newChunk = chunk.startsWith(previousChunk)
+          ? chunk.slice(previousChunk.length)
+          : chunk
+
+        if (newChunk) {
+          fullResponse += newChunk
+          onChunk(newChunk)
+        }
+
+        previousChunk = chunk
+      }
+
+      writer.destroy()
+      return fullResponse
+    } else {
+      // Fallback to non-streaming
+      const result = await writer.write(text)
+      writer.destroy()
+      return result
+    }
   } catch (error) {
     console.error("Error in processProofread:", error)
     throw new Error(
@@ -40,15 +68,41 @@ const processProofread = async (text: string): Promise<string> => {
 
 const processTranslate = async (
   text: string,
-  language: keyof typeof CODE_TO_LANGUAGE
+  language: keyof typeof CODE_TO_LANGUAGE,
+  onChunk?: (chunk: string) => void
 ): Promise<string> => {
   try {
     const targetLanguage = CODE_TO_LANGUAGE[language]
     const model = await getLanguageModel()
     const prompt = `Translate the following text to ${targetLanguage}. Only provide the translation, no explanations:\n\n${text}`
-    const result = await model.prompt(prompt)
-    model.destroy()
-    return result
+
+    if (onChunk) {
+      // Use streaming
+      const stream = model.promptStreaming(prompt)
+      let fullResponse = ""
+      let previousChunk = ""
+
+      for await (const chunk of stream) {
+        const newChunk = chunk.startsWith(previousChunk)
+          ? chunk.slice(previousChunk.length)
+          : chunk
+
+        if (newChunk) {
+          fullResponse += newChunk
+          onChunk(newChunk)
+        }
+
+        previousChunk = chunk
+      }
+
+      model.destroy()
+      return fullResponse
+    } else {
+      // Fallback to non-streaming
+      const result = await model.prompt(prompt)
+      model.destroy()
+      return result
+    }
   } catch (error) {
     console.error("Error in processTranslate:", error)
     throw new Error(
@@ -57,12 +111,40 @@ const processTranslate = async (
   }
 }
 
-const processRephrase = async (text: string): Promise<string> => {
+const processRephrase = async (
+  text: string,
+  onChunk?: (chunk: string) => void
+): Promise<string> => {
   try {
     const rewriter = await getRewriter("as-is", "as-is")
-    const result = await rewriter.rewrite(text)
-    rewriter.destroy()
-    return result
+
+    if (onChunk) {
+      // Use streaming
+      const stream = rewriter.rewriteStreaming(text)
+      let fullResponse = ""
+      let previousChunk = ""
+
+      for await (const chunk of stream) {
+        const newChunk = chunk.startsWith(previousChunk)
+          ? chunk.slice(previousChunk.length)
+          : chunk
+
+        if (newChunk) {
+          fullResponse += newChunk
+          onChunk(newChunk)
+        }
+
+        previousChunk = chunk
+      }
+
+      rewriter.destroy()
+      return fullResponse
+    } else {
+      // Fallback to non-streaming
+      const result = await rewriter.rewrite(text)
+      rewriter.destroy()
+      return result
+    }
   } catch (error) {
     console.error("Error in processRephrase:", error)
     throw new Error(
@@ -71,12 +153,40 @@ const processRephrase = async (text: string): Promise<string> => {
   }
 }
 
-const processSummarize = async (text: string): Promise<string> => {
+const processSummarize = async (
+  text: string,
+  onChunk?: (chunk: string) => void
+): Promise<string> => {
   try {
     const summarizer = await getSummarizer("tldr")
-    const result = await summarizer.summarize(text)
-    summarizer.destroy()
-    return result
+
+    if (onChunk) {
+      // Use streaming
+      const stream = summarizer.summarizeStreaming(text)
+      let fullResponse = ""
+      let previousChunk = ""
+
+      for await (const chunk of stream) {
+        const newChunk = chunk.startsWith(previousChunk)
+          ? chunk.slice(previousChunk.length)
+          : chunk
+
+        if (newChunk) {
+          fullResponse += newChunk
+          onChunk(newChunk)
+        }
+
+        previousChunk = chunk
+      }
+
+      summarizer.destroy()
+      return fullResponse
+    } else {
+      // Fallback to non-streaming
+      const result = await summarizer.summarize(text)
+      summarizer.destroy()
+      return result
+    }
   } catch (error) {
     console.error("Error in processSummarize:", error)
     throw new Error(
@@ -87,6 +197,9 @@ const processSummarize = async (text: string): Promise<string> => {
 
 export const IntentsTab = () => {
   const [processingIds, setProcessingIds] = useState<Set<number>>(new Set())
+  const [streamingResults, setStreamingResults] = useState<Map<number, string>>(
+    new Map()
+  )
 
   // Load intent queue
   const iq = useLiveQuery(() => {
@@ -133,17 +246,28 @@ export const IntentsTab = () => {
         let result: string
         let originalText: string = ""
 
+        // Create streaming callback for real-time updates
+        const onChunk = (chunk: string) => {
+          setStreamingResults((prev) => {
+            const newMap = new Map(prev)
+            const current = newMap.get(intent.id!) || ""
+            newMap.set(intent.id!, current + chunk)
+            return newMap
+          })
+        }
+
         switch (intent.type) {
           case "PROOFREAD":
             originalText = intent.text
-            result = await processProofread(intent.text)
+            result = await processProofread(intent.text, onChunk)
             break
           case "TRANSLATE":
             if ("language" in intent && "text" in intent) {
               originalText = intent.text
               result = await processTranslate(
                 intent.text,
-                intent.language as keyof typeof CODE_TO_LANGUAGE
+                intent.language as keyof typeof CODE_TO_LANGUAGE,
+                onChunk
               )
             } else {
               result = "Translation error: No language specified"
@@ -151,11 +275,11 @@ export const IntentsTab = () => {
             break
           case "REPHRASE":
             originalText = intent.text
-            result = await processRephrase(intent.text)
+            result = await processRephrase(intent.text, onChunk)
             break
           case "SUMMARIZE":
             originalText = intent.text
-            result = await processSummarize(intent.text)
+            result = await processSummarize(intent.text, onChunk)
             break
           default:
             result = "Unknown intent type"
@@ -174,6 +298,13 @@ export const IntentsTab = () => {
         await db.table("intentQueue").update(intent.id, {
           processed: true
         })
+
+        // Clear streaming result for this intent
+        setStreamingResults((prev) => {
+          const newMap = new Map(prev)
+          newMap.delete(intent.id!)
+          return newMap
+        })
       } catch (error) {
         console.error("Error processing intent:", error)
         // Save error result to database
@@ -184,6 +315,13 @@ export const IntentsTab = () => {
           originalText: errorText,
           result: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
           timestamp: Date.now()
+        })
+
+        // Clear streaming result for this intent
+        setStreamingResults((prev) => {
+          const newMap = new Map(prev)
+          newMap.delete(intent.id!)
+          return newMap
         })
       } finally {
         setProcessingIds((prev) => {
@@ -230,6 +368,9 @@ export const IntentsTab = () => {
                 intentWithId.id && processingIds.has(intentWithId.id)
               const processedResult = intentWithId.id
                 ? resultsMap.get(intentWithId.id)
+                : null
+              const streamingResult = intentWithId.id
+                ? streamingResults.get(intentWithId.id)
                 : null
 
               return (
@@ -278,8 +419,21 @@ export const IntentsTab = () => {
                         </button>
                       </div>
 
-                      {/* Display Result from Database */}
-                      {processedResult && (
+                      {/* Display Streaming Result (in progress) */}
+                      {isProcessing && streamingResult && (
+                        <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                          <p className="text-xs font-semibold text-blue-800 dark:text-blue-400 mb-1 flex items-center gap-2">
+                            <span className="animate-pulse">●</span>
+                            Streaming:
+                          </p>
+                          <p className="text-sm text-blue-700 dark:text-blue-300 whitespace-pre-wrap">
+                            {streamingResult}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Display Final Result from Database */}
+                      {processedResult && !isProcessing && (
                         <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
                           <p className="text-xs font-semibold text-green-800 dark:text-green-400 mb-1">
                             Result:

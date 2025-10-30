@@ -46,8 +46,8 @@ const Chat: React.FC = () => {
     setSelectedChatId(newId)
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleChatCreated = (chatId: string) => {
+   
+  const handleChatCreated = () => {
     // Chat is now in the database
   }
 

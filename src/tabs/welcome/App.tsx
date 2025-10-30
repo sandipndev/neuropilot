@@ -7,18 +7,33 @@ import { IntroductionStep } from "./components/steps/IntroductionStep"
 import { ModelDownloadStep } from "./components/steps/ModelDownloadStep"
 import { UserInfoStep } from "./components/steps/UserInfoStep"
 import { OnboardingProvider } from "./contexts/OnboardingContext"
-import { useGetInitialStep } from "./utils/onboarding-status"
 
 import "./index.css"
+import { useStorage } from "@plasmohq/storage/hook"
+import { INTRO_STEP_SHOWN_KEY, USER_NAME_KEY } from "./api/user-data"
 
 function App() {
-  const initialStep = useGetInitialStep()
-  const [currentStep, setCurrentStep] = useState<number>(initialStep)
+  const [currentStep, setCurrentStep] = useState<number>(0)
+  const [userNamex] = useStorage(USER_NAME_KEY);
+  const [introStepShownx] = useStorage(INTRO_STEP_SHOWN_KEY);
 
+  const getStatus = (_introStepShown: boolean, _userName: string) => {
+    const isComplete = !!_userName;
+
+    if(isComplete){
+      return 4
+    }
+
+    if(_introStepShown){
+      return 1;
+    }
+
+    return 0;
+  }
 
   useEffect(() => {
-    setCurrentStep(initialStep)
-  }, [initialStep])
+    setCurrentStep(getStatus(introStepShownx, userNamex))
+  }, [userNamex, introStepShownx])
 
   const stepLabels = [
     "Introduction",
@@ -36,6 +51,7 @@ function App() {
     setCurrentStep(step)
   }
 
+  console.log(currentStep)
   if(currentStep === -1) return null;
 
   return (

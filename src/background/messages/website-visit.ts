@@ -12,6 +12,7 @@ export type WebsiteVisit = {
   referrer: string | null
   summary?: string
   summary_generated_with_n_attentions?: number
+  updated_at: number
 }
 
 const handler: PlasmoMessaging.MessageHandler = async (req) => {
@@ -25,7 +26,8 @@ const handler: PlasmoMessaging.MessageHandler = async (req) => {
         opened_at: body.timestamp,
         referrer: body.url === body.referrer ? null : body.referrer,
         closed_at: null,
-        active_time: 0
+        active_time: 0,
+        updated_at: body.timestamp
       })
       break
     }
@@ -35,7 +37,8 @@ const handler: PlasmoMessaging.MessageHandler = async (req) => {
         .where("url")
         .equals(body.url)
         .modify({
-          active_time: body.time
+          active_time: body.time,
+          updated_at: Date.now()
         })
       break
     }
@@ -45,7 +48,8 @@ const handler: PlasmoMessaging.MessageHandler = async (req) => {
         .where("url")
         .equals(body.url)
         .modify({
-          closed_at: body.timestamp
+          closed_at: body.timestamp,
+          updated_at: body.timestamp
         })
       break
     }

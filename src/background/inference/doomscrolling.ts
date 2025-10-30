@@ -1,11 +1,12 @@
 import { Storage } from "@plasmohq/storage"
 
+import type { WebsiteVisit } from "~background/messages/website-visit"
+import db from "~db"
 import {
-  DOOMSCROLLING_ATTENTION_ITEMS_THRESHOLD,
   DOOMSCROLLING_TIME_WINDOW,
   NotificationMessageType
 } from "~default-settings"
-import { allUserActivityForLastMs, sendNotification } from "~utils"
+import { sendNotification } from "~utils"
 
 const storage = new Storage()
 const LAST_DOOMSCROLL_NOTIFICATION_KEY =
@@ -17,31 +18,25 @@ const doomscrollingDetectionTask = async () => {
     timeWindowValue || DOOMSCROLLING_TIME_WINDOW.defaultValue
   )
 
-  const itemsThresholdValue = await storage.get(
-    DOOMSCROLLING_ATTENTION_ITEMS_THRESHOLD.key
-  )
-  const itemsThreshold = Number(
-    itemsThresholdValue || DOOMSCROLLING_ATTENTION_ITEMS_THRESHOLD.defaultValue
-  )
+  // Get the most recent updated_at timestamp from websiteVisits
+  const allVisits = await db.table<WebsiteVisit>("websiteVisits").toArray()
 
-  const recentActivity = await allUserActivityForLastMs(timeWindow)
+  if (allVisits.length === 0) {
+    return
+  }
 
-  const totalAttentionItems = recentActivity.reduce((total, activity) => {
-    return (
-      total +
-      activity.textAttentions.length +
-      activity.imageAttentions.length +
-      activity.audioAttentions.length +
-      activity.youtubeAttentions.length
-    )
-  }, 0)
+  const maxUpdatedAt = Math.max(...allVisits.map(visit => visit.updated_at))
+  const timeSinceLastActivity = Date.now() - maxUpdatedAt
 
   console.debug("doomscrollingDetectionTask", {
-    totalAttentionItems,
-    itemsThreshold
+    maxUpdatedAt,
+    timeSinceLastActivity,
+    timeWindow,
+    isDoomscrolling: timeSinceLastActivity >= timeWindow
   })
 
-  if (totalAttentionItems < itemsThreshold) {
+  // If user hasn't been active for the threshold time, they're doomscrolling
+  if (timeSinceLastActivity >= timeWindow) {
     await sendNotification(
       NotificationMessageType.DOOMSCROLLING_DETECTED,
       LAST_DOOMSCROLL_NOTIFICATION_KEY

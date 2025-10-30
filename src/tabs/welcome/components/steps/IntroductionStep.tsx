@@ -5,7 +5,7 @@ import { useEffect, useState } from "react"
 import { useStorage } from "@plasmohq/storage/hook"
 
 import { Button } from "../../components/ui/button"
-import { INTRO_STEP_SHOWN_KEY } from "../../utils/onboarding-status"
+import { INTRO_STEP_SHOWN_KEY } from "~tabs/welcome/api/user-data"
 
 interface IntroductionStepProps {
   onContinue: () => void

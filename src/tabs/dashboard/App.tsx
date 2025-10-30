@@ -16,8 +16,8 @@ import { useWinsData } from "./hooks/useWinsData"
 import "./index.css"
 
 import { useStorage } from "@plasmohq/storage/hook"
-
 import { USER_NAME_KEY } from "~tabs/welcome/api/user-data"
+
 
 type TabType = "dashboard" | "journey" | "settings" | "chat"
 

@@ -114,6 +114,11 @@ class NeuropilotDB extends Dexie {
       processedIntents: "++id, intentId, timestamp",
       websiteVisits: "&url, opened_at"
     })
+
+    // Version 3: Add updated_at index to websiteVisits
+    this.version(3).stores({
+      websiteVisits: "&url, opened_at, updated_at"
+    })
   }
 }
 

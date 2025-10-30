@@ -11,7 +11,8 @@ import {
   Play,
   Target,
   Timer,
-  Trophy
+  Trophy,
+  AlertCircle
 } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 
@@ -32,6 +33,8 @@ import "./index.css"
 import type { Intent } from "~background/messages/intent"
 
 import { Chat } from "./chat"
+import { useStorage } from "@plasmohq/storage/hook"
+import { USER_NAME_KEY } from "~tabs/welcome/api/user-data"
 
 type TabType = "focus" | "insights" | "explore" | "intents"
 
@@ -41,6 +44,7 @@ const generateChatId = () =>
 const storage = new Storage()
 
 const Popup = () => {
+  const [userName] = useStorage(USER_NAME_KEY);
   const [activeTab, setActiveTab] = useState<TabType>("focus")
   const [focusData, setFocusData] = useState<FocusWithParsedData | null>(null)
   const [currentChatId, setCurrentChatId] = useState<string>(generateChatId())
@@ -49,6 +53,8 @@ const Popup = () => {
     return db.table<Focus>("focus").toArray()
   }, [])
 
+
+  const isOnboardingComplete = !!userName;
   useEffect(() => {
     if (!focusDataDex || focusDataDex.length === 0) {
       setFocusData(null)
@@ -229,16 +235,43 @@ const Popup = () => {
     setCurrentChatId(generateChatId())
   }, [])
 
-  const renderFocusTab = () => (
-    <div className="flex-1 flex flex-col h-full overflow-hidden">
-      <Chat
-        chatId={currentChatId}
-        isNewChat={true}
-        onChatCreated={(id) => setCurrentChatId(id)}
-        onNewChatRequested={handleNewChatRequest}
-      />
-    </div>
-  )
+  const renderFocusTab = () => {
+    if (!isOnboardingComplete) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center p-6">
+          <div className="bg-white/60 dark:bg-slate-700/60 backdrop-blur-md rounded-2xl border border-gray-300/50 dark:border-slate-600/50 p-8 max-w-md text-center shadow-xl">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 bg-amber-100/80 dark:bg-amber-900/40 rounded-full">
+                <AlertCircle className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+              </div>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+              Welcome to Focus Forest! 🌱
+            </h3>
+            <p className="text-sm text-gray-700 dark:text-gray-300 mb-6">
+              Many features here won't work until you complete the onboarding process.
+            </p>
+            <button
+              onClick={() => chrome.tabs.create({ url: "/tabs/welcome.html" })}
+              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95">
+              Start Onboarding
+            </button>
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <Chat
+          chatId={currentChatId}
+          isNewChat={true}
+          onChatCreated={(id) => setCurrentChatId(id)}
+          onNewChatRequested={handleNewChatRequest}
+        />
+      </div>
+    )
+  }
 
   const activitySummaries = useLiveQuery(() => {
     return db
@@ -249,7 +282,33 @@ const Popup = () => {
       .toArray()
   }, [])
 
-  const renderInsightsTab = () => (
+  const renderInsightsTab = () => {
+    if (!isOnboardingComplete) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center p-6">
+          <div className="bg-white/60 dark:bg-slate-700/60 backdrop-blur-md rounded-2xl border border-gray-300/50 dark:border-slate-600/50 p-8 max-w-md text-center shadow-xl">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 bg-amber-100/80 dark:bg-amber-900/40 rounded-full">
+                <AlertCircle className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+              </div>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+              Complete Onboarding First
+            </h3>
+            <p className="text-sm text-gray-700 dark:text-gray-300 mb-6">
+              Many features here won't work until you complete the onboarding process.
+            </p>
+            <button
+              onClick={() => chrome.tabs.create({ url: "/tabs/welcome.html" })}
+              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95">
+              Start Onboarding
+            </button>
+          </div>
+        </div>
+      )
+    }
+
+    return (
     <div className="flex-1 overflow-y-auto p-2 space-y-4">
       {/* Refresher Quiz Section */}
       <div className="bg-white/40 dark:bg-slate-700/40 backdrop-blur-sm rounded-xl border border-gray-300/50 dark:border-slate-600/50 p-5">
@@ -362,9 +421,36 @@ const Popup = () => {
         )}
       </div>
     </div>
-  )
+    )
+  }
 
-  const renderExploreTab = () => (
+  const renderExploreTab = () => {
+    if (!isOnboardingComplete) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center p-6">
+          <div className="bg-white/60 dark:bg-slate-700/60 backdrop-blur-md rounded-2xl border border-gray-300/50 dark:border-slate-600/50 p-8 max-w-md text-center shadow-xl">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 bg-amber-100/80 dark:bg-amber-900/40 rounded-full">
+                <AlertCircle className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+              </div>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+              Complete Onboarding First
+            </h3>
+            <p className="text-sm text-gray-700 dark:text-gray-300 mb-6">
+              Many features here won't work until you complete the onboarding process.
+            </p>
+            <button
+              onClick={() => chrome.tabs.create({ url: "/tabs/welcome.html" })}
+              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95">
+              Start Onboarding
+            </button>
+          </div>
+        </div>
+      )
+    }
+
+    return (
     <div className="flex-1 overflow-y-auto p-2 space-y-4">
       {/* Wins Section */}
       <div className="bg-white/40 dark:bg-slate-700/40 backdrop-blur-xs rounded-xl border border-gray-300/50 dark:border-slate-600/50 p-5">
@@ -426,7 +512,8 @@ const Popup = () => {
         </div>
       </div>
     </div>
-  )
+    )
+  }
 
   if (isLoading) {
     return (

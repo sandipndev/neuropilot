@@ -1,9 +1,16 @@
-import { useEffect, useRef, useState } from "react"
+import { lazy, Suspense, useEffect, useRef, useState } from "react"
 
 import type { WebsiteVisit } from "~background/messages/website-visit"
 import db from "~db"
+import { ErrorBoundary } from "./ErrorBoundary"
 
-interface JourneyNode {
+const NetworkGraphView = lazy(() =>
+  import("./NetworkGraphView").then((module) => ({
+    default: module.NetworkGraphView
+  }))
+)
+
+export interface JourneyNode {
   id: string
   url: string
   title: string
@@ -15,7 +22,7 @@ interface JourneyNode {
   summary?: string
 }
 
-interface JourneyPath {
+export interface JourneyPath {
   id: string
   nodes: JourneyNode[]
   startTime: number
@@ -48,6 +55,7 @@ export function JourneyGraph() {
   const [scrollStates, setScrollStates] = useState<Map<string, { isAtBottom: boolean; remainingItems: number }>>(
     new Map()
   )
+  const [showNetworkGraph, setShowNetworkGraph] = useState(false)
 
   useEffect(() => {
     loadJourneyData()
@@ -704,6 +712,28 @@ const renderSemanticGroupCard = (group: SemanticGroup, groupIndex: number) => {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Network Graph Button */}
+          <button
+            onClick={() => setShowNetworkGraph(true)}
+            className="p-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
+            title="View Network Graph">
+            <svg
+              className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24">
+              <circle cx="12" cy="5" r="2" strokeWidth="2" />
+              <circle cx="5" cy="12" r="2" strokeWidth="2" />
+              <circle cx="19" cy="12" r="2" strokeWidth="2" />
+              <circle cx="12" cy="19" r="2" strokeWidth="2" />
+              <line x1="12" y1="7" x2="12" y2="17" strokeWidth="2" />
+              <line x1="10.5" y1="6" x2="6.5" y2="11" strokeWidth="2" />
+              <line x1="13.5" y1="6" x2="17.5" y2="11" strokeWidth="2" />
+              <line x1="6.5" y1="13" x2="10.5" y2="18" strokeWidth="2" />
+              <line x1="17.5" y1="13" x2="13.5" y2="18" strokeWidth="2" />
+            </svg>
+          </button>
+
           {/* View Mode Toggle */}
           <div className="inline-flex bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-1">
             <button
@@ -1032,6 +1062,63 @@ const renderSemanticGroupCard = (group: SemanticGroup, groupIndex: number) => {
             )}
           </div>
         </div>
+      )}
+
+      {/* Network Graph Modal */}
+      {showNetworkGraph && (
+        <ErrorBoundary
+          fallback={
+            <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl p-6 max-w-md">
+                <div className="flex items-center gap-3 mb-4">
+                  <svg
+                    className="w-8 h-8 text-red-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Network Graph Error
+                  </h3>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Failed to load the network graph visualization. This feature may not be compatible with your browser.
+                </p>
+                <button
+                  onClick={() => setShowNetworkGraph(false)}
+                  className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors">
+                  Close
+                </button>
+              </div>
+            </div>
+          }>
+          <Suspense
+            fallback={
+              <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl p-8">
+                  <div className="flex items-center gap-3">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    <span className="text-gray-900 dark:text-white">
+                      Loading Network Graph...
+                    </span>
+                  </div>
+                </div>
+              </div>
+            }>
+            <NetworkGraphView
+              journeyPaths={journeyPaths}
+              onClose={() => setShowNetworkGraph(false)}
+              timeRange={timeRange}
+              faviconImages={faviconImages}
+            />
+          </Suspense>
+        </ErrorBoundary>
       )}
     </div>
   )

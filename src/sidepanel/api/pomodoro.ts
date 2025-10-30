@@ -51,8 +51,10 @@ export async function getPomodoroState(): Promise<PomodoroState> {
     // If timer is active, calculate remaining time based on elapsed time
     if (state.isActive && state.startTime) {
       const elapsed = Math.floor((Date.now() - state.startTime) / 1000)
-      const targetDuration = state.state === "focus" ? FOCUS_DURATION : BREAK_DURATION
-      const remaining = Math.max(0, targetDuration - elapsed)
+      // Calculate remaining time from when the timer was started/resumed
+      // If this is a fresh start, remainingTime will be the full duration
+      // If this is a resume, remainingTime will be what was left when paused
+      const remaining = Math.max(0, state.remainingTime - elapsed)
 
       // If time is up, auto-transition
       if (remaining === 0) {
@@ -76,9 +78,10 @@ export async function getPomodoroState(): Promise<PomodoroState> {
         }
       }
 
-      // Update remaining time
-      if (remaining !== state.remainingTime) {
-        return await updateState({ remainingTime: remaining })
+      // Return state with calculated remaining time (don't update DB every second)
+      return {
+        ...state,
+        remainingTime: remaining
       }
     }
 
@@ -106,10 +109,11 @@ export async function startPomodoro(): Promise<PomodoroState> {
       })
     }
 
-    // Resume current state
+    // Resume current state - preserve the remaining time
     return await updateState({
       isActive: true,
-      startTime: Date.now()
+      startTime: Date.now(),
+      remainingTime: currentState.remainingTime // Keep the current remaining time
     })
   } catch (error) {
     console.error("Error starting pomodoro:", error)
@@ -124,6 +128,7 @@ export async function stopPomodoro(): Promise<PomodoroState> {
   try {
     const currentState = await getPomodoroState()
 
+    // Save the current remaining time when pausing
     return await updateState({
       isActive: false,
       startTime: null,

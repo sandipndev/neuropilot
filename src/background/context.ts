@@ -116,8 +116,19 @@ chrome.runtime.onInstalled.addListener(() => {
 
 const storage = new Storage()
 
+const notifySidepanelOpened = async (tabId: number) => {
+  try {
+    await chrome.tabs.sendMessage(tabId, { type: "SIDEPANEL_OPENED" })
+  } catch (err) {
+    console.debug("Could not notify content script:", err)
+  }
+}
+
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   await chrome.sidePanel.open({ tabId: tab?.id })
+  if (tab?.id) {
+    await notifySidepanelOpened(tab.id)
+  }
 
   switch (info.menuItemId as IntentName) {
     case "add-image-to-chat": {

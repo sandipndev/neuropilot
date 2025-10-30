@@ -95,11 +95,20 @@ export type IntentName = (typeof INTENT_ITEMS)[number]
 const INTENT_TYPES = IntentSchema.options.map((s) => s.shape.type.value)
 export type IntentType = (typeof INTENT_TYPES)[number]
 
+const notifySidepanelOpened = async (tabId: number) => {
+  try {
+    await chrome.tabs.sendMessage(tabId, { type: "SIDEPANEL_OPENED" })
+  } catch (err) {
+    console.debug("Could not notify content script:", err)
+  }
+}
+
 const handler: PlasmoMessaging.MessageHandler = async (req) => {
   const tabId = req.sender.tab?.id
   if (!tabId) return
 
   await chrome.sidePanel.open({ tabId })
+  await notifySidepanelOpened(tabId)
 
   switch (req.body.type as IntentName) {
     case "chat": {

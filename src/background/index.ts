@@ -116,9 +116,24 @@ chrome.runtime.onInstalled.addListener((details) => {
   }
 })
 
+// Testing Stuff ...
+// Helper function to notify content script about sidepanel opening
+const notifySidepanelOpened = async (tabId: number) => {
+  try {
+    // console.log("[Neuropilot] Sending SIDEPANEL_OPENED message to tab:", tabId)
+    await chrome.tabs.sendMessage(tabId, { type: "SIDEPANEL_OPENED" })
+    // console.log("[Neuropilot] Message sent successfully")
+  } catch (err) {
+    console.debug("Could not notify content script:", err)
+  }
+}
+
 // side panel open on icon click
-chrome.action.onClicked.addListener((tab) => {
-  chrome.sidePanel.open({ windowId: tab.windowId })
+chrome.action.onClicked.addListener(async (tab) => {
+  await chrome.sidePanel.open({ windowId: tab.windowId })
+  if (tab.id) {
+    await notifySidepanelOpened(tab.id)
+  }
 })
 
 export { queue, taskMetadata }

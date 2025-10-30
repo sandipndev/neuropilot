@@ -19,7 +19,7 @@ import { useStorage } from "@plasmohq/storage/hook"
 
 import { USER_NAME_KEY } from "~tabs/welcome/api/user-data"
 
-type TabType = "dashboard" | "settings" | "chat"
+type TabType = "dashboard" | "journey" | "settings" | "chat"
 
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(false)
@@ -126,6 +126,18 @@ function App() {
               )}
             </button>
             <button
+              onClick={() => setActiveTab("journey")}
+              className={`px-6 py-3 font-medium text-sm transition-all relative ${
+                activeTab === "journey"
+                  ? "text-blue-600 dark:text-blue-400"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+              }`}>
+              Journey
+              {activeTab === "journey" && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400" />
+              )}
+            </button>
+            <button
               onClick={() => setActiveTab("settings")}
               className={`px-6 py-3 font-medium text-sm transition-all relative ${
                 activeTab === "settings"
@@ -170,7 +182,6 @@ function App() {
 
               {/* Right Column - Quiz & Stats */}
               <div className="col-span-7 flex flex-col gap-5 overflow-y-auto scrollbar-thin">
-                <JourneyGraph />
                 <CompactQuizCard
                   questions={questions}
                   unansweredQuestions={unansweredQuestions}
@@ -183,6 +194,14 @@ function App() {
                   isLoading={focusLoading || winsLoading}
                 />
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "journey" && (
+          <div className="h-full p-6 overflow-y-auto">
+            <div className="max-w-[1600px] mx-auto">
+              <JourneyGraph />
             </div>
           </div>
         )}

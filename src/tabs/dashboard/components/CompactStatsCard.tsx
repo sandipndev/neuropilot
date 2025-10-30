@@ -3,8 +3,8 @@
  */
 
 import { motion } from "framer-motion"
-import { useMemo } from "react"
 import { BarChart3, Clock } from "lucide-react"
+import { useMemo } from "react"
 
 import { calculateStats, formatDuration } from "../lib"
 import type { FocusWithParsedData, WinWithParsedData } from "../types"
@@ -16,7 +16,11 @@ interface CompactStatsCardProps {
 }
 
 // Donut chart component
-function DonutChart({ data }: { data: Array<{ name: string; value: number; color: string }> }) {
+function DonutChart({
+  data
+}: {
+  data: Array<{ name: string; value: number; color: string }>
+}) {
   const total = data.reduce((sum, item) => sum + item.value, 0)
   const size = 160
   const strokeWidth = 24
@@ -39,16 +43,16 @@ function DonutChart({ data }: { data: Array<{ name: string; value: number; color
           strokeWidth={strokeWidth}
           className="text-gray-200 dark:text-gray-800"
         />
-        
+
         {/* Data segments */}
         {data.map((item, index) => {
           const percentage = (item.value / total) * 100
           const segmentLength = (percentage / 100) * circumference
           const offset = circumference - segmentLength
-          
+
           const startAngle = currentAngle
           currentAngle += (percentage / 100) * 360
-          
+
           return (
             <motion.circle
               key={index}
@@ -68,7 +72,7 @@ function DonutChart({ data }: { data: Array<{ name: string; value: number; color
           )
         })}
       </svg>
-      
+
       {/* Center text */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
@@ -94,18 +98,19 @@ export function CompactStatsCard({
 
   const chartData = useMemo(() => {
     const colors = [
-      '#3b82f6', // blue
-      '#8b5cf6', // purple
-      '#10b981', // green
-      '#f59e0b', // amber
-      '#ef4444', // red
+      "#3b82f6", // blue
+      "#8b5cf6", // purple
+      "#10b981", // green
+      "#f59e0b", // amber
+      "#ef4444" // red
     ]
-    
+
     return stats.topActivities.slice(0, 5).map((activity, index) => ({
       name: activity.name,
       value: activity.time,
       color: colors[index],
-      percentage: stats.dailyTotal > 0 ? (activity.time / stats.dailyTotal) * 100 : 0
+      percentage:
+        stats.dailyTotal > 0 ? (activity.time / stats.dailyTotal) * 100 : 0
     }))
   }, [stats])
 
@@ -175,8 +180,7 @@ export function CompactStatsCard({
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className="flex items-center gap-2"
-                  >
+                    className="flex items-center gap-2">
                     <div
                       className="w-3 h-3 rounded-sm shrink-0"
                       style={{ backgroundColor: item.color }}
@@ -215,7 +219,8 @@ export function CompactStatsCard({
                     {stats.primeActivity.name}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {formatDuration(stats.primeActivity.totalTime)} • {stats.primeActivity.percentage.toFixed(0)}% of total
+                    {formatDuration(stats.primeActivity.totalTime)} •{" "}
+                    {stats.primeActivity.percentage.toFixed(0)}% of total
                   </div>
                 </div>
               </div>

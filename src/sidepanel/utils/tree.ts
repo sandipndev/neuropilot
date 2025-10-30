@@ -28,5 +28,5 @@ export function getTreeGrowthStage(totalTimeMs: number): number {
   // Exponential growth formula: Y = R * (1 - e^(-k*x))
   const growthStage = R * (1 - Math.exp(-k * minutes));
 
-  return growthStage;
+  return growthStage + 10;
 }

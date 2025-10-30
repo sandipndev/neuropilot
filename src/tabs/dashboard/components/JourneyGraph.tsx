@@ -12,6 +12,7 @@ interface JourneyNode {
   favicon: string
   timestamp: number
   referrer: string | null
+  summary?: string
 }
 
 interface JourneyPath {
@@ -109,7 +110,8 @@ export function JourneyGraph() {
           totalTime: v.active_time || 0,
           favicon: getFaviconUrl(v.url),
           timestamp: v.opened_at,
-          referrer: v.referrer
+          referrer: v.referrer,
+          summary: v.summary
         }))
 
         path.endTime = pathVisits[pathVisits.length - 1].opened_at
@@ -343,7 +345,7 @@ export function JourneyGraph() {
         <select
           value={timeRange}
           onChange={(e) => setTimeRange(Number(e.target.value))}
-          className="px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          className="px-2 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
           <option value={1 * 60 * 1000}>Last 1 Minute</option>
           <option value={5 * 60 * 1000}>Last 5 Minutes</option>
           <option value={15 * 60 * 1000}>Last 15 Minutes</option>
@@ -391,7 +393,7 @@ export function JourneyGraph() {
 
             {/* Tooltip */}
             {hoveredNode && (
-              <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 p-4 w-72 z-50 pointer-events-none">
+              <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 p-4 w-80 z-50 pointer-events-none">
                 <div className="flex items-start gap-3 mb-3">
                   <img
                     src={faviconImages.get(hoveredNode.id)}
@@ -407,6 +409,18 @@ export function JourneyGraph() {
                     </div>
                   </div>
                 </div>
+
+                {/* Website Summary */}
+                {hoveredNode.summary && (
+                  <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Summary
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                      {hoveredNode.summary}
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-2.5 text-sm">
                   <div className="flex items-center justify-between py-1.5 border-t border-gray-100 dark:border-gray-700">

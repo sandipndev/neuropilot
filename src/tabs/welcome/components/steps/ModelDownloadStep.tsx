@@ -60,7 +60,7 @@ export const ModelDownloadStep: React.FC<ModelDownloadStepProps> = ({
   // Check model availability on mount
   useEffect(() => {
     checkModelStatus();
-  }, [checkModelStatus]);
+  }, []);
 
   const downloadModel = async () => {
     setStatus('downloading');

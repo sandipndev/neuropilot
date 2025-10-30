@@ -1,7 +1,7 @@
 {
   "name": "neuropilot",
   "displayName": "Neuropilot",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Your AI co-pilot for staying focussed",
   "author": "sandipndev <hey@sandipan.dev>, neilblaze <putubanerjee23@gmail.com>, subhamX <subham7sahu@gmail.com>",
   "scripts": {

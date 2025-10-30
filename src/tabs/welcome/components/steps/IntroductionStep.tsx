@@ -2,7 +2,10 @@ import { AnimatePresence, motion } from "framer-motion"
 import { Brain, Eye, Sparkles, TrendingUp, Zap } from "lucide-react"
 import { useEffect, useState } from "react"
 
+import { useStorage } from "@plasmohq/storage/hook"
+
 import { Button } from "../../components/ui/button"
+import { INTRO_STEP_SHOWN_KEY } from "../../utils/onboarding-status"
 
 interface IntroductionStepProps {
   onContinue: () => void
@@ -156,6 +159,7 @@ export const IntroductionStep: React.FC<IntroductionStepProps> = ({
 }) => {
   const [scene, setScene] = useState(0)
   const [showText, setShowText] = useState(false)
+  const [, setIntroStepShown] = useStorage(INTRO_STEP_SHOWN_KEY)
 
   useEffect(() => {
     const timers = [
@@ -167,6 +171,11 @@ export const IntroductionStep: React.FC<IntroductionStepProps> = ({
     ]
     return () => timers.forEach(clearTimeout)
   }, [])
+
+  const handleContinue = () => {
+    setIntroStepShown(true)
+    onContinue()
+  }
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-hidden">
@@ -900,7 +909,7 @@ export const IntroductionStep: React.FC<IntroductionStepProps> = ({
 
                   <Button
                     size="lg"
-                    onClick={onContinue}
+                    onClick={handleContinue}
                     className="relative text-3xl px-24 py-14 bg-gradient-to-r from-fuchsia-500 via-pink-500 to-violet-500 hover:from-violet-500 hover:to-fuchsia-500 transition-all shadow-2xl border-0 font-black rounded-3xl overflow-hidden">
                     <span className="relative z-10 flex items-center gap-4">
                       Begin Your Journey

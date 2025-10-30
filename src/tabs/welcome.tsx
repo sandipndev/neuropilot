@@ -1,3 +1,3 @@
-import App from './welcome/App';
+import App from "./welcome/App"
 
-export default App;
+export default App

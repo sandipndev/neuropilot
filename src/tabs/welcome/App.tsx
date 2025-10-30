@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import { ProgressIndicator } from "./components/ProgressIndicator"
 import { CompletionStep } from "./components/steps/CompletionStep"
@@ -14,6 +14,12 @@ import "./index.css"
 function App() {
   const initialStep = useGetInitialStep()
   const [currentStep, setCurrentStep] = useState<number>(initialStep)
+
+
+  useEffect(() => {
+    setCurrentStep(initialStep)
+  }, [initialStep])
+
   const stepLabels = [
     "Introduction",
     "Configure Flags",
@@ -29,6 +35,8 @@ function App() {
   const handleNavigateToStep = (step: number) => {
     setCurrentStep(step)
   }
+
+  if(currentStep === -1) return null;
 
   return (
     <OnboardingProvider>

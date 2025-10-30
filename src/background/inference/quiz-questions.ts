@@ -4,9 +4,11 @@ import { getLanguageModel } from "~model"
 import { allUserActivityForLastMs } from "~utils"
 
 const quizQuestionsInferenceTask = async () => {
+  console.log(`Starting quizQuestionsInferenceTask.. `)
   const ONE_DAY_MS = 24 * 60 * 60 * 1000
   const recentActivity = await allUserActivityForLastMs(ONE_DAY_MS)
 
+  console.log(`Recent activity: ${recentActivity.length}`)
   if (recentActivity.length === 0) return
 
   const focusData = await db
@@ -24,6 +26,7 @@ const quizQuestionsInferenceTask = async () => {
     .map((a) => a.summary)
     .join("\n")
 
+
   const keyTextLearnings = recentActivity
     .flatMap((a) => a.textAttentions.map((ta) => ta.text))
     .filter((text) => text && text.length > 20)
@@ -37,6 +40,8 @@ const quizQuestionsInferenceTask = async () => {
     .join("\n")
 
   const keyLearnings = `Website Summaries:\n${websiteSummaries}\n\nKey Text Content:\n${keyTextLearnings}`
+
+  console.log(`Key learnings: ${keyLearnings}`)
 
   // calculate n_questions based on amount of activity
   // generate more questions if there is more activity
@@ -96,6 +101,7 @@ Do not wrap in markdown code blocks or add any other text.`
 
   // Parse JSON response
   const quizQuestions = JSON.parse(jsonResponse)
+  console.log(`Raw quizQuestions: ${quizQuestions}`)
 
   if (Array.isArray(quizQuestions)) {
     // Validate the structure
@@ -106,8 +112,10 @@ Do not wrap in markdown code blocks or add any other text.`
         q.option_2 &&
         (q.correct_answer === 1 || q.correct_answer === 2)
     )
-
+    console.log(`Clearning quizQuestions...`)
     await db.table<QuizQuestion>("quizQuestions").clear()
+
+    console.log(`Inserting quizQuestions... ${validQuestions.length}`)
 
     const timestamp = Date.now()
     for (const {

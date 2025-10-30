@@ -45,31 +45,11 @@ const initImageTracker = async () => {
       const loadingIndicator = showLoadingIndicator(data.imageElement)
 
       try {
-        const base64Response = await fetch(data.base64)
-        const blob = await base64Response.blob()
-        const imageFile = new File([blob], "image.jpg", {
-          type: data.mimeType || "image/jpeg"
-        })
-
-        const PROMPT = `Describe this image in one concise sentence (max 15 words).`
+        const altText = data.alt ? `Image alt text: "${data.alt}". ` : ""
+        const PROMPT = `${altText}Describe this image in one concise sentence (max 15 words).`
 
         const session = await getImageModel()
-        const caption = await session.prompt([
-          {
-            role: "user",
-            content: [
-              { type: "image", value: imageFile },
-              {
-                type: "text",
-                value: data.alt
-              },
-              {
-                type: "text",
-                value: PROMPT.trim()
-              }
-            ]
-          }
-        ])
+        const caption = await session.prompt(PROMPT)
         session.destroy()
 
         cachedImageCaptions.set(data.src, caption)

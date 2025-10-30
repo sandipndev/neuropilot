@@ -10,17 +10,17 @@ import { OnboardingProvider } from "./contexts/OnboardingContext"
 
 import "./index.css"
 import { useStorage } from "@plasmohq/storage/hook"
-import { INTRO_STEP_SHOWN_KEY, USER_NAME_KEY } from "./api/user-data"
+import { INTRO_STEP_SHOWN_KEY, ONBOARDED_KEY } from "./api/user-data"
 
 function App() {
-  const [currentStep, setCurrentStep] = useState<number>(0)
-  const [userNamex] = useStorage(USER_NAME_KEY);
+  const [currentStep, setCurrentStep] = useState<number>(-1)
+  const [isOnboarded] = useStorage(ONBOARDED_KEY);
   const [introStepShownx] = useStorage(INTRO_STEP_SHOWN_KEY);
 
-  const getStatus = (_introStepShown: boolean, _userName: string) => {
-    const isComplete = !!_userName;
 
-    if(isComplete){
+  const getStatus = (_introStepShown: boolean, isOnboarded: string) => {
+    console.log(`getStatusCalled`)
+    if(isOnboarded){
       return 4
     }
 
@@ -32,8 +32,9 @@ function App() {
   }
 
   useEffect(() => {
-    setCurrentStep(getStatus(introStepShownx, userNamex))
-  }, [userNamex, introStepShownx])
+    console.log('isOnboarded: ', isOnboarded, ' introStepShown: ', introStepShownx)
+    setCurrentStep(getStatus(introStepShownx, isOnboarded))
+  }, [isOnboarded, introStepShownx])
 
   const stepLabels = [
     "Introduction",
@@ -44,7 +45,12 @@ function App() {
   ]
 
   const handleContinue = () => {
-    setCurrentStep((prev) => (prev !== null ? prev + 1 : 0))
+    setCurrentStep((prev) => {
+      if(prev===null) return 0;
+      if(prev===4) return 4;
+      return prev+1;
+    })
+
   }
 
   const handleNavigateToStep = (step: number) => {

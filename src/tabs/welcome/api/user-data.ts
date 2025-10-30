@@ -2,6 +2,8 @@ import { Storage } from "@plasmohq/storage"
 
 export const USER_NAME_KEY = "neuropilot_user_name"
 export const INTRO_STEP_SHOWN_KEY = "introStepShown";
+export const ONBOARDED_KEY = 'onboarded';
+
 
 interface SetUserNameParams {
   name: string

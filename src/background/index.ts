@@ -12,18 +12,39 @@ import quizQuestionsInferenceTask from "~background/inference/quiz-questions"
 import websiteSummarizerTask from "~background/inference/website-summarizer"
 
 import "~background/context"
+import { ONBOARDED_KEY } from "~tabs/welcome/api/user-data"
 
 const TASK_CONCURRENCY = 1
 const queue = new PQueue({ concurrency: TASK_CONCURRENCY })
 queue.pause()
 
-const backgroundInferenceTasks = [
-  activitySummaryInferenceTask,
-  doomscrollingDetectionTask,
-  focusInferenceTask,
-  focusInactivityTask,
-  websiteSummarizerTask
+type TaskDefinition = {
+  name: string
+  fn: () => Promise<void>
+}
+
+const backgroundInferenceTasks: TaskDefinition[] = [
+  { name: "activity-summary", fn: activitySummaryInferenceTask },
+  { name: "doomscrolling-detection", fn: doomscrollingDetectionTask },
+  { name: "focus-inference", fn: focusInferenceTask },
+  { name: "focus-inactivity", fn: focusInactivityTask },
+  { name: "website-summarizer", fn: websiteSummarizerTask }
 ]
+
+const pulseTask: TaskDefinition = {
+  name: "pulse-inference",
+  fn: pulseInferenceTask
+}
+
+const quizTask: TaskDefinition = {
+  name: "quiz-questions",
+  fn: quizQuestionsInferenceTask
+}
+
+const garbageCollectionTaskDef: TaskDefinition = {
+  name: "garbage-collection",
+  fn: garbageCollectionTask
+}
 
 type QueuedTask = {
   name: string
@@ -34,19 +55,19 @@ const taskMetadata: QueuedTask[] = []
 
 let taskIdCounter = 0
 
-const enqueueTask = (taskFn: () => Promise<void>) => {
-  if (taskMetadata.find((t) => t.name === taskFn.name)) return
+const enqueueTask = (task: TaskDefinition) => {
+  if (taskMetadata.find((t) => t.name === task.name)) return
 
   const meta: QueuedTask = {
-    name: taskFn.name,
+    name: task.name,
     enqueuedAt: Date.now(),
-    id: `${taskFn.name}-${Date.now()}-${++taskIdCounter}`
+    id: `${task.name}-${Date.now()}-${++taskIdCounter}`
   }
   taskMetadata.push(meta)
 
   queue.add(async () => {
     try {
-      await taskFn()
+      await task.fn()
     } catch (err) {
       console.error("Task failed:", err)
     } finally {
@@ -69,7 +90,7 @@ const enqueueTask = (taskFn: () => Promise<void>) => {
 // }
 
 const startScheduler = async () => {
-  if (await storage.get("onboarded")) {
+  if (await storage.get(ONBOARDED_KEY)) {
     queue.start()
   }
   // runContinuousTasksLoop()
@@ -88,13 +109,13 @@ init().catch(console.error)
 chrome.alarms.onAlarm.addListener((alarm) => {
   switch (alarm.name) {
     case "pulse-task":
-      enqueueTask(pulseInferenceTask)
+      enqueueTask(pulseTask)
       break
     case "quiz-task":
-      enqueueTask(quizQuestionsInferenceTask)
+      enqueueTask(quizTask)
       break
     case "garbage-collection-task":
-      enqueueTask(garbageCollectionTask)
+      enqueueTask(garbageCollectionTaskDef)
       break
     case "continuous-tasks-loop":
       for (const task of backgroundInferenceTasks) enqueueTask(task)

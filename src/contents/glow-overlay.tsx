@@ -8,10 +8,7 @@ export const config: PlasmoCSConfig = {
   all_frames: false
 }
 
-// Root container is managed by Plasmo
-// Keeping this function for potential future use
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const getRootContainer = () => {
+export const getRootContainer = () => {
   const container = document.createElement("div")
   container.id = "neuropilot-glow-root"
   container.style.cssText = `

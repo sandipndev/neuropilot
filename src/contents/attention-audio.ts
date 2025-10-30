@@ -38,63 +38,23 @@ const initAudioTracker = async () => {
     onSustainedAudioAttention: async (data) => {
       if (cachedAudioSummaries.has(data.src)) {
         const transcription = cachedAudioSummaries.get(data.src)
-        drawSummary(data.audioElement, transcription)
+        drawSummary(transcription)
         return
       }
 
       const loadingIndicator = showLoadingIndicator()
 
-      async function fetchWithRetry(url: string, retries = 3, delay = 1000) {
-        for (let attempt = 0; attempt <= retries; attempt++) {
-          try {
-            const res = await fetch(url)
-            if (!res.ok) throw new Error(`HTTP ${res.status}`)
-            return res
-          } catch (err) {
-            if (attempt === retries) throw err
-            console.warn(
-              `Fetch failed (attempt ${attempt + 1}), retrying...`,
-              err
-            )
-            await new Promise((r) => setTimeout(r, delay * 2 ** attempt)) // exponential backoff
-          }
-        }
-      }
-
       try {
-        const audioResponse = await fetchWithRetry(data.src)
-        await new Promise((r) => setTimeout(r, 100))
-
-        const blob = await audioResponse.blob()
-        const audioFile = new File([blob], "audio.mp3", {
-          type: blob.type || "audio/mpeg"
-        })
-
-        const PROMPT = `Summarize this audio in one concise sentence (max 15 words).`
+        const titleText = data.title ? `Audio title: "${data.title}". ` : ""
+        const PROMPT = `${titleText}Summarize this audio in one concise sentence (max 15 words).`
 
         const session = await getAudioModel()
-        const summary = await session.prompt([
-          {
-            role: "user",
-            content: [
-              { type: "audio", value: audioFile },
-              {
-                type: "text",
-                value: data.title
-              },
-              {
-                type: "text",
-                value: PROMPT.trim()
-              }
-            ]
-          }
-        ])
-        await new Promise((r) => setTimeout(r, 100))
+        const summary = await session.prompt(PROMPT)
         session.destroy()
 
         cachedAudioSummaries.set(data.src, summary)
         loadingIndicator.remove()
-        drawSummary(data.audioElement, summary)
+        drawSummary(summary)
 
         await sendToBackground({
           name: COGNITIVE_ATTENTION_AUDIO_MESSAGE_NAME,
@@ -175,7 +135,7 @@ const showLoadingIndicator = (): HTMLElement => {
   return loadingDiv
 }
 
-const drawSummary = (audioElement: HTMLAudioElement, summary: string) => {
+const drawSummary = (summary: string) => {
   const summaryId = "audio-summary-overlay"
 
   const existingSummary = document.getElementById(summaryId)

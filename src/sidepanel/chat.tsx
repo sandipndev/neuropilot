@@ -1,5 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks"
-import { Image, MessageSquare, Mic, Send, Sparkles } from "lucide-react"
+import { ExternalLink, Image, MessageSquare, Mic, Send, Sparkles } from "lucide-react"
 import { marked } from "marked"
 import React, { useEffect, useMemo, useRef, useState } from "react"
 
@@ -19,6 +19,27 @@ interface ChatProps {
 
 // Fixed context window of 30 minutes
 const CONTEXT_WINDOW_MS = 30 * 60 * 1000
+
+marked.use({
+  renderer: {
+    link({ href, title, text }) {
+      const titleAttr = title ? ` title="${title}"` : ''
+      return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer"
+        class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline"
+        style="cursor: pointer; word-break: break-all; overflow-wrap: anywhere; display: inline;">
+        ${text}
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="5 5 18 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          style="display: inline-block; margin-left: 1px; transform: translateY(2px);">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+          <polyline points="15 3 21 3 21 9"></polyline>
+          <line x1="10" y1="14" x2="21" y2="3"></line>
+        </svg>
+      </a>`
+    }
+  }
+})
+
 
 export const Chat: React.FC<ChatProps> = ({
   chatId,
@@ -348,7 +369,7 @@ export const Chat: React.FC<ChatProps> = ({
           }`}>
           {message.type === "text" && (
             <div
-              className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2"
+              className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 break-words overflow-wrap-anywhere"
               dangerouslySetInnerHTML={{
                 __html: marked.parse(message.content) as string
               }}
@@ -386,7 +407,7 @@ export const Chat: React.FC<ChatProps> = ({
                 <div className="max-w-xs lg:max-w-md xl:max-w-lg px-4 py-3 rounded-2xl shadow-sm backdrop-blur-sm bg-transparent text-slate-900 dark:text-slate-100 rounded-bl-sm">
                   {streamingMessage ? (
                     <div
-                      className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2"
+                      className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-headings:my-2 break-words overflow-wrap-anywhere"
                       dangerouslySetInnerHTML={{
                         __html: marked.parse(streamingMessage) as string
                       }}

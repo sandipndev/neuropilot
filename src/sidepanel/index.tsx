@@ -495,7 +495,7 @@ const Popup = () => {
 
                 {/* Pomodoro Timer - Enhanced */}
                 <div className="relative group/pomodoro">
-                  <div className="flex items-center gap-2 bg-gradient-to-r from-emerald-100/70 via-emerald-50/40 to-white/20 dark:from-emerald-900/50 dark:via-emerald-950/30 dark:to-slate-900/30 backdrop-blur-md px-4 py-2 rounded-xl border border-white/30 dark:border-slate-600/40 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+                  <div className="flex items-center gap-2 bg-gradient-to-r from-emerald-100/70 via-emerald-50/40 to-white/20 dark:from-emerald-900/50 dark:via-emerald-950/30 dark:to-slate-900/30 backdrop-blur-md px-4 py-2 mr-3 rounded-xl border border-white/30 dark:border-slate-600/40 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
                     {/* Progress indicator background - Subtle fill */}
                     <div
                       className={`absolute inset-0 rounded-xl transition-all duration-1000 ease-in-out ${
@@ -560,14 +560,14 @@ const Popup = () => {
                         <div className="absolute inset-0 rounded-lg bg-white/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       </button>
                     </div>
-
-                    {/* Pomodoro count indicator */}
-                    {pomodoroState.totalPomodoros > 0 && (
-                      <div className="absolute -top-1 -right-1 bg-gradient-to-br from-purple-500 to-pink-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg border border-white/30">
-                        {pomodoroState.totalPomodoros}
-                      </div>
-                    )}
                   </div>
+
+                  {/* Pomodoro count indicator */}
+                  {pomodoroState.totalPomodoros > 0 && (
+                    <div className="absolute -top-1 -right-1 mr-3 bg-gradient-to-br from-purple-500 to-pink-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg border border-white/30">
+                      {pomodoroState.totalPomodoros}
+                    </div>
+                  )}
 
                   {/* Hover Popover */}
                   <div className="absolute top-full right-0 mt-2 w-64 opacity-0 invisible group-hover/pomodoro:opacity-100 group-hover/pomodoro:visible transition-all duration-300 pointer-events-none z-50">

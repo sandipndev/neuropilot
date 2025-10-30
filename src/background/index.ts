@@ -34,7 +34,7 @@ const taskMetadata: QueuedTask[] = []
 
 let taskIdCounter = 0
 
-const enqueueTask = (taskFn: () => Promise<any>) => {
+const enqueueTask = (taskFn: () => Promise<void>) => {
   if (taskMetadata.find((t) => t.name === taskFn.name)) return
 
   const meta: QueuedTask = {

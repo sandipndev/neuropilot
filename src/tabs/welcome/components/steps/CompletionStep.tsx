@@ -48,7 +48,7 @@ const STEPS_INFO = [
 export const CompletionStep: React.FC<CompletionStepProps> = ({
   onNavigateToStep
 }) => {
-  const [userName, __] = useStorage(USER_NAME_KEY)
+  const [userName] = useStorage(USER_NAME_KEY)
 
   // Redirect to User Info step if name is not provided
   useEffect(() => {

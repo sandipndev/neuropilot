@@ -7,7 +7,6 @@ import { CheckCircle2, Loader2, User } from 'lucide-react';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { setUserName, getUserName } from '../../api/user-data';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useStorage } from '@plasmohq/storage/hook';
 
 interface UserInfoStepProps {
   onComplete: () => void;
@@ -15,7 +14,7 @@ interface UserInfoStepProps {
 
 export const UserInfoStep: React.FC<UserInfoStepProps> = ({ onComplete }) => {
   const { updateUserData, markStepComplete } = useOnboarding();
-  const [name, setName] = useState('');
+  const [name, setName] = useState(''); // TODO: useStorage perhaps.. it will be cleaner.
   const [nameError, setNameError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -29,17 +28,6 @@ export const UserInfoStep: React.FC<UserInfoStepProps> = ({ onComplete }) => {
     const trimmedValue = value.trim();
     if (trimmedValue.length === 0) {
       return 'Name is required';
-    }
-    return '';
-  };
-
-  const validateAge = (value: string): string => {
-    if (!value) {
-      return 'Age is required';
-    }
-    const ageNum = parseInt(value, 10);
-    if (isNaN(ageNum) || ageNum < 1 || ageNum > 150) {
-      return 'Please enter a valid age';
     }
     return '';
   };

@@ -63,7 +63,7 @@ class WebsiteTracker {
     this.emit("closed", { url: this.url, time: this.activeTime })
   }
 
-  private async emit(event: WebsiteVisitEventType, data: any = {}) {
+  private async emit(event: WebsiteVisitEventType, data: Record<string, unknown> = {}) {
     const body = {
       event,
       url: this.url,
@@ -73,7 +73,9 @@ class WebsiteTracker {
 
     try {
       await sendToBackground({ name: WEBSITE_VISIT_MESSAGE_NAME, body })
-    } catch {}
+    } catch {
+      // Ignore errors when sending to background
+    }
   }
 }
 

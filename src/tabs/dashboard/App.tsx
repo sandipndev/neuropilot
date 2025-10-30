@@ -54,7 +54,7 @@ function App() {
     }
   }, [focusHistory.length])
 
-  const [userName, _] = useStorage(USER_NAME_KEY)
+  const [userName] = useStorage(USER_NAME_KEY)
 
   console.log("userName", userName)
 

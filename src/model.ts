@@ -2,7 +2,6 @@ import { Storage } from "@plasmohq/storage"
 
 import type { ChatMessageItem } from "~chat"
 import { MODEL_TEMPERATURE_MULTIPLIER, MODEL_TOPK } from "~default-settings"
-import { hashArray, hashString } from "~utils"
 
 const storage = new Storage()
 
@@ -18,7 +17,7 @@ const MULTIMODAL_CONFIG = {
 } as const
 
 const getLanguageModelOptions = async () => {
-  const LanguageModel = (self as any).LanguageModel
+  const LanguageModel = (self as { LanguageModel?: { params: () => Promise<{ defaultTemperature: number; defaultTopK: number }>; create: (options: Record<string, unknown>) => Promise<unknown>; availability: (config?: Record<string, unknown>) => Promise<string> } }).LanguageModel
 
   // Get topK from storage or use default
   let topK: number = await storage.get(MODEL_TOPK.key)
@@ -39,8 +38,8 @@ const getLanguageModelOptions = async () => {
   }
 
   temperatureMultiplier = Number(temperatureMultiplier)
-  const params = await LanguageModel.params()
-  const temperature = Number(params.defaultTemperature) * temperatureMultiplier
+  const params = await LanguageModel?.params()
+  const temperature = Number(params?.defaultTemperature ?? 1.0) * temperatureMultiplier
 
   return {
     topK: Number(topK),
@@ -48,8 +47,8 @@ const getLanguageModelOptions = async () => {
   }
 }
 
-const checkLanguageModelAvailability = async (config?: any) => {
-  const LanguageModel = (self as any).LanguageModel
+const checkLanguageModelAvailability = async (config?: Record<string, unknown>) => {
+  const LanguageModel = (self as { LanguageModel?: { params: () => Promise<{ defaultTemperature: number; defaultTopK: number }>; create: (options: Record<string, unknown>) => Promise<unknown>; availability: (config?: Record<string, unknown>) => Promise<string> } }).LanguageModel
   if (!LanguageModel) throw new Error("Chrome AI not available")
 
   const availability = await LanguageModel.availability(config)
@@ -114,7 +113,7 @@ export const getChatModel = async (
 
 //////// SUMMARIZER API ////////
 const checkSummarizerAvailability = async () => {
-  const Summarizer = (self as any).Summarizer
+  const Summarizer = (self as { Summarizer?: { create: (options: Record<string, unknown>) => Promise<{ summarize: (text: string) => Promise<string>; destroy: () => void }> } }).Summarizer
   if (!Summarizer) throw new Error("Summarizer not available")
   return Summarizer
 }
@@ -132,7 +131,7 @@ export const getSummarizer = async (
 //////// REWRITE API ////////
 
 const checkRewriterAvailability = async () => {
-  const Rewriter = (self as any).Rewriter
+  const Rewriter = (self as { Rewriter?: { create: (options: Record<string, unknown>) => Promise<{ rewrite: (text: string) => Promise<string>; destroy: () => void }> } }).Rewriter
   if (!Rewriter) throw new Error("Rewriter not available")
   return Rewriter
 }
@@ -151,7 +150,7 @@ export const getRewriter = async (
 
 //////// WRITER API ////////
 const checkWriterAvailability = async () => {
-  const Writer = (self as any).Writer
+  const Writer = (self as { Writer?: { create: (options: Record<string, unknown>) => Promise<{ write: (prompt: string, options?: Record<string, unknown>) => Promise<string>; destroy: () => void }> } }).Writer
   if (!Writer) throw new Error("Writer not available")
   return Writer
 }

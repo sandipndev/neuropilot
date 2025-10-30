@@ -11,7 +11,12 @@ export function useNotificationSound() {
     try {
       // Create audio context if it doesn't exist
       if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const AudioContextClass = window.AudioContext || (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+        if (AudioContextClass) {
+          audioContextRef.current = new AudioContextClass()
+        } else {
+          throw new Error('AudioContext not supported')
+        }
       }
 
       const audioContext = audioContextRef.current;

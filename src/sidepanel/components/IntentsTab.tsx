@@ -1,5 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 import type { Intent } from "~background/messages/intent"
 import { CODE_TO_LANGUAGE } from "~background/messages/intent"
@@ -105,10 +105,13 @@ export const IntentsTab = () => {
   }, [])
 
   // Create a map of intentId -> processed result
-  const resultsMap = new Map<number, ProcessedIntent>()
-  processedIntents?.forEach((pi) => {
-    resultsMap.set(pi.intentId, pi)
-  })
+  const resultsMap = useMemo(() => {
+    const map = new Map<number, ProcessedIntent>()
+    processedIntents?.forEach((pi) => {
+      map.set(pi.intentId, pi)
+    })
+    return map
+  }, [processedIntents])
 
   // Auto-process unprocessed intents
   useEffect(() => {

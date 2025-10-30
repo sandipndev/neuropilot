@@ -38,7 +38,7 @@ export async function checkChromeAIAvailability(): Promise<ChromeAIStatus> {
     };
   }
 
-  const LanguageModel = (window as any).LanguageModel;
+  const LanguageModel = (window as { LanguageModel?: { availability: (config?: Record<string, unknown>) => Promise<string> } }).LanguageModel;
 
   if (!LanguageModel?.availability) {
     return {
@@ -110,7 +110,7 @@ export async function createAISession(config: AISessionConfig): Promise<AILangua
     return Promise.reject(new Error(isAvailable.instructions || 'Chrome AI not available'));
   }
 
-  const LanguageModel = (window as any).LanguageModel;
+  const LanguageModel = (window as { LanguageModel?: { availability: (config?: Record<string, unknown>) => Promise<string>; create: (config: Record<string, unknown>) => Promise<AILanguageModelSession> } }).LanguageModel;
 
   if (!LanguageModel?.availability || !LanguageModel.create) {
     throw new Error('Chrome LanguageModel API not available');
@@ -133,7 +133,7 @@ export async function createAISession(config: AISessionConfig): Promise<AILangua
   }
 
   // Use provided config or defaults
-  const sessionConfig: any = {
+  const sessionConfig: Record<string, unknown> = {
     initialPrompts: [
       {
         role: 'system',

@@ -291,10 +291,12 @@ class CognitiveAttentionTextTracker {
         return true
       }
 
-      for (let selector of IGNORE_SELECTORS) {
+      for (const selector of IGNORE_SELECTORS) {
         try {
           if (current.matches(selector)) return true
-        } catch (e) {}
+        } catch {
+          // Ignore invalid selectors
+        }
       }
 
       const className = (current.className || "").toString().toLowerCase()

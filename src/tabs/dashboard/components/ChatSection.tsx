@@ -187,7 +187,7 @@ export function ChatSection({ currentFocus, focusHistory = [] }: ChatSectionProp
       setIsWaitingForResponse(false);
       inputRef.current?.focus();
     }
-  }, [inputValue, isLoading, currentFocus, focusHistory]);
+  }, [inputValue, isLoading, currentFocus, focusHistory, selectedImage]);
 
   // Handle Enter key press
   const handleKeyDown = useCallback(
@@ -325,7 +325,7 @@ export function ChatSection({ currentFocus, focusHistory = [] }: ChatSectionProp
         cleanupImagePreview(selectedImage);
       }
     };
-  }, []);
+  }, [selectedImage]);
 
   return (
     <motion.div

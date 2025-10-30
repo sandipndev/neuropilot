@@ -12,7 +12,7 @@ export async function checkChromeAIAvailability(): Promise<{
   available: boolean;
   reason?: string;
 }> {
-  const LanguageModel = (window as any).LanguageModel;
+  const LanguageModel = (window as { LanguageModel?: { availability?: () => Promise<string> } }).LanguageModel;
   
   if (!LanguageModel?.availability) {
     return {
@@ -50,7 +50,7 @@ export async function checkModelAvailability(): Promise<{
   }
 
   try {
-    const LanguageModel = (window as any).LanguageModel;
+    const LanguageModel = (window as { LanguageModel?: { availability: () => Promise<string> } }).LanguageModel;
     
     // Check model availability status
     const status = await LanguageModel.availability();

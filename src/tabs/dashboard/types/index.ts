@@ -19,6 +19,8 @@ export interface StatsData {
     name: string;
     time: number;
   }>;
+  dailyWins: number;
+  weeklyWins: number;
 }
 
 export type FocusState = 'no-focus' | 'active-focus' | 'wind-down';

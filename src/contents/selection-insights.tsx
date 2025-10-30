@@ -17,7 +17,7 @@ export const config: PlasmoCSConfig = {
   all_frames: false
 }
 
-const SelectionCard = () => {
+function SelectionCard() {
   const [visible, setVisible] = useState(false)
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [selectedText, setSelectedText] = useState("")

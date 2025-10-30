@@ -1,5 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks"
-import { ExternalLink, Image, MessageSquare, Mic, Send, Sparkles } from "lucide-react"
+import { Image, MessageSquare, Mic, Send, Sparkles } from "lucide-react"
 import { marked } from "marked"
 import React, { useEffect, useMemo, useRef, useState } from "react"
 
@@ -95,7 +95,7 @@ export const Chat: React.FC<ChatProps> = ({
   useEffect(() => {
     const base64ToFile = (base64String: string, filename: string) => {
       const arr = base64String.split(",")
-      const mime = arr[0].match(/:(.*?);/)[1]
+      const mime = arr[0].match(/:(.*?);/)?.[1] ?? "application/octet-stream"
       const bstr = atob(arr[1])
       const n = bstr.length
       const u8arr = new Uint8Array(n)
@@ -138,12 +138,11 @@ export const Chat: React.FC<ChatProps> = ({
 
   useEffect(() => {
     const session = chatService.getSession()
-    if (session) {
-      const { inputUsage, inputQuota } = session
-      const usage = { inputUsage, inputQuota }
+    if (session && 'inputUsage' in session && 'inputQuota' in session) {
+      const usage = { inputUsage: session.inputUsage as number, inputQuota: session.inputQuota as number }
       onUsageUpdate?.(usage)
     }
-  }, [messages, onUsageUpdate])
+  }, [messages, onUsageUpdate, chatService])
 
   useEffect(() => {
     return () => {

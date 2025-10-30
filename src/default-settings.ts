@@ -41,8 +41,8 @@ export const FOCUS_INACTIVITY_THRESHOLD = {
 export const MODEL_TOPK = {
   key: "setting-model-topk",
   defaultValue: async () => {
-    const params = await (self as any).LanguageModel.params()
-    return params.defaultTopK
+    const params = await (self as { LanguageModel?: { params: () => Promise<{ defaultTopK: number }> } }).LanguageModel?.params()
+    return params?.defaultTopK ?? 3
   }
 }
 export const MODEL_TEMPERATURE_MULTIPLIER = {

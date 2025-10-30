@@ -160,14 +160,14 @@ const showLoadingIndicator = (imageElement: HTMLImageElement): HTMLElement => {
 
   window.addEventListener("resize", resizeHandler)
   window.addEventListener("scroll", scrollHandler, true)
-  ;(loadingDiv as any)._cleanup = () => {
+  const cleanup = () => {
     window.removeEventListener("resize", resizeHandler)
     window.removeEventListener("scroll", scrollHandler, true)
   }
 
   const originalRemove = loadingDiv.remove.bind(loadingDiv)
   loadingDiv.remove = () => {
-    ;(loadingDiv as any)._cleanup?.()
+    cleanup()
     originalRemove()
   }
 

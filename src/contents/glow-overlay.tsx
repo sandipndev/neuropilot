@@ -1,5 +1,5 @@
 import type { PlasmoCSConfig } from "plasmo"
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 import "./glow-overlay.css"
 
@@ -8,7 +8,10 @@ export const config: PlasmoCSConfig = {
   all_frames: false
 }
 
-export const getRootContainer = () => {
+// Root container is managed by Plasmo
+// Keeping this function for potential future use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const getRootContainer = () => {
   const container = document.createElement("div")
   container.id = "neuropilot-glow-root"
   container.style.cssText = `
@@ -26,24 +29,7 @@ const GlowOverlay = () => {
   const overlayRef = useRef<HTMLDivElement>(null)
   const animationPlayedRef = useRef(false)
 
-  useEffect(() => {
-    console.log("[Neuropilot Glow] Content script mounted")
-    
-    // Testing stuff ...
-    const handleMessage = (message: any) => {
-      if (message.type === "SIDEPANEL_OPENED" && !animationPlayedRef.current) {
-        playAnimation()
-      }
-    }
-
-    chrome.runtime.onMessage.addListener(handleMessage)
-
-    return () => {
-      chrome.runtime.onMessage.removeListener(handleMessage)
-    }
-  }, [])
-
-  const playAnimation = () => {
+  const playAnimation = useCallback(() => {
     const $overlay = overlayRef.current
     if (!$overlay || animationPlayedRef.current) return
     
@@ -71,7 +57,24 @@ const GlowOverlay = () => {
         }
       })
     }, 300)
-  }
+  }, [])
+
+  useEffect(() => {
+    console.log("[Neuropilot Glow] Content script mounted")
+    
+    // Testing stuff ...
+    const handleMessage = (message: { type: string }) => {
+      if (message.type === "SIDEPANEL_OPENED" && !animationPlayedRef.current) {
+        playAnimation()
+      }
+    }
+
+    chrome.runtime.onMessage.addListener(handleMessage)
+
+    return () => {
+      chrome.runtime.onMessage.removeListener(handleMessage)
+    }
+  }, [playAnimation])
 
   const animateNumber = (options: {
     startValue?: number
@@ -124,7 +127,7 @@ const GlowOverlay = () => {
       ref={overlayRef}
       id="neuropilot-glow-overlay"
       style={{
-        // @ts-ignore
+        // @ts-expect-error - CSS custom properties
         "--pointer-°": "45deg",
         "--pointer-d": "100"
       }}>

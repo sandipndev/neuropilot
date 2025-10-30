@@ -25,7 +25,7 @@ export function TreeAnimationSection({
     })
   }, [])
 
-  const { canvas, setContainerRef, rive, setCanvasRef } = useRive(
+  const { rive, setCanvasRef } = useRive(
     {
       src: "/assets/8178-15744-focusforest.riv",
       autoplay: true,
@@ -67,8 +67,7 @@ export function TreeAnimationSection({
 
 
 
-  const [layoutHeight, setLayoutHeight] = useState(window.innerHeight)
-  const [layoutWidth, setLayoutWidth] = useState(window.innerWidth)
+  const [layoutHeight] = useState(window.innerHeight)
 
 
   if (!runtimeLoaded) {

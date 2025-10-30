@@ -321,7 +321,7 @@ class CognitiveAttentionImageUI {
     }
   }
 
-  showHighlight(image: HTMLImageElement, progress: number): void {
+  showHighlight(image: HTMLImageElement): void {
     if (!this.config.showOverlay) return
 
     this.hideHighlight()

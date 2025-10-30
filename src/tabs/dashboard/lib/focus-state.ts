@@ -1,10 +1,6 @@
 // Focus state determination logic
 
 import type { FocusWithParsedData, FocusState } from '../types';
-import { isNightTime } from './time';
-
-// Constants for wind-down logic
-const WIND_DOWN_THRESHOLD = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
 
 /**
  * Calculate total daily focus time (last 24 hours)
@@ -32,17 +28,6 @@ export function determineFocusState(
   if (!currentFocus && focusHistory.length === 0) {
     return 'no-focus';
   }
-
-  // Calculate total daily focus time
-  const totalDailyFocusTime = calculateDailyFocusTime(focusHistory);
-
-  // Check if it's nighttime (after 8 PM)
-  const nightTime = isNightTime();
-
-  // // If user has focused for 6+ hours today and it's nighttime, suggest wind-down
-  // if (totalDailyFocusTime >= WIND_DOWN_THRESHOLD && nightTime) {
-  //   return 'wind-down';
-  // }
 
   // Otherwise, show active focus state
   return 'active-focus';

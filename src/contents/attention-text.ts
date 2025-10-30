@@ -27,7 +27,7 @@ let textTracker: CognitiveAttentionTextTracker | null = null
 const URL = location.href
 
 // Helper to safely parse numbers and fallback to defaults
-const parseNumber = (val: any, fallback: number) => {
+const parseNumber = (val: unknown, fallback: number) => {
   const num = Number(val)
   return Number.isFinite(num) ? num : fallback
 }

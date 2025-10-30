@@ -1,5 +1,3 @@
-import { z } from "zod"
-
 import type { PlasmoMessaging } from "@plasmohq/messaging"
 import { Storage } from "@plasmohq/storage"
 
@@ -8,7 +6,7 @@ import { INTENT_QUEUE_NOTIFY } from "~default-settings"
 
 const storage = new Storage()
 
-const INTENT_ITEMS = [
+type IntentItems = [
   "add-selection-to-chat",
   "proofread-selection",
   "rephrase-selection",
@@ -24,7 +22,7 @@ const INTENT_ITEMS = [
   "rephrase",
   "summarize",
   "chat"
-] as const
+]
 
 export const CODE_TO_LANGUAGE = {
   en: "English",
@@ -49,51 +47,38 @@ export const CODE_TO_LANGUAGE = {
   pl: "Polish"
 }
 
-const IntentSchema = z.discriminatedUnion("type", [
-  z.object({
-    name: z.enum(INTENT_ITEMS),
-    type: z.literal("PROOFREAD"),
-    text: z.string(),
-    timestamp: z.number(),
-    processed: z.boolean().optional().default(false)
-  }),
-  z.object({
-    name: z.enum(INTENT_ITEMS),
-    type: z.literal("TRANSLATE"),
-    text: z.string(),
-    language: z.enum(Object.keys(CODE_TO_LANGUAGE)),
-    timestamp: z.number(),
-    processed: z.boolean().optional().default(false)
-  }),
-  z.object({
-    name: z.enum(INTENT_ITEMS),
-    type: z.literal("REPHRASE"),
-    text: z.string(),
-    timestamp: z.number(),
-    processed: z.boolean().optional().default(false)
-  }),
-  z.object({
-    name: z.enum(INTENT_ITEMS),
-    type: z.literal("SUMMARIZE"),
-    text: z.string(),
-    timestamp: z.number(),
-    processed: z.boolean().optional().default(false)
-  }),
-  z.object({
-    name: z.enum(INTENT_ITEMS),
-    type: z.literal("CHAT"),
-    payload: z.string(),
-    payloadType: z.enum(["IMAGE", "TEXT", "AUDIO"]),
-    timestamp: z.number(),
-    processed: z.boolean().optional().default(false)
+type BaseIntent = {
+  name: IntentName
+  timestamp: number
+  processed?: boolean
+}
+
+export type Intent =
+  | (BaseIntent & {
+    type: "PROOFREAD"
+    text: string
   })
-])
+  | (BaseIntent & {
+    type: "TRANSLATE"
+    text: string
+    language: keyof typeof CODE_TO_LANGUAGE
+  })
+  | (BaseIntent & {
+    type: "REPHRASE"
+    text: string
+  })
+  | (BaseIntent & {
+    type: "SUMMARIZE"
+    text: string
+  })
+  | (BaseIntent & {
+    type: "CHAT"
+    payload: string
+    payloadType: "IMAGE" | "TEXT" | "AUDIO"
+  })
 
-export type Intent = z.infer<typeof IntentSchema>
-export type IntentName = (typeof INTENT_ITEMS)[number]
-
-const INTENT_TYPES = IntentSchema.options.map((s) => s.shape.type.value)
-export type IntentType = (typeof INTENT_TYPES)[number]
+export type IntentName = IntentItems[number]
+export type IntentType = Intent["type"]
 
 const notifySidepanelOpened = async (tabId: number) => {
   try {

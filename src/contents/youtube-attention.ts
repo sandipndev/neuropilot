@@ -26,7 +26,7 @@ class YoutubeAttention {
     this.watchUrlChanges()
   }
 
-  private async emit(event: string, data: any) {
+  private async emit(event: string, data: Record<string, unknown>) {
     await sendToBackground({
       name: YOUTUBE_ATTENTION_MESSAGE_NAME,
       body: {

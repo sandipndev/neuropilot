@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 import { ProgressIndicator } from "./components/ProgressIndicator"
 import { CompletionStep } from "./components/steps/CompletionStep"

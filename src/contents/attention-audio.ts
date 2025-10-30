@@ -42,7 +42,7 @@ const initAudioTracker = async () => {
         return
       }
 
-      const loadingIndicator = showLoadingIndicator(data.audioElement)
+      const loadingIndicator = showLoadingIndicator()
 
       async function fetchWithRetry(url: string, retries = 3, delay = 1000) {
         for (let attempt = 0; attempt <= retries; attempt++) {
@@ -126,7 +126,7 @@ initAudioTracker().then(() => {
 
 export { audioTracker }
 
-const showLoadingIndicator = (audioElement: HTMLAudioElement): HTMLElement => {
+const showLoadingIndicator = (): HTMLElement => {
   const loadingId = "audio-transcription-loading"
 
   const existingLoading = document.getElementById(loadingId)

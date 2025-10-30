@@ -68,12 +68,11 @@ const ChatConversation: React.FC<ChatConversationProps> = ({
 
   useEffect(() => {
     const session = chatService.getSession()
-    if (session) {
-      const { inputUsage, inputQuota } = session
-      const usage = { inputUsage, inputQuota }
+    if (session && 'inputUsage' in session && 'inputQuota' in session) {
+      const usage = { inputUsage: session.inputUsage as number, inputQuota: session.inputQuota as number }
       onUsageUpdate?.(usage)
     }
-  }, [messages, onUsageUpdate])
+  }, [messages, onUsageUpdate, chatService])
 
   useEffect(() => {
     return () => {

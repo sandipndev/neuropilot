@@ -59,6 +59,7 @@ export function JourneyGraph() {
 
   useEffect(() => {
     loadJourneyData()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeRange, viewMode])
 
   const getFaviconUrl = (url: string): string => {
@@ -269,9 +270,10 @@ export function JourneyGraph() {
     return groups.sort((a, b) => b.startTime - a.startTime)
   }
 
-  const getNodeSize = (visits: number) => {
-    return Math.min(48 + visits * 4, 80)
-  }
+  // Unused function - kept for potential future use
+  // const getNodeSize = (visits: number) => {
+  //   return Math.min(48 + visits * 4, 80)
+  // }
 
   const getTimeColor = (totalTime: number) => {
     const minutes = totalTime / 60000
@@ -319,7 +321,7 @@ export function JourneyGraph() {
     const cardHeight = maxRows * rowHeight + 20
 
     // Generate curved path between two points
-    const generateCurvePath = (from: any, to: any) => {
+    const generateCurvePath = (from: { x: number; y: number }, to: { x: number; y: number }) => {
       const dx = to.x - from.x
       const dy = to.y - from.y
 
@@ -490,7 +492,7 @@ export function JourneyGraph() {
     })
   }
 
-const renderSemanticGroupCard = (group: SemanticGroup, groupIndex: number) => {
+const renderSemanticGroupCard = (group: SemanticGroup) => {
   const scrollState = scrollStates.get(group.id)
   const isAtBottom = scrollState?.isAtBottom ?? false
   const remainingItems = scrollState?.remainingItems ?? Math.max(0, group.paths.length - 3)
@@ -613,21 +615,11 @@ const renderSemanticGroupCard = (group: SemanticGroup, groupIndex: number) => {
                 </div>
 
                 {/* Domain badges - show which sites are in this journey */}
-                {domains.length > 0 && (
+                {domains.length > 3 && (
                   <div className="flex flex-wrap gap-1 mb-2">
-                    {domains.slice(0, 3).map((domain, idx) => (
-                      // <span
-                      //   key={idx}
-                      //   className="text-[10px] px-1.5 py-0.5 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded border border-gray-200 dark:border-gray-600 font-mono">
-                      //   {domain}
-                      // </span>
-                      <></>
-                    ))}
-                    {domains.length > 3 && (
-                      <span className="text-[10px] px-1.5 py-0.5 text-gray-500 dark:text-gray-500">
-                        +{domains.length - 3}
-                      </span>
-                    )}
+                    <span className="text-[10px] px-1.5 py-0.5 text-gray-500 dark:text-gray-500">
+                      {domains.length} sites
+                    </span>
                   </div>
                 )}
 
@@ -646,11 +638,11 @@ const renderSemanticGroupCard = (group: SemanticGroup, groupIndex: number) => {
 
                 {/* Path Nodes - Compact View */}
                 <div className="flex flex-wrap gap-2">
-                  {path.nodes.map((node) => {
+                  {path.nodes.map((node, nodeIndex) => {
                     const timeColor = getTimeColor(node.totalTime)
                     return (
                       <div
-                        key={node.id}
+                        key={`${node.id}-${nodeIndex}`}
                         className="relative group"
                         onMouseEnter={() => setHoveredNode(node)}
                         onMouseLeave={() => setHoveredNode(null)}>
@@ -1043,7 +1035,7 @@ const renderSemanticGroupCard = (group: SemanticGroup, groupIndex: number) => {
                   Top Groups
                 </h5>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {semanticGroups.slice(0, 5).map((group, index) => (
+                  {semanticGroups.slice(0, 5).map((group) => (
                     <div
                       key={group.id}
                       className="text-xs p-2 bg-white dark:bg-gray-700 rounded border">

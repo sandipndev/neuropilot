@@ -65,6 +65,7 @@ export const FlagsConfigurationStep: React.FC<FlagsConfigurationStepProps> = ({
   // Check flags status on mount
   useEffect(() => {
     checkFlagsStatus()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const checkFlagsStatus = async () => {

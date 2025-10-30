@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
@@ -22,12 +22,7 @@ export const ModelDownloadStep: React.FC<ModelDownloadStepProps> = ({
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [needsDownload, setNeedsDownload] = useState(false);
 
-  // Check model availability on mount
-  useEffect(() => {
-    checkModelStatus();
-  }, []);
-
-  const checkModelStatus = async () => {
+  const checkModelStatus = useCallback(async () => {
     setStatus('checking');
     setErrorMessage('');
     
@@ -60,7 +55,12 @@ export const ModelDownloadStep: React.FC<ModelDownloadStepProps> = ({
           : 'Failed to check model availability'
       );
     }
-  };
+  }, [setModelAvailable, updateModelProgress]);
+
+  // Check model availability on mount
+  useEffect(() => {
+    checkModelStatus();
+  }, [checkModelStatus]);
 
   const downloadModel = async () => {
     setStatus('downloading');
@@ -68,12 +68,12 @@ export const ModelDownloadStep: React.FC<ModelDownloadStepProps> = ({
     updateModelProgress(0);
 
     try {
-      const LanguageModel = (window as any).LanguageModel;
+      const LanguageModel = (window as { LanguageModel?: { create: (options: { monitor: (m: { addEventListener: (event: string, handler: (e: { loaded: number; total: number }) => void) => void }) => void }) => Promise<{ destroy: () => void }> } }).LanguageModel;
       
       // Create a language model session with download progress monitoring
-      const session = await LanguageModel.create({
-        monitor(m: any) {
-          m.addEventListener('downloadprogress', (e: any) => {
+      const session = await LanguageModel!.create({
+        monitor(m: { addEventListener: (event: string, handler: (e: { loaded: number; total: number }) => void) => void }) {
+          m.addEventListener('downloadprogress', (e: { loaded: number; total: number }) => {
             const progress = (e.loaded / e.total) * 100;
             updateModelProgress(progress);
           });

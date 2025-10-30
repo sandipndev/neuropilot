@@ -15,10 +15,17 @@ export type ChatMessageItem = {
   )[]
 }
 
+interface ChatSession {
+  prompt: (input: string) => Promise<string>
+  promptStreaming: (input: string) => AsyncIterable<string>
+  append: (messages: ChatMessageItem[]) => Promise<void>
+  destroy?: () => void
+}
+
 export class ChatService {
   private chatId: string
   private contextWindowMs: number = 24 * 60 * 60 * 1000 // 1 day
-  private _session: any | null = null
+  private _session: ChatSession | null = null
 
   constructor(chatId: string) {
     this.chatId = chatId
@@ -41,7 +48,7 @@ export class ChatService {
     if (!chat) {
       const activity = await allUserActivityForLastMs(this.contextWindowMs)
       const prompt = SYSTEM_PROMPT(systemPromptContext(activity))
-      this._session = await getChatModel(prompt, [])
+      this._session = await getChatModel(prompt, []) as ChatSession
 
       await db.table<Chat>("chat").put({
         id: this.chatId,
@@ -90,7 +97,7 @@ export class ChatService {
     )
 
     const systemPrompt = SYSTEM_PROMPT(systemPromptContext(chat.userActivity))
-    this._session = await getChatModel(systemPrompt, previousConversation)
+    this._session = await getChatModel(systemPrompt, previousConversation) as ChatSession
     return this._session
   }
 
@@ -187,7 +194,7 @@ export class ChatService {
   ): Promise<void> {
     try {
       const { getLanguageModel } = await import("~model")
-      const titleModel = await getLanguageModel()
+      const titleModel = await getLanguageModel() as { prompt: (input: string) => Promise<string>; destroy?: () => void }
 
       const titlePrompt = `Based on this conversation, generate a 3-4 word title that captures what the user is trying to learn or find out.
 
@@ -204,7 +211,7 @@ Respond with ONLY the title, nothing else. Keep it concise (3-4 words maximum).`
       })
 
       // Destroy the title model session after use
-      if (titleModel.destroy) {
+      if ('destroy' in titleModel && typeof titleModel.destroy === 'function') {
         await titleModel.destroy()
       }
     } catch (error) {
@@ -262,10 +269,9 @@ FORMAT:
 
 All this context is NOT another previous conversation, it is the user's current activity.
   
-${
-  activityContent
+${activityContent
     ? `HERE IS WHAT THE USER HAS VISITED PRIMARILY:
 ${activityContent}`
     : "The user has not visited any websites recently."
-}
+  }
 `

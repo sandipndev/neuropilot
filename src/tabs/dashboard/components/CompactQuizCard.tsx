@@ -83,7 +83,7 @@ export function CompactQuizCard({
   // Shuffle options for current question (memoized to prevent re-shuffling on re-renders)
   const shuffledOptions = useMemo(
     () => (currentQuestion ? shuffleOptions(currentQuestion) : []),
-    [currentQuestion?.id]
+    [currentQuestion]
   )
 
   const handleAnswer = useCallback(

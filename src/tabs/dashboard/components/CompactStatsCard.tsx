@@ -48,7 +48,6 @@ function DonutChart({
         {data.map((item, index) => {
           const percentage = (item.value / total) * 100
           const segmentLength = (percentage / 100) * circumference
-          const offset = circumference - segmentLength
 
           const startAngle = currentAngle
           currentAngle += (percentage / 100) * 360
@@ -112,7 +111,7 @@ export function CompactStatsCard({
       percentage:
         stats.dailyTotal > 0 ? (activity.time / stats.dailyTotal) * 100 : 0
     }))
-  }, [stats])
+  }, [stats.topActivities, stats.dailyTotal])
 
   if (isLoading) {
     return (
@@ -125,7 +124,7 @@ export function CompactStatsCard({
     )
   }
 
-  const hasData = stats.weeklyTotal > 0 || stats.dailyTotal > 0
+  const hasData = stats.dailyTotal > 0
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm">

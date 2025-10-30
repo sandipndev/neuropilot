@@ -159,7 +159,7 @@ export const sendNotification = async (
   }
 }
 
-export const stableStringify = (obj: any) => {
+export const stableStringify = (obj: unknown): string => {
   if (Array.isArray(obj)) {
     return `[${obj.map(stableStringify).join(",")}]`
   } else if (obj && typeof obj === "object") {
@@ -171,8 +171,9 @@ export const stableStringify = (obj: any) => {
   return JSON.stringify(obj)
 }
 
-export const hashArray = (arr: any) =>
-  crypto.createHash("sha256").update(stableStringify(arr)).digest("hex")
-
 export const hashString = (str: string) =>
   crypto.createHash("sha256").update(str).digest("hex")
+
+export const hashArray = (arr: unknown[]): string => {
+  return hashString(stableStringify(arr))
+}

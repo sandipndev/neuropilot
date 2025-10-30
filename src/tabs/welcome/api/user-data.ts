@@ -1,8 +1,3 @@
-/**
- * Mock API mutations for user name and age management
- * Uses localStorage for persistence
- */
-
 import { Storage } from "@plasmohq/storage"
 
 export const USER_NAME_KEY = "neuropilot_user_name"
@@ -19,7 +14,7 @@ interface SetUserNameResult {
 const storage = new Storage()
 
 /**
- * Save user name and age to localStorage
+ * Save user name!
  */
 export async function setUserName(
   params: SetUserNameParams
@@ -54,16 +49,3 @@ export async function getUserName(): Promise<string | null> {
     return null
   }
 }
-
-
-
-// /**
-//  * Clear user data from localStorage
-//  */
-// export function clearUserData(): void {
-//   try {
-//     localStorage.removeItem(USER_NAME_KEY)
-//   } catch (error) {
-//     console.error("Error clearing user data:", error)
-//   }
-// }

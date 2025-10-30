@@ -2,6 +2,19 @@
  * Utility functions for Chrome AI availability checking
  */
 
+// Type definitions for Chrome AI APIs
+interface ChromeAIAPI {
+  availability?: () => Promise<string>
+}
+
+interface WindowWithChromeAI extends Window {
+  LanguageModel?: ChromeAIAPI
+  Writer?: ChromeAIAPI
+  Rewriter?: ChromeAIAPI
+  Proofreader?: ChromeAIAPI
+  Translator?: ChromeAIAPI
+}
+
 /**
  * Check if Chrome AI flags are properly enabled
  * This checks if LanguageModel.availability exists, which indicates flags are set correctly
@@ -12,7 +25,7 @@ export async function checkChromeAIAvailability(): Promise<{
   available: boolean
   reason?: string
 }> {
-  const LanguageModel = (window as any).LanguageModel
+  const LanguageModel = (window as WindowWithChromeAI).LanguageModel
   if (!LanguageModel?.availability) {
     return {
       available: false,
@@ -21,7 +34,7 @@ export async function checkChromeAIAvailability(): Promise<{
     }
   }
 
-  const Writer = (window as any).Writer
+  const Writer = (window as WindowWithChromeAI).Writer
   if (!Writer?.availability) {
     return {
       available: false,
@@ -30,7 +43,7 @@ export async function checkChromeAIAvailability(): Promise<{
     }
   }
 
-  const Rewriter = (window as any).Rewriter
+  const Rewriter = (window as WindowWithChromeAI).Rewriter
   if (!Rewriter?.availability) {
     return {
       available: false,
@@ -39,7 +52,7 @@ export async function checkChromeAIAvailability(): Promise<{
     }
   }
 
-  const Proofreader = (window as any).Proofreader
+  const Proofreader = (window as WindowWithChromeAI).Proofreader
   if (!Proofreader?.availability) {
     return {
       available: false,
@@ -48,7 +61,7 @@ export async function checkChromeAIAvailability(): Promise<{
     }
   }
 
-  const Translator = (window as any).Translator
+  const Translator = (window as WindowWithChromeAI).Translator
   if (!Translator?.availability) {
     return {
       available: false,
@@ -86,7 +99,7 @@ export async function checkModelAvailability(): Promise<{
   }
 
   try {
-    const LanguageModel = (window as any).LanguageModel
+    const LanguageModel = (window as WindowWithChromeAI).LanguageModel
 
     // Check model availability status
     const status = await LanguageModel.availability()

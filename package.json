@@ -6,7 +6,8 @@
   "author": "sandipndev <hey@sandipan.dev>, neilblaze <putubanerjee23@gmail.com>, subhamX <subham7sahu@gmail.com>",
   "scripts": {
     "dev": "plasmo dev",
-    "build": "plasmo build",
+    "lint": "eslint . --ext .ts,.tsx",
+    "build": "pnpm lint && plasmo build",
     "package": "plasmo package",
     "postinstall": "node scripts/patch.js"
   },

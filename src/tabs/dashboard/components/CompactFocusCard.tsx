@@ -2,7 +2,6 @@
  * CompactFocusCard - Professional focus display
  */
 
-import { motion } from "framer-motion"
 import { Clock, Target } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 

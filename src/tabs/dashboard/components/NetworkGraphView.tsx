@@ -13,6 +13,8 @@ interface NetworkGraphNode {
   favicon: string
   timestamp: number
   summary?: string
+  x?: number
+  y?: number
 }
 
 interface NetworkGraphLink {
@@ -34,6 +36,7 @@ export function NetworkGraphView({
   timeRange,
   faviconImages
 }: NetworkGraphViewProps) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fgRef = useRef<any>(null)
   const [hoveredNode, setHoveredNode] = useState<NetworkGraphNode | null>(null)
   const [selectedTimeFilter, setSelectedTimeFilter] = useState<number>(timeRange)
@@ -53,12 +56,13 @@ export function NetworkGraphView({
 
       filteredPaths.forEach((path) => {
         path.nodes.forEach((node, index) => {
-          let nodeId: string
-          try {
-            nodeId = new URL(node.url).hostname
-          } catch {
-            nodeId = node.url
-          }
+          const nodeId = (() => {
+            try {
+              return new URL(node.url).hostname
+            } catch {
+              return node.url
+            }
+          })()
 
           // Aggregate node data
           if (nodesMap.has(nodeId)) {
@@ -91,12 +95,13 @@ export function NetworkGraphView({
           if (index < path.nodes.length - 1) {
             const nextNode = path.nodes[index + 1]
             const sourceId = nodeId
-            let targetId: string
-            try {
-              targetId = new URL(nextNode.url).hostname
-            } catch {
-              targetId = nextNode.url
-            }
+            const targetId = (() => {
+              try {
+                return new URL(nextNode.url).hostname
+              } catch {
+                return nextNode.url
+              }
+            })()
             const linkId = `${sourceId}->${targetId}`
 
             if (!linksMap.has(linkId)) {
@@ -141,7 +146,7 @@ export function NetworkGraphView({
   }
 
   // Custom node canvas object with favicon
-  const nodeCanvasObject = useCallback((node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+  const nodeCanvasObject = useCallback((node: NetworkGraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const size = Math.max(15, node.val * 2.5)
     const label = node.id.length > 15 ? node.id.substring(0, 15) + "..." : node.id
 
@@ -186,7 +191,7 @@ export function NetworkGraphView({
   }, [faviconImages])
 
   // Paint link particles for animation
-  const linkDirectionalParticles = useCallback((link: any) => {
+  const linkDirectionalParticles = useCallback((link: NetworkGraphLink) => {
     return link.value > 2 ? 2 : 0 // Show particles for stronger connections
   }, [])
 
@@ -340,7 +345,7 @@ export function NetworkGraphView({
                 nodeCanvasObjectMode={() => "replace"}
                 linkSource="source"
                 linkTarget="target"
-                linkWidth={(link: any) => Math.max(2, Math.sqrt(link.value) * 2)}
+                linkWidth={(link: NetworkGraphLink) => Math.max(2, Math.sqrt(link.value) * 2)}
                 linkColor={() => "rgba(100, 116, 139, 0.6)"}
                 linkCurvature={0.2}
                 linkDirectionalArrowLength={6}
@@ -350,8 +355,8 @@ export function NetworkGraphView({
                 linkDirectionalParticleSpeed={0.005}
                 linkDirectionalParticleWidth={2}
                 linkDirectionalParticleColor={() => "#3b82f6"}
-                onNodeHover={(node: any) => setHoveredNode(node)}
-                onNodeClick={(node: any) => {
+                onNodeHover={(node: NetworkGraphNode | null) => setHoveredNode(node)}
+                onNodeClick={(node: NetworkGraphNode | null) => {
                   if (node) {
                     window.open(node.url, "_blank")
                   }

@@ -5,12 +5,12 @@ import type { FocusWithParsedData, WinWithParsedData, StatsData } from '../types
 /**
  * Calculate comprehensive statistics from focus history and wins
  * @param focusHistory - Array of focus sessions
- * @param wins - Array of wins (reserved for future use)
+ * @param wins - Array of wins
  * @returns Calculated statistics data
  */
 export function calculateStats(
   focusHistory: FocusWithParsedData[],
-  _wins: WinWithParsedData[]
+  wins: WinWithParsedData[]
 ): StatsData {
   // Calculate daily total (last 24 hours)
   const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
@@ -21,6 +21,10 @@ export function calculateStats(
   const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
   const weeklyFocus = focusHistory.filter((f) => f.last_updated >= oneWeekAgo);
   const weeklyTotal = weeklyFocus.reduce((sum, f) => sum + f.total_time_spent, 0);
+
+  // Calculate wins
+  const dailyWins = wins.filter((w) => w.recorded_at >= oneDayAgo);
+  const weeklyWins = wins.filter((w) => w.recorded_at >= oneWeekAgo);
 
   // Aggregate by focus item
   const activityMap = new Map<string, number>();
@@ -49,6 +53,8 @@ export function calculateStats(
     dailyTotal,
     weeklyTotal,
     topActivities,
+    dailyWins: dailyWins.length,
+    weeklyWins: weeklyWins.length,
   };
 }
 
@@ -153,4 +159,37 @@ export function getPrimeActivity(
     totalTime: primeActivity.time,
     percentage: totalTime > 0 ? (primeActivity.time / totalTime) * 100 : 0,
   };
+}
+
+/**
+ * Calculate daily wins count (last 24 hours)
+ * @param wins - Array of wins
+ * @returns Number of wins in the last 24 hours
+ */
+export function calculateDailyWins(wins: WinWithParsedData[]): number {
+  const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+  return wins.filter((w) => w.recorded_at >= oneDayAgo).length;
+}
+
+/**
+ * Calculate weekly wins count (last 7 days)
+ * @param wins - Array of wins
+ * @returns Number of wins in the last 7 days
+ */
+export function calculateWeeklyWins(wins: WinWithParsedData[]): number {
+  const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  return wins.filter((w) => w.recorded_at >= oneWeekAgo).length;
+}
+
+/**
+ * Get wins for a specific time period
+ * @param wins - Array of wins
+ * @param startTime - Start of time period (timestamp in ms)
+ * @returns Filtered wins array
+ */
+export function getWinsByTime(
+  wins: WinWithParsedData[],
+  startTime: number
+): WinWithParsedData[] {
+  return wins.filter((w) => w.recorded_at >= startTime);
 }

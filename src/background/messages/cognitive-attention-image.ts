@@ -12,7 +12,7 @@ export type ImageAttention = {
   timestamp: number
 }
 
-const handler: PlasmoMessaging.MessageHandler = async (req, res) => {
+const handler: PlasmoMessaging.MessageHandler = async (req) => {
   await db.table<ImageAttention>("imageAttention").put({
     url: req.body.url,
     src: req.body.src,

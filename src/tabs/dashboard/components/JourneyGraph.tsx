@@ -22,18 +22,36 @@ interface JourneyPath {
   endTime: number
 }
 
+interface SemanticGroup {
+  id: string
+  title: string
+  keywords: string[]
+  paths: JourneyPath[]
+  totalNodes: number
+  totalTime: number
+  startTime: number
+  endTime: number
+}
+
+type ViewMode = "date" | "group"
+
 export function JourneyGraph() {
   const containerRef = useRef<HTMLDivElement>(null)
   const [journeyPaths, setJourneyPaths] = useState<JourneyPath[]>([])
+  const [semanticGroups, setSemanticGroups] = useState<SemanticGroup[]>([])
   const [hoveredNode, setHoveredNode] = useState<JourneyNode | null>(null)
   const [timeRange, setTimeRange] = useState<number>(15 * 60 * 1000)
+  const [viewMode, setViewMode] = useState<ViewMode>("date")
   const [faviconImages, setFaviconImages] = useState<Map<string, string>>(
+    new Map()
+  )
+  const [scrollStates, setScrollStates] = useState<Map<string, { isAtBottom: boolean; remainingItems: number }>>(
     new Map()
   )
 
   useEffect(() => {
     loadJourneyData()
-  }, [timeRange])
+  }, [timeRange, viewMode])
 
   const getFaviconUrl = (url: string): string => {
     try {
@@ -129,6 +147,118 @@ export function JourneyGraph() {
 
     setFaviconImages(imageMap)
     setJourneyPaths(paths)
+
+    // Generate semantic groups if in group view mode
+    if (viewMode === "group") {
+      const groups = generateSemanticGroups(paths)
+      setSemanticGroups(groups)
+    }
+  }
+
+  const extractKeywords = (text: string): string[] => {
+    // Remove common words and extract meaningful keywords
+    const commonWords = new Set([ "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for", "of", 
+      "with", "by", "from", "up", "about", "into", "through", "during", "including", "until", "against", "among", 
+      "throughout", "despite", "towards", "upon", "concerning", "is", "are", "was", "were", "be", "been", "being", 
+      "have", "has", "had", "do", "does", "did", "will", "would", "should", "could", "may", "might", "must", "can", 
+      "this", "that", "these", "those", "i", "you", "he", "she", "it", "we", "they", "what", "which", "who", "when", 
+      "where", "why", "how", "all", "each", "every", "both", "few", "more", "most", "other", "some", "such" ])
+
+    const words = text
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter((word) => word.length > 3 && !commonWords.has(word))
+
+    // Return unique keywords
+    return [...new Set(words)]
+  }
+
+  const calculateSimilarity = (keywords1: string[], keywords2: string[]): number => {
+    if (keywords1.length === 0 || keywords2.length === 0) return 0
+
+    const set1 = new Set(keywords1)
+    const set2 = new Set(keywords2)
+    const intersection = new Set([...set1].filter((x) => set2.has(x)))
+
+    // Jaccard similarity
+    const union = new Set([...set1, ...set2])
+    return intersection.size / union.size
+  }
+
+  const generateSemanticGroups = (paths: JourneyPath[]): SemanticGroup[] => {
+    if (paths.length === 0) return []
+
+    const pathsWithKeywords = paths.map((path) => {
+      const allText = path.nodes
+        .map((node) => `${node.title} ${getDomainFromUrl(node.url)} ${node.summary || ""}`)
+        .join(" ")
+      const keywords = extractKeywords(allText)
+      return { path, keywords }
+    })
+
+    // Group paths by semantic similarity
+    const groups: SemanticGroup[] = []
+    const processed = new Set<string>()
+
+    pathsWithKeywords.forEach(({ path, keywords }) => {
+      if (processed.has(path.id)) return
+
+      // Find similar paths
+      const similarPaths = pathsWithKeywords.filter(
+        ({ path: otherPath, keywords: otherKeywords }) => {
+          if (processed.has(otherPath.id) || path.id === otherPath.id) return false
+          const similarity = calculateSimilarity(keywords, otherKeywords)
+          return similarity > 0.2 // Threshold for grouping
+        }
+      )
+
+      // Create a group
+      const groupPaths = [path, ...similarPaths.map((sp) => sp.path)]
+      groupPaths.forEach((p) => processed.add(p.id))
+
+      // Find common keywords
+      const allKeywords = [keywords, ...similarPaths.map((sp) => sp.keywords)].flat()
+      const keywordFrequency = new Map<string, number>()
+      allKeywords.forEach((kw) => {
+        keywordFrequency.set(kw, (keywordFrequency.get(kw) || 0) + 1)
+      })
+
+      // Get top keywords
+      const topKeywords = [...keywordFrequency.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([kw]) => kw)
+
+      // Generate group title from top keywords or domain
+      const groupTitle =
+        topKeywords.length > 0
+          ? topKeywords
+              .slice(0, 3)
+              .map((kw) => kw.charAt(0).toUpperCase() + kw.slice(1))
+              .join(", ")
+          : getDomainFromUrl(groupPaths[0].nodes[0].url)
+
+      const totalNodes = groupPaths.reduce((sum, p) => sum + p.nodes.length, 0)
+      const totalTime = groupPaths.reduce(
+        (sum, p) => sum + p.nodes.reduce((s, n) => s + n.totalTime, 0),
+        0
+      )
+
+      groups.push({
+        id: `group-${path.id}`,
+        title: groupTitle,
+        keywords: topKeywords,
+        paths: groupPaths,
+        totalNodes,
+        totalTime,
+        startTime: Math.min(...groupPaths.map((p) => p.startTime)),
+        endTime: Math.max(...groupPaths.map((p) => p.endTime))
+      })
+    })
+
+    // Sort groups by start time (most recent first)
+    return groups.sort((a, b) => b.startTime - a.startTime)
   }
 
   const getNodeSize = (visits: number) => {
@@ -330,6 +460,237 @@ export function JourneyGraph() {
     return paths.reduce((sum, path) => sum + path.nodes.length, 0)
   }
 
+  const handleGroupScroll = (groupId: string, event: React.UIEvent<HTMLDivElement>) => {
+    const target = event.currentTarget
+    const scrollTop = target.scrollTop
+    const scrollHeight = target.scrollHeight
+    const clientHeight = target.clientHeight
+    
+    const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10  // 10px threshold
+    const group = semanticGroups.find(g => g.id === groupId)
+    if (!group) return
+    
+    const totalPaths = group.paths.length
+    const scrollPercentage = (scrollTop + clientHeight) / scrollHeight
+    const visiblePaths = Math.ceil(scrollPercentage * totalPaths)
+    const remainingItems = Math.max(0, totalPaths - visiblePaths)
+    
+    setScrollStates(prev => {
+      const newMap = new Map(prev)
+      newMap.set(groupId, { isAtBottom, remainingItems })
+      return newMap
+    })
+  }
+
+const renderSemanticGroupCard = (group: SemanticGroup, groupIndex: number) => {
+  const scrollState = scrollStates.get(group.id)
+  const isAtBottom = scrollState?.isAtBottom ?? false
+  const remainingItems = scrollState?.remainingItems ?? Math.max(0, group.paths.length - 3)
+  const showIndicator = group.paths.length > 4 && !isAtBottom && remainingItems > 0
+
+  // Helper function to extract keywords from a path
+  const getPathKeywords = (path: JourneyPath): string[] => {
+    const allText = path.nodes
+      .map((node) => `${node.title} ${getDomainFromUrl(node.url)} ${node.summary || ""}`)
+      .join(" ")
+    return extractKeywords(allText)
+  }
+
+  // Helper function to find common keywords between two paths
+  const findCommonKeywords = (path1Keywords: string[], path2Keywords: string[]): string[] => {
+    const set1 = new Set(path1Keywords)
+    return path2Keywords.filter(kw => set1.has(kw))
+  }
+
+  // Get keywords for each path
+  const pathKeywords = group.paths.map(path => ({
+    path,
+    keywords: getPathKeywords(path)
+  }))
+
+  return (
+    <div
+      key={group.id}
+      className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+      
+      {/* Group Header */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <svg
+              className="w-5 h-5 text-blue-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+              />
+            </svg>
+            <span className="text-base font-semibold text-gray-900 dark:text-white">
+              {group.title}
+            </span>
+          </div>
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            {new Date(group.startTime).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit"
+            })}
+          </span>
+        </div>
+
+        {/* Common Keywords */}
+        {group.keywords.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {group.keywords.slice(0, 5).map((keyword, idx) => (
+              <span
+                key={idx}
+                className="px-2.5 py-1 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium rounded-full border border-blue-200 dark:border-blue-700/50 shadow-sm">
+                {keyword}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Journey Paths in Group */}
+      <div className="relative">
+        <div 
+          className="space-y-3 max-h-72 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent"
+          onScroll={(e) => handleGroupScroll(group.id, e)}>
+          {group.paths.map((path, pathIndex) => {
+            const currentPathKeywords = pathKeywords[pathIndex].keywords
+            
+            // Find common keywords with other paths in the group
+            const commonWithOthers = pathKeywords
+              .filter((_, idx) => idx !== pathIndex)
+              .flatMap(other => findCommonKeywords(currentPathKeywords, other.keywords))
+            const uniqueCommonKeywords = [...new Set(commonWithOthers)]
+            
+            // Get unique domains from this path
+            const domains = [...new Set(path.nodes.map(node => getDomainFromUrl(node.url)))]
+            
+            return (
+              <div
+                key={path.id}
+                className="bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-700/50 dark:to-gray-700/30 rounded-lg p-3 border border-gray-200 dark:border-gray-600 relative overflow-hidden">
+                
+                {/* Connection indicator */}
+                {uniqueCommonKeywords.length > 0 && (
+                  <div className="absolute top-0 right-0 w-16 h-16 -mr-8 -mt-8 bg-gradient-to-br from-blue-400/20 to-purple-400/20 dark:from-blue-500/20 dark:to-purple-500/20 rounded-full blur-xl"></div>
+                )}
+                
+                {/* Path Header */}
+                <div className="flex items-center justify-between mb-2 relative z-10">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-1.5 h-1.5 rounded-full ${
+                      uniqueCommonKeywords.length > 0 
+                        ? "bg-gradient-to-r from-blue-500 to-purple-500 shadow-sm" 
+                        : "bg-blue-500"
+                    }`}></div>
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                      Journey {pathIndex + 1}
+                    </span>
+                    {uniqueCommonKeywords.length > 0 && (
+                      <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full font-medium">
+                        {uniqueCommonKeywords.length} shared
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {path.nodes.length} {path.nodes.length === 1 ? "site" : "sites"}
+                  </span>
+                </div>
+
+                {/* Domain badges - show which sites are in this journey */}
+                {domains.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {domains.slice(0, 3).map((domain, idx) => (
+                      // <span
+                      //   key={idx}
+                      //   className="text-[10px] px-1.5 py-0.5 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded border border-gray-200 dark:border-gray-600 font-mono">
+                      //   {domain}
+                      // </span>
+                      <></>
+                    ))}
+                    {domains.length > 3 && (
+                      <span className="text-[10px] px-1.5 py-0.5 text-gray-500 dark:text-gray-500">
+                        +{domains.length - 3}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Common keywords for this path */}
+                {uniqueCommonKeywords.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-2 pb-2 border-b border-gray-200 dark:border-gray-600">
+                    {uniqueCommonKeywords.slice(0, 4).map((keyword, idx) => (
+                      <span
+                        key={idx}
+                        className="text-[10px] px-1.5 py-0.5 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/40 dark:to-purple-900/40 text-blue-700 dark:text-blue-300 rounded-full font-medium border border-blue-300 dark:border-blue-600/50">
+                        {keyword}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Path Nodes - Compact View */}
+                <div className="flex flex-wrap gap-2">
+                  {path.nodes.map((node) => {
+                    const timeColor = getTimeColor(node.totalTime)
+                    return (
+                      <div
+                        key={node.id}
+                        className="relative group"
+                        onMouseEnter={() => setHoveredNode(node)}
+                        onMouseLeave={() => setHoveredNode(null)}>
+                        <div
+                          className={`w-8 h-8 rounded-full bg-gradient-to-br ${timeColor} p-0.5 shadow-sm transition-all duration-300 ${
+                            hoveredNode?.id === node.id ? "scale-110 shadow-md" : ""
+                          }`}>
+                          <div className="w-full h-full rounded-full bg-white dark:bg-gray-700 p-1 flex items-center justify-center overflow-hidden">
+                            <img
+                              src={faviconImages.get(node.id)}
+                              alt={node.title}
+                              className="w-full h-full object-contain"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none"
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+        
+        {showIndicator && (
+          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white dark:from-gray-800 to-transparent pointer-events-none flex items-end justify-center pb-1 transition-opacity duration-300">
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              ↓ Scroll for {remainingItems} more
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Group Footer */}
+      <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-600 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+        <span>
+          {group.paths.length} {group.paths.length === 1 ? "journey" : "journeys"}
+        </span>
+        <span>{formatTime(group.totalTime)} total</span>
+      </div>
+    </div>
+  )
+}
+
+
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
       <div className="flex items-center justify-between mb-4">
@@ -342,20 +703,69 @@ export function JourneyGraph() {
           </p>
         </div>
 
-        <select
-          value={timeRange}
-          onChange={(e) => setTimeRange(Number(e.target.value))}
-          className="px-2 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <option value={1 * 60 * 1000}>Last 1 Minute</option>
-          <option value={5 * 60 * 1000}>Last 5 Minutes</option>
-          <option value={15 * 60 * 1000}>Last 15 Minutes</option>
-          <option value={30 * 60 * 1000}>Last 30 Minutes</option>
-          <option value={60 * 60 * 1000}>Last Hour</option>
-          <option value={6 * 60 * 60 * 1000}>Last 6 Hours</option>
-          <option value={24 * 60 * 60 * 1000}>Last 24 Hours</option>
-          <option value={7 * 24 * 60 * 60 * 1000}>Last 7 Days</option>
-          <option value={30 * 24 * 60 * 60 * 1000}>Last 30 Days</option>
-        </select>
+        <div className="flex items-center gap-3">
+          {/* View Mode Toggle */}
+          <div className="inline-flex bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode("date")}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-2 ${
+                viewMode === "date"
+                  ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              }`}>
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 10h16M4 14h16M4 18h16"
+                />
+              </svg>
+              By date
+            </button>
+            <button
+              onClick={() => setViewMode("group")}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-2 ${
+                viewMode === "group"
+                  ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              }`}>
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                />
+              </svg>
+              By group
+            </button>
+          </div>
+
+          {/* Time Range Selector */}
+          <select
+            value={timeRange}
+            onChange={(e) => setTimeRange(Number(e.target.value))}
+            className="px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-auto min-w-fit pr-8 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M10.293%203.293L6%207.586%201.707%203.293A1%201%200%2000.293%204.707l5%205a1%201%200%20001.414%200l5-5a1%201%200%2010-1.414-1.414z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px_12px] bg-[position:right_0.5rem_center] bg-no-repeat">
+            <option value={1 * 60 * 1000}>Last 1 Minute</option>
+            <option value={5 * 60 * 1000}>Last 5 Minutes</option>
+            <option value={15 * 60 * 1000}>Last 15 Minutes</option>
+            <option value={30 * 60 * 1000}>Last 30 Minutes</option>
+            <option value={60 * 60 * 1000}>Last Hour</option>
+            <option value={6 * 60 * 60 * 1000}>Last 6 Hours</option>
+            <option value={24 * 60 * 60 * 1000}>Last 24 Hours</option>
+            <option value={7 * 24 * 60 * 60 * 1000}>Last 7 Days</option>
+            <option value={30 * 24 * 60 * 60 * 1000}>Last 30 Days</option>
+          </select>
+        </div>
       </div>
 
       {journeyPaths.length === 0 ? (
@@ -385,11 +795,19 @@ export function JourneyGraph() {
         <div className="flex gap-6">
           {/* Journey Cards Area */}
           <div ref={containerRef} className="flex-1">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {journeyPaths.map((path, pathIndex) =>
-                renderJourneyCard(path, pathIndex)
-              )}
-            </div>
+            {viewMode === "date" ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {journeyPaths.map((path, pathIndex) =>
+                  renderJourneyCard(path, pathIndex)
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {semanticGroups.map((group, groupIndex) =>
+                  renderSemanticGroupCard(group, groupIndex)
+                )}
+              </div>
+            )}
 
             {/* Tooltip */}
             {hoveredNode && (
@@ -500,40 +918,71 @@ export function JourneyGraph() {
                 Statistics
               </h5>
               <div className="space-y-2 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">
-                    Journeys
-                  </span>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    {journeyPaths.length}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">
-                    Total Sites
-                  </span>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    {getTotalNodes(journeyPaths)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">
-                    Avg per Journey
-                  </span>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    {journeyPaths.length > 0
-                      ? Math.round(
-                          (getTotalNodes(journeyPaths) / journeyPaths.length) *
-                            10
-                        ) / 10
-                      : 0}
-                  </span>
-                </div>
+                {viewMode === "date" ? (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">
+                        Journeys
+                      </span>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {journeyPaths.length}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">
+                        Total Sites
+                      </span>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {getTotalNodes(journeyPaths)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">
+                        Avg per Journey
+                      </span>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {journeyPaths.length > 0
+                          ? Math.round(
+                              (getTotalNodes(journeyPaths) / journeyPaths.length) *
+                                10
+                            ) / 10
+                          : 0}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">
+                        Groups
+                      </span>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {semanticGroups.length}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">
+                        Total Journeys
+                      </span>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {semanticGroups.reduce((sum, g) => sum + g.paths.length, 0)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">
+                        Total Sites
+                      </span>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {semanticGroups.reduce((sum, g) => sum + g.totalNodes, 0)}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
-            {/* Journey List */}
-            {journeyPaths.length > 0 && (
+            {/* Journey/Group List */}
+            {viewMode === "date" && journeyPaths.length > 0 && (
               <div className="mt-6 space-y-3">
                 <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Recent Journeys
@@ -552,6 +1001,29 @@ export function JourneyGraph() {
                           minute: "2-digit"
                         })}{" "}
                         • {path.nodes.length} sites
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {viewMode === "group" && semanticGroups.length > 0 && (
+              <div className="mt-6 space-y-3">
+                <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Top Groups
+                </h5>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {semanticGroups.slice(0, 5).map((group, index) => (
+                    <div
+                      key={group.id}
+                      className="text-xs p-2 bg-white dark:bg-gray-700 rounded border">
+                      <div className="font-medium text-gray-900 dark:text-white">
+                        {group.title}
+                      </div>
+                      <div className="text-gray-500 dark:text-gray-400">
+                        {group.paths.length}{" "}
+                        {group.paths.length === 1 ? "journey" : "journeys"} •{" "}
+                        {group.totalNodes} sites
                       </div>
                     </div>
                   ))}

@@ -98,7 +98,7 @@ function App() {
       {/* Celebration Confetti */}
       {showCelebration && (
         <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
-          <div className="text-8xl animate-bounce">🎉</div>
+          {/* <div className="text-8xl animate-bounce">🎉</div> */}
         </div>
       )}
 

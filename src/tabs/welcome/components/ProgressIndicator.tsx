@@ -17,7 +17,7 @@ export function ProgressIndicator({
     <div className="w-full bg-muted rounded-lg p-6">
       <div className="relative">
         {/* Progress line */}
-        <div className="absolute top-5 left-0 right-0 h-0.5 bg-border">
+        <div className="absolute top-5 left-8 right-5 h-0.5 bg-border">
           <div
             className="h-full bg-chart-4 transition-all duration-400 ease-in-out"
             style={{

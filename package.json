@@ -73,7 +73,9 @@
       {
         "resources": [
           "~assets/*",
-          "~assets/*/**"
+          "~assets/*/**",
+          "tabs/dashboard.html",
+          "tabs/welcome.html"
         ],
         "matches": [
           "https://www.plasmo.com/*"

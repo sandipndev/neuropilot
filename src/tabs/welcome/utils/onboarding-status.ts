@@ -2,27 +2,26 @@ import { useStorage } from "@plasmohq/storage/hook";
 import { USER_NAME_KEY } from "../api/user-data";
 
 /**
- * Check if all onboarding steps are complete by verifying localStorage
+ * Hook to check if all onboarding steps are complete
+ * Must be called at the top level of a React component
  */
 export function useIsOnboardingComplete(): boolean {
-  try {
-    const [userName, _] = useStorage(USER_NAME_KEY);
+  const [userName] = useStorage(USER_NAME_KEY);
 
-    // If both name and age exist, onboarding is complete
-    return !!(userName);
-  } catch (error) {
-    console.error('Error checking onboarding status:', error);
-    return false;
-  }
+  // If userName exists, onboarding is complete
+  return !!userName;
 }
 
 /**
- * Get the initial step based on onboarding completion status
+ * Hook to get the initial step based on onboarding completion status
+ * Must be called at the top level of a React component
  * @returns The step number to start from (0-4)
  */
 export function useGetInitialStep(): number {
+  const isComplete = useIsOnboardingComplete();
+
   // If onboarding is complete, go directly to completion step (step 4)
-  if (useIsOnboardingComplete()) {
+  if (isComplete) {
     return 4;
   }
 

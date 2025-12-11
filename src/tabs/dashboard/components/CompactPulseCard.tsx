@@ -38,17 +38,6 @@ function getCategoryColor(category: PulseCategory) {
 }
 
 export function CompactPulseCard({ pulses, isLoading = false }: CompactPulseCardProps) {
-  if (isLoading) {
-    return (
-      <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800">
-        <div className="animate-pulse space-y-4">
-          <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-1/3"></div>
-          <div className="h-20 bg-gray-200 dark:bg-gray-800 rounded"></div>
-        </div>
-      </div>
-    );
-  }
-
   const recentPulses = pulses.slice(0, 5);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
@@ -66,6 +55,17 @@ export function CompactPulseCard({ pulses, isLoading = false }: CompactPulseCard
 
     return () => clearInterval(interval);
   }, [recentPulses.length]);
+
+  if (isLoading) {
+    return (
+      <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800">
+        <div className="animate-pulse space-y-4">
+          <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-1/3"></div>
+          <div className="h-20 bg-gray-200 dark:bg-gray-800 rounded"></div>
+        </div>
+      </div>
+    );
+  }
 
   const currentPulse = recentPulses[currentIndex];
   const category = currentPulse ? categorizePulse(currentPulse.message) : 'recap';

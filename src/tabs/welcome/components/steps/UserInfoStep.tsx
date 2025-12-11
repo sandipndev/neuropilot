@@ -16,6 +16,7 @@ export const UserInfoStep: React.FC<UserInfoStepProps> = ({ onComplete }) => {
   const { updateUserData, markStepComplete } = useOnboarding();
   const [name, setName] = useState(''); // TODO: useStorage perhaps.. it will be cleaner.
   const [nameError, setNameError] = useState('');
+  const [ageRange, setAgeRange] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -139,7 +140,7 @@ export const UserInfoStep: React.FC<UserInfoStepProps> = ({ onComplete }) => {
               ) : (
                 <form key="form" onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Your Name</Label>
+                    <Label htmlFor="name">Your Name <span className="text-destructive">*</span></Label>
                     <Input
                       id="name"
                       type="text"
@@ -150,6 +151,7 @@ export const UserInfoStep: React.FC<UserInfoStepProps> = ({ onComplete }) => {
                       aria-invalid={!!nameError}
                       className="text-base"
                       autoFocus
+                      required
                     />
                     <AnimatePresence>
                       {nameError && (
@@ -163,6 +165,32 @@ export const UserInfoStep: React.FC<UserInfoStepProps> = ({ onComplete }) => {
                         </motion.p>
                       )}
                     </AnimatePresence>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Age Range <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { value: 'under-18', label: 'Under 18' },
+                        { value: 'under-30', label: 'Under 30' },
+                        { value: 'under-60', label: 'Under 60' },
+                        { value: 'over-60', label: 'Over 60' },
+                      ].map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={() => setAgeRange(ageRange === option.value ? '' : option.value)}
+                          className={`px-3 py-2 text-sm border rounded-md cursor-pointer transition-colors hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed ${
+                            ageRange === option.value
+                              ? 'bg-chart-4/20 border-chart-4 text-chart-4'
+                              : 'border-border'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   <Button

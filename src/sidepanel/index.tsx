@@ -818,7 +818,7 @@ const Popup = () => {
           </div>
 
           {/* Tab Bar */}
-          <div className="shrink-0 mx-4 pb-1 mt-4" id="tour-tabs">
+          <div className="shrink-0 mx-4 pb-1 mt-4 mb-2" id="tour-tabs">
             <div className="flex gap-2">
               <button
                 onClick={() => setActiveTab("focus")}

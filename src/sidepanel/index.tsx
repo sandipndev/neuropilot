@@ -5,6 +5,7 @@ import {
   Coffee,
   Compass,
   Flame,
+  // HelpCircle,
   LayoutDashboard,
   Lightbulb,
   Pause,
@@ -26,6 +27,7 @@ import { getPomodoroState, togglePomodoro } from "./api/pomodoro"
 import { getWinsData } from "./api/wins"
 import { IntentsTab } from "./components/IntentsTab"
 import { TreeAnimationSection } from "./components/TreeAnimationSection"
+import { TourGuide, type TourStep } from "./components/TourGuide"
 import type { WinItem } from "./types/wins"
 
 import "./index.css"
@@ -36,6 +38,8 @@ import { Chat } from "./chat"
 import { useStorage } from "@plasmohq/storage/hook"
 import { USER_NAME_KEY } from "~tabs/welcome/api/user-data"
 
+const TOUR_COMPLETED = "neuropilot_tour_completed"
+
 type TabType = "focus" | "insights" | "explore" | "intents"
 
 const generateChatId = () =>
@@ -43,18 +47,65 @@ const generateChatId = () =>
 
 const storage = new Storage()
 
+const tourSteps: TourStep[] = [
+  {
+    target: "#tour-logo",
+    title: "Welcome to Neuropilot",
+    content: "Your AI co-pilot for staying focused. Let's take a quick tour of the key features!",
+    position: "bottom"
+  },
+  {
+    target: "#tour-pomodoro",
+    title: "Pomodoro Timer",
+    content: "Use the built-in Pomodoro timer to manage your focus sessions. 25 minutes of work, 5 minutes of rest.",
+    position: "left"
+  },
+  {
+    target: "#tour-tree",
+    title: "Focus Forest",
+    content: "Watch your tree grow as you focus! The more you concentrate, the more your forest flourishes.",
+    position: "bottom"
+  },
+  {
+    target: "#current-focus",
+    title: "Current Active Focus",
+    content: "Monitor and get insights about your current activity.",
+    position: "bottom"
+  },
+  {
+    target: "#tour-tabs",
+    title: "Navigation Tabs",
+    content: "Switch between Focus chat, Insights, Learning intents, and Explore to access different features.",
+    position: "top"
+  },
+  {
+    target: "#tour-dashboard",
+    title: "Dashboard",
+    content: "Access your full dashboard for detailed analytics, refresher quizzes, and settings.",
+    position: "left"
+  }
+]
+
 const Popup = () => {
   const [userName] = useStorage(USER_NAME_KEY);
   const [activeTab, setActiveTab] = useState<TabType>("focus")
   const [focusData, setFocusData] = useState<FocusWithParsedData | null>(null)
   const [currentChatId, setCurrentChatId] = useState<string>(generateChatId())
+  const [isTourOpen, setIsTourOpen] = useState(false)
+  const [tourCompleted, setTourCompleted] = useStorage(TOUR_COMPLETED, false)
 
   const focusDataDex = useLiveQuery(() => {
     return db.table<Focus>("focus").toArray()
   }, [])
 
-
   const isOnboardingComplete = !!userName;
+
+  useEffect(() => {
+    if (isOnboardingComplete && tourCompleted === false && !isTourOpen) {
+      const timer = setTimeout(() => setIsTourOpen(true), 800)
+      return () => clearTimeout(timer)
+    }
+  }, [isOnboardingComplete, tourCompleted, isTourOpen])
   useEffect(() => {
     if (!focusDataDex || focusDataDex.length === 0) {
       setFocusData(null)
@@ -544,8 +595,10 @@ const Popup = () => {
         className="relative h-screen overflow-hidden flex flex-col"
         role="main"
         id="main-bg-x">
-        {/* Tree Animation Background - Full visibility */}
-        <TreeAnimationSection totalFocusTime={focusData?.total_time || 0} />
+        {/* Tree Animation Background */}
+        <div id="tour-tree">
+          <TreeAnimationSection totalFocusTime={focusData?.total_time || 0} />
+        </div>
 
         {/* Content Container with padding for card layout */}
 
@@ -553,18 +606,25 @@ const Popup = () => {
           {/* Header - No Card */}
           <div className="shrink-0 px-2">
             <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2 mt-2">
+              <div className="flex items-center gap-2 mt-2" id="tour-logo">
                 <img
                   src="/assets/logo_NPxx.png"
                   className="w-20 bg-transparent"
-                  // style={{
-                  //   filter: "hue-rotate(40deg)"
-                  // }}
                 />
               </div>
               <div className="flex items-center gap-2">
-                {/* Dashboard Button - Enhanced */}
+                {/* Help/Tour Button */}
+                {/* <button
+                  onClick={() => setIsTourOpen(true)}
+                  className="cursor-pointer h-10 relative bg-white/60 hover:bg-white/80 backdrop-blur-md px-3 py-2 rounded-xl border border-gray-200/50 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 active:scale-95"
+                  aria-label="Start Tour"
+                  title="Take a tour">
+                  <HelpCircle className="w-4 h-4 text-gray-600" />
+                </button> */}
+                
+                {/* Dashboard Button */}
                 <button
+                  id="tour-dashboard"
                   onClick={() =>
                     chrome.tabs.create({ url: "/tabs/dashboard.html" })
                   }
@@ -572,17 +632,13 @@ const Popup = () => {
                   aria-label="Open Dashboard">
                   <div className="flex items-center gap-1.5">
                     <LayoutDashboard className="w-4 h-4 text-white" />
-                    {/* <span className="text-xs font-semibold text-white">
-                      Dashboard
-                    </span> */}
                   </div>
-                  {/* Subtle glow effect */}
                   <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-400 to-purple-500 opacity-0 group-hover:opacity-20 blur-md transition-opacity duration-300 -z-10" />
                 </button>
 
-                {/* Pomodoro Timer - Enhanced */}
-                <div className="relative group/pomodoro">
-                  <div className="flex items-center gap-2 bg-gradient-to-r from-emerald-100/70 via-emerald-50/40 to-white/20 dark:from-emerald-900/50 dark:via-emerald-950/30 dark:to-slate-900/30 backdrop-blur-md px-4 py-2 mr-3 rounded-xl border border-white/30 dark:border-slate-600/40 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+                {/* Pomodoro Timer */}
+                <div className="relative group/pomodoro mr-3" id="tour-pomodoro">
+                  <div className="flex items-center gap-2 bg-gradient-to-r from-emerald-100/70 via-emerald-50/40 to-white/20 dark:from-emerald-900/50 dark:via-emerald-950/30 dark:to-slate-900/30 backdrop-blur-md px-4 py-2 rounded-xl border border-white/30 dark:border-slate-600/40 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
                     {/* Progress indicator background - Subtle fill */}
                     <div
                       className={`absolute inset-0 rounded-xl transition-all duration-1000 ease-in-out ${
@@ -718,7 +774,7 @@ const Popup = () => {
             </div>
 
             {/* Current Focus Display */}
-            <div className="bg-white/30 dark:bg-slate-800/30 backdrop-blur-md rounded-xl p-3 border border-gray-300/50 dark:border-slate-600/50 shadow-xs">
+            <div className="bg-white/30 dark:bg-slate-800/30 backdrop-blur-md rounded-xl p-3 border border-gray-300/50 dark:border-slate-600/50 shadow-xs" id="current-focus">
               {focusData ? (
                 <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
@@ -761,8 +817,8 @@ const Popup = () => {
             </div>
           </div>
 
-          {/* Apple-style Glassmorphic Tab Bar */}
-          <div className="shrink-0 px-4 pb-1 mt-4">
+          {/* Tab Bar */}
+          <div className="shrink-0 mx-4 pb-1 mt-4" id="tour-tabs">
             <div className="flex gap-2">
               <button
                 onClick={() => setActiveTab("focus")}
@@ -826,7 +882,16 @@ const Popup = () => {
           </div>
         </div>
       </div>
-      {/* Your Content/Components */}
+
+      <TourGuide
+        steps={tourSteps}
+        isOpen={isTourOpen}
+        onClose={() => setIsTourOpen(false)}
+        onFinish={() => {
+          setIsTourOpen(false)
+          setTourCompleted(true)
+        }}
+      />
     </div>
   )
 }

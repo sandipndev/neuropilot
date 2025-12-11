@@ -1,7 +1,4 @@
-/**
- * CompactPulseCard - Professional activity timeline
- */
-
+import { useState, useEffect } from 'react';
 import { Activity, Lightbulb, Clock, TrendingUp, Zap } from 'lucide-react';
 import type { Pulse } from '~/db';
 import { formatRelativeTime } from '../lib/time';
@@ -52,13 +49,35 @@ export function CompactPulseCard({ pulses, isLoading = false }: CompactPulseCard
     );
   }
 
-  const recentPulses = pulses.slice(0, 6);
+  const recentPulses = pulses.slice(0, 5);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(() => {
+    if (recentPulses.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setIsVisible(false);
+      setTimeout(() => {
+        setCurrentIndex((prev) => (prev + 1) % recentPulses.length);
+        setIsVisible(true);
+      }, 300);
+    }, 7000);
+
+    return () => clearInterval(interval);
+  }, [recentPulses.length]);
+
+  const currentPulse = recentPulses[currentIndex];
+  const category = currentPulse ? categorizePulse(currentPulse.message) : 'recap';
+  const colorClass = currentPulse ? getCategoryColor(category) : '';
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm">
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
-          <Zap className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+          <div className="p-1.5 rounded-lg bg-orange-100 dark:bg-orange-900/30">
+            <Zap className="w-5 h-5 text-orange-700 dark:text-orange-300" />
+          </div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             Activity Pulse
           </h3>
@@ -78,36 +97,40 @@ export function CompactPulseCard({ pulses, isLoading = false }: CompactPulseCard
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {recentPulses.map((pulse, index) => {
-            const category = categorizePulse(pulse.message);
-            const colorClass = getCategoryColor(category);
-            
-            return (
-              <div
-                key={`${pulse.timestamp}-${index}`}
-                className="flex gap-3 group"
-              >
-                <div className="flex flex-col items-center">
-                  <div className={`w-8 h-8 rounded-lg ${colorClass} flex items-center justify-center shrink-0`}>
-                    {getCategoryIcon(category)}
-                  </div>
-                  {index < recentPulses.length - 1 && (
-                    <div className="w-px h-full bg-gray-200 dark:bg-gray-800 mt-2" />
-                  )}
-                </div>
-                
-                <div className="flex-1 pb-4">
-                  <p className="text-sm text-gray-900 dark:text-gray-100 leading-relaxed mb-1">
-                    {pulse.message}
-                  </p>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {formatRelativeTime(pulse.timestamp)}
-                  </span>
-                </div>
+        <div className="space-y-4">
+          <div
+            className={`flex gap-3 transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+          >
+            <div className="flex flex-col items-center">
+              <div className={`w-8 h-8 rounded-lg ${colorClass} flex items-center justify-center shrink-0`}>
+                {getCategoryIcon(category)}
               </div>
-            );
-          })}
+            </div>
+            
+            <div className="flex-1">
+              <p className="text-sm text-gray-900 dark:text-gray-100 leading-relaxed mb-1">
+                {currentPulse?.message}
+              </p>
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                {currentPulse && formatRelativeTime(currentPulse.timestamp)}
+              </span>
+            </div>
+          </div>
+
+          {recentPulses.length > 1 && (
+            <div className="flex items-center justify-center gap-1.5 pt-2">
+              {recentPulses.map((_, index) => (
+                <div
+                  key={index}
+                  className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${
+                    index === currentIndex
+                      ? 'bg-gray-700 dark:bg-gray-300'
+                      : 'bg-gray-300 dark:bg-gray-600'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

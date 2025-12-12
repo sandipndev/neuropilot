@@ -56,6 +56,7 @@ export const Chat: React.FC<ChatProps> = ({
   const [writing, setWriting] = useState(false)
   const [messagesHeight, setMessagesHeight] = useState(90) // percentage
   const [isDragging, setIsDragging] = useState(false)
+  const [usageInfo, setUsageInfo] = useState<{ inputUsage: number; inputQuota: number } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const audioInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -140,6 +141,7 @@ export const Chat: React.FC<ChatProps> = ({
     const session = chatService.getSession()
     if (session && 'inputUsage' in session && 'inputQuota' in session) {
       const usage = { inputUsage: session.inputUsage as number, inputQuota: session.inputQuota as number }
+      setUsageInfo(usage)
       onUsageUpdate?.(usage)
     }
   }, [messages, onUsageUpdate, chatService])
@@ -460,12 +462,50 @@ export const Chat: React.FC<ChatProps> = ({
       {/* Floating New Chat Button - Only show after first complete conversation */}
       {messages && messages.length >= 2 && onNewChatRequested && (
         <div className="sticky bottom-[15px] mb-4 left-1/2 -translate-x-1/2 z-10 w-fit mx-auto pointer-events-none">
-          <button
-            onClick={onNewChatRequested}
-            className="pointer-events-auto group flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white/40 dark:bg-slate-800/40 backdrop-blur-md border border-white/60 dark:border-slate-600/60 rounded-full shadow-lg hover:shadow-xl hover:bg-white/60 dark:hover:bg-slate-800/60 transition-all duration-300 hover:scale-105 active:scale-95">
-            <span className="text-lg leading-none">+</span>
-            <span>new chat</span>
-          </button>
+          <div className="pointer-events-auto flex items-center gap-2">
+            <button
+              onClick={onNewChatRequested}
+              className="group flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white/40 dark:bg-slate-800/40 backdrop-blur-md border border-white/60 dark:border-slate-600/60 rounded-full shadow-lg hover:shadow-xl hover:bg-white/60 dark:hover:bg-slate-800/60 transition-all duration-300 hover:scale-105 active:scale-95">
+              <span className="text-lg leading-none">+</span>
+              <span>new chat</span>
+            </button>
+            {usageInfo && (
+              <div
+                className={`flex items-center justify-center mt-1 w-8 h-8 rounded-full shadow-sm ${
+                  usageInfo.inputUsage / (usageInfo.inputQuota / 1.2) < 0.75
+                    ? "bg-white"
+                    : "bg-white"
+                }`}
+                title={`${usageInfo.inputUsage} / ${usageInfo.inputQuota / 1.2}`}>
+                <svg className="w-5 h-5 -rotate-90" viewBox="0 0 20 20">
+                  <circle
+                    cx="10"
+                    cy="10"
+                    r="8"
+                    fill="none"
+                    strokeWidth="3"
+                    className={usageInfo.inputUsage / (usageInfo.inputQuota / 1.2) < 0.75
+                      ? "stroke-green-200 dark:stroke-green-800"
+                      : "stroke-yellow-200 dark:stroke-yellow-800"
+                    }
+                  />
+                  <circle
+                    cx="10"
+                    cy="10"
+                    r="8"
+                    fill="none"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeDasharray={`${(usageInfo.inputUsage / (usageInfo.inputQuota / 1.2)) * 50.27} 50.27`}
+                    className={usageInfo.inputUsage / (usageInfo.inputQuota / 1.2) < 0.75
+                      ? "stroke-green-600 dark:stroke-green-400"
+                      : "stroke-yellow-600 dark:stroke-yellow-400"
+                    }
+                  />
+                </svg>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

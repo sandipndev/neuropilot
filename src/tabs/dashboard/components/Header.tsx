@@ -27,16 +27,16 @@ export function Header({
     return () => clearInterval(interval)
   }, [])
 
-  console.log(userName)
-  const displayName = userName || "" // cc: Subham please fix this lol, take the user name as an input in the beginning walkthrough
+  // console.log(userName)
+  const displayName = userName || "" 
 
   // Get time-based greeting
   const getGreeting = () => {
     const hour = currentTime.getHours()
-    if (hour < 12) return { text: "Good morning", emoji: "☀️" }
-    if (hour < 17) return { text: "Good afternoon", emoji: "🌤️" }
-    if (hour < 21) return { text: "Good evening", emoji: "🌆" }
-    return { text: "Good evening", emoji: "🌙" }
+    if (hour >= 5 && hour < 12) return { text: "Good morning", emoji: "☀️" }
+    if (hour >= 12 && hour < 19) return { text: "Good afternoon", emoji: "🌤️" }
+    if (hour >= 19 && hour < 20) return { text: "Good evening", emoji: "🌆" }
+    return { text: "Good night", emoji: "🌙" }
   }
 
   const greeting = getGreeting()

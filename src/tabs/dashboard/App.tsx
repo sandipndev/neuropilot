@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 
 import Chat from "./components/Chat"
+import { AttentionProgressGraph } from "./components/AttentionProgressGraph"
 import { CompactFocusCard } from "./components/CompactFocusCard"
 import { CompactPulseCard } from "./components/CompactPulseCard"
 import { CompactQuizCard } from "./components/CompactQuizCard"
@@ -174,6 +175,10 @@ function App() {
               <div className="col-span-5 flex flex-col gap-5 overflow-y-auto scrollbar-thin">
                 <CompactFocusCard
                   currentFocus={currentFocus}
+                  focusHistory={focusHistory}
+                  isLoading={focusLoading}
+                />
+                <AttentionProgressGraph
                   focusHistory={focusHistory}
                   isLoading={focusLoading}
                 />

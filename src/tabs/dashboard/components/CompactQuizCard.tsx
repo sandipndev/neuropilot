@@ -136,7 +136,9 @@ export function CompactQuizCard({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          <Brain className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+          <div className="p-1.5 rounded-lg bg-indigo-300 dark:bg-indigo-700/30">
+            <Brain className="w-5 h-5 text-indigo-700 dark:text-violet-300" />
+          </div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             Knowledge Check
           </h3>

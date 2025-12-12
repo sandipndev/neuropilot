@@ -198,12 +198,38 @@ const Chat: React.FC = () => {
                 </div>
                 {usageInfo && (
                   <div
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm ${
-                      usageInfo.inputUsage / usageInfo.inputQuota < 0.6
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm ${
+                      usageInfo.inputUsage / (usageInfo.inputQuota/1.2) < 0.6
                         ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800"
                         : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800"
                     }`}>
-                    {usageInfo.inputUsage} / {usageInfo.inputQuota}
+                    <svg className="w-4 h-4 -rotate-90" viewBox="0 0 20 20">
+                      <circle
+                        cx="10"
+                        cy="10"
+                        r="8"
+                        fill="none"
+                        strokeWidth="3"
+                        className={usageInfo.inputUsage / (usageInfo.inputQuota / 1.2) < 0.6
+                          ? "stroke-green-200 dark:stroke-green-800"
+                          : "stroke-yellow-200 dark:stroke-yellow-800"
+                        }
+                      />
+                      <circle
+                        cx="10"
+                        cy="10"
+                        r="8"
+                        fill="none"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeDasharray={`${(usageInfo.inputUsage / (usageInfo.inputQuota / 1.2)) * 50.27} 50.27`}
+                        className={usageInfo.inputUsage / (usageInfo.inputQuota / 1.2) < 0.6
+                          ? "stroke-green-600 dark:stroke-green-400"
+                          : "stroke-yellow-600 dark:stroke-yellow-400"
+                        }
+                      />
+                    </svg>
+                    {usageInfo.inputUsage} / {usageInfo.inputQuota / 1.2}
                   </div>
                 )}
               </div>
